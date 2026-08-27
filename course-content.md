@@ -30,6 +30,60 @@ Core message:
 5. **Episode 2.5 — Generalization and Reliable Model Evaluation**
 6. **Episode 2.6 — Demo: UW Campus Building-Energy Regression**
 
+### Episode 2.3 — Regression: Predicting Continuous Outcomes
+
+#### Central question {#regression-central-question}
+
+How can building characteristics be used to predict a continuous performance outcome such as annual energy consumption?
+
+#### Regression versus classification {#regression-versus-classification}
+
+<div id="regression-classification-comparison"></div>
+
+Regression predicts a number on a continuous scale. Classification predicts which discrete category an example belongs to.
+
+#### How linear regression works {#how-linear-regression-works}
+
+For one feature, a fitted line predicts an outcome with **ŷ = wx + w₀**. Here, *x* is a known building feature, *w* is the learned slope, and *w₀* is the intercept. Each vertical gap between an observed point and its prediction is a residual: **error = actual − predicted**.
+
+<div id="interactive-regression-plot"></div>
+
+With several building features, the same idea becomes **ŷ = w₁x₁ + w₂x₂ + … + wₙxₙ + w₀**. Each coefficient describes the model's fitted relationship with one feature while the other included features are held constant.
+
+#### Architectural example {#regression-architectural-example}
+
+<div id="regression-architectural-feature-flow"></div>
+
+The observed annual building energy consumption is the target **Y**. The model learns coefficients from buildings where both X and Y are known, then uses those coefficients to predict ŷ for unseen buildings.
+
+#### Model evaluation {#regression-model-evaluation}
+
+<div class="metric-cards">
+  <section><strong>Prediction error</strong><p>The difference between an observed energy value and the model's prediction.</p></section>
+  <section><strong>RMSE</strong><p>RMSE summarizes prediction error in the target's unit and gives larger errors more weight. Lower is better.</p></section>
+  <section><strong>R²</strong><p>The proportion of variation in the target explained by the fitted model on the evaluated data.</p></section>
+</div>
+
+> A high R² does not by itself prove that the model is reliable or that a feature causes energy consumption to change. Check unseen-data error, residuals, data quality, and domain plausibility.
+
+### Episode 2.6 — Demo: UW Campus Building-Energy Regression
+
+#### Guided workflow {#regression-guided-workflow}
+
+This demonstration follows the supplied assignment notebook without reproducing its setup cells or completing its student TODOs as if they were submitted answers. Each checkpoint executes actual Python in the browser against the real UW CSV. Python loads only when this episode is opened.
+
+<div id="python-regression-workflow"></div>
+
+#### Interactive feature selection {#regression-interactive-feature-selection}
+
+Choose model inputs, then select **Train model**. The browser applies the assignment's outlier rules, uses a reproducible 80/20 split, fits ordinary least squares on the training rows, and updates every result from the loaded data.
+
+<div id="uw-regression-demo"></div>
+
+#### Final exercise {#regression-final-exercise}
+
+<div id="regression-final-challenge"></div>
+
 ## Module 3 — Deep Learning for Architecture
 
 Module question: How can different deep-learning architectures process tabular data, images, graphs, sequences, coordinates, and physical systems?
