@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Modules 2–3 — Machine Learning and Deep Learning for Architecture</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="assets/module_code_lab.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Modules 2–3 — Machine Learning and Deep Learning for
+Architecture</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a
+href="#modules-23-machine-learning-and-deep-learning-for-architecture"
+id="toc-modules-23-machine-learning-and-deep-learning-for-architecture">Modules
+2–3 — Machine Learning and Deep Learning for Architecture</a>
+<ul>
+<li><a href="#combined-learning-outcomes"
+id="toc-combined-learning-outcomes">Combined learning outcomes</a></li>
+<li><a href="#module-2-machine-learning-fundamentals"
+id="toc-module-2-machine-learning-fundamentals">Module 2 — Machine
+Learning Fundamentals</a></li>
+<li><a href="#module-3-deep-learning-for-architecture"
+id="toc-module-3-deep-learning-for-architecture">Module 3 — Deep
+Learning for Architecture</a>
+<ul>
+<li><a href="#episode-3.1-from-an-artificial-neuron-to-a-deep-network"
+id="toc-episode-3.1-from-an-artificial-neuron-to-a-deep-network">Episode
+3.1 — From an artificial neuron to a deep network</a>
+<ul>
+<li><a href="#central-question" id="toc-central-question">Central
+question</a></li>
+<li><a href="#artificial-neuron" id="toc-artificial-neuron">Artificial
+neuron</a></li>
+<li><a href="#network-layers" id="toc-network-layers">Network
+layers</a></li>
+<li><a href="#shallow-versus-deep-networks"
+id="toc-shallow-versus-deep-networks">Shallow versus deep
+networks</a></li>
+<li><a href="#common-activation-functions"
+id="toc-common-activation-functions">Common activation
+functions</a></li>
+<li><a href="#architectural-example"
+id="toc-architectural-example">Architectural example</a></li>
+<li><a href="#interactive-mini-code-lab-run-an-artificial-neuron"
+id="toc-interactive-mini-code-lab-run-an-artificial-neuron">Interactive
+mini code lab — run an artificial neuron</a></li>
+</ul></li>
+<li><a href="#episode-3.2-how-neural-networks-learn"
+id="toc-episode-3.2-how-neural-networks-learn">Episode 3.2 — How neural
+networks learn</a>
+<ul>
+<li><a href="#central-question-1" id="toc-central-question-1">Central
+question</a></li>
+<li><a href="#complete-training-loop"
+id="toc-complete-training-loop">Complete training loop</a></li>
+<li><a href="#key-terms" id="toc-key-terms">Key terms</a></li>
+<li><a href="#loss-examples" id="toc-loss-examples">Loss
+examples</a></li>
+<li><a href="#architectural-interpretation"
+id="toc-architectural-interpretation">Architectural
+interpretation</a></li>
+</ul></li>
+<li><a
+href="#episode-3.3-generalization-overfitting-and-reliable-evaluation"
+id="toc-episode-3.3-generalization-overfitting-and-reliable-evaluation">Episode
+3.3 — Generalization, overfitting, and reliable evaluation</a>
+<ul>
+<li><a href="#central-question-2" id="toc-central-question-2">Central
+question</a></li>
+<li><a href="#three-model-states" id="toc-three-model-states">Three
+model states</a></li>
+<li><a href="#regularization-strategies"
+id="toc-regularization-strategies">Regularization strategies</a></li>
+<li><a href="#evaluation-must-match-the-task"
+id="toc-evaluation-must-match-the-task">Evaluation must match the
+task</a></li>
+<li><a href="#architecture-specific-generalization-tests"
+id="toc-architecture-specific-generalization-tests">Architecture-specific
+generalization tests</a></li>
+</ul></li>
+<li><a href="#episode-3.4-cnn-and-computer-vision-for-architecture"
+id="toc-episode-3.4-cnn-and-computer-vision-for-architecture">Episode
+3.4 — CNN and computer vision for architecture</a>
+<ul>
+<li><a href="#central-question-3" id="toc-central-question-3">Central
+question</a></li>
+<li><a href="#cnn-workflow" id="toc-cnn-workflow">CNN workflow</a></li>
+<li><a href="#architectural-applications"
+id="toc-architectural-applications">Architectural applications</a></li>
+<li><a href="#example-workflow" id="toc-example-workflow">Example
+workflow</a></li>
+<li><a href="#risks-and-limitations"
+id="toc-risks-and-limitations">Risks and limitations</a></li>
+</ul></li>
+<li><a href="#episode-3.5-graphs-gnns-and-spatial-relationships"
+id="toc-episode-3.5-graphs-gnns-and-spatial-relationships">Episode 3.5 —
+Graphs, GNNs, and spatial relationships</a>
+<ul>
+<li><a href="#central-question-4" id="toc-central-question-4">Central
+question</a></li>
+<li><a href="#graph-representation" id="toc-graph-representation">Graph
+representation</a></li>
+<li><a href="#gnn-message-passing" id="toc-gnn-message-passing">GNN
+message passing</a></li>
+<li><a href="#architectural-applications-1"
+id="toc-architectural-applications-1">Architectural
+applications</a></li>
+<li><a href="#hypergraph-distinction"
+id="toc-hypergraph-distinction">Hypergraph distinction</a></li>
+<li><a href="#spatial-workflow" id="toc-spatial-workflow">Spatial
+workflow</a></li>
+<li><a href="#research-example" id="toc-research-example">Research
+example</a></li>
+</ul></li>
+<li><a
+href="#episode-3.6-physics-informed-learning-surrogate-models-and-inrs"
+id="toc-episode-3.6-physics-informed-learning-surrogate-models-and-inrs">Episode
+3.6 — Physics-informed learning, surrogate models, and INRs</a>
+<ul>
+<li><a href="#central-question-5" id="toc-central-question-5">Central
+question</a></li>
+<li><a href="#modeling-spectrum" id="toc-modeling-spectrum">Modeling
+spectrum</a></li>
+<li><a href="#hvac-example" id="toc-hvac-example">HVAC example</a></li>
+<li><a href="#building-aerodynamics-surrogate-example"
+id="toc-building-aerodynamics-surrogate-example">Building-aerodynamics
+surrogate example</a></li>
+<li><a href="#validation-requirements"
+id="toc-validation-requirements">Validation requirements</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#accuracy-boundaries-for-scripts-and-diagrams"
+id="toc-accuracy-boundaries-for-scripts-and-diagrams">Accuracy
+boundaries for scripts and diagrams</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1
+id="modules-23-machine-learning-and-deep-learning-for-architecture">Modules
+2–3 — Machine Learning and Deep Learning for Architecture</h1>
+<p>Purpose: detailed teaching content, demonstrations, and English
+diagram prompts for short instructional videos<br />
+Audience: architecture and built-environment students with basic
+data-literacy knowledge<br />
+Central question: How can architectural data be transformed into
+evaluated machine-learning models and, when appropriate, more
+specialized deep-learning systems that support responsible design
+decisions?</p>
+<h2 id="combined-learning-outcomes">Combined learning outcomes</h2>
+<p>By the end of Modules 2–3, students should be able to:</p>
+<ul>
+<li>Distinguish supervised, unsupervised, semi-supervised, and
+reinforcement learning.</li>
+<li>Translate an architectural question into features, targets, data
+representations, and a suitable learning task.</li>
+<li>Explain the complete machine-learning workflow from preprocessing
+through deployment and monitoring.</li>
+<li>Build and evaluate regression and classification models using
+task-appropriate metrics.</li>
+<li>Explain feature selection, multicollinearity, generalization,
+underfitting, overfitting, and cross-validation.</li>
+<li>Explain the structure and training process of an artificial neural
+network.</li>
+<li>Match MLPs, CNNs, sequence models, Transformers, GNNs,
+physics-informed models, and INRs to suitable architectural data.</li>
+<li>Evaluate technical accuracy, physical plausibility, domain transfer,
+uncertainty, and design usefulness.</li>
+</ul>
+<p>Core message:</p>
+<blockquote>
+<p>Begin with the architectural question and the data. Select the
+simplest model that can answer the question reliably, evaluate it on
+unseen data, and keep domain knowledge and human judgment in the
+decision loop.</p>
+</blockquote>
+<h2 id="module-2-machine-learning-fundamentals">Module 2 — Machine
+Learning Fundamentals</h2>
+<ol type="1">
+<li><strong>Episode 2.1 — ML Types and the Complete
+Workflow</strong></li>
+<li><strong>Episode 2.2 — Why Statistics and Probability
+Matter</strong></li>
+<li><strong>Episode 2.3 — Regression: Predicting Continuous
+Outcomes</strong></li>
+<li><strong>Episode 2.4 — Classification: Predicting
+Categories</strong></li>
+<li><strong>Episode 2.5 — Generalization and Reliable Model
+Evaluation</strong></li>
+<li><strong>Episode 2.6 — Demo: UW Campus Building-Energy
+Regression</strong></li>
+</ol>
+<h2 id="module-3-deep-learning-for-architecture">Module 3 — Deep
+Learning for Architecture</h2>
+<p>Module question: How can different deep-learning architectures
+process tabular data, images, graphs, sequences, coordinates, and
+physical systems?</p>
+<figure>
+<img src="assets/module_3_deep_learning_workflow.png"
+alt="Module 3 overview: a five-stage workflow from an architectural problem and data representation to model architecture, evaluation, and a design decision." />
+<figcaption aria-hidden="true">Module 3 overview: a five-stage workflow
+from an architectural problem and data representation to model
+architecture, evaluation, and a design decision.</figcaption>
+</figure>
+<p><em>Figure 1. Deep Learning for Architecture — from data
+representation to design decision. Created for this module.</em></p>
+<h3 id="episode-3.1-from-an-artificial-neuron-to-a-deep-network">Episode
+3.1 — From an artificial neuron to a deep network</h3>
+<h4 id="central-question">Central question</h4>
+<p>How can a network of simple mathematical units learn a complex
+relationship between building geometry, climate, and performance?</p>
+<h4 id="artificial-neuron">Artificial neuron</h4>
+<p>An artificial neuron is a mathematical function, not a realistic
+simulation of a biological neuron.</p>
+<p>An artificial neuron contains:</p>
+<ul>
+<li>Inputs: building area, height, window-to-wall ratio, orientation,
+materials, weather, or other features.</li>
+<li>Weights: values learned during training that represent the relative
+influence of each input.</li>
+<li>Bias: a learned value that shifts the neuron’s response.</li>
+<li>Weighted sum: the combination of inputs and weights.</li>
+<li>Activation function: a transformation that introduces a nonlinear
+response.</li>
+<li>Output: a value passed to the next layer or used as the final
+prediction.</li>
+</ul>
+<p>Basic relationship:</p>
+<blockquote>
+<p>Inputs x1, x2, …, xn → z = sum(wi × xi) + b → a = activation(z) →
+output</p>
+</blockquote>
+<h4 id="network-layers">Network layers</h4>
+<ul>
+<li>Input layer: receives building parameters, climate, images, graphs,
+sensors, or simulation data.</li>
+<li>Hidden layers: learn intermediate representations and complex
+interactions.</li>
+<li>Output layer: produces a prediction, class, segmentation, generated
+representation, or physical field.</li>
+</ul>
+<h4 id="shallow-versus-deep-networks">Shallow versus deep networks</h4>
+<ul>
+<li>A shallow network usually has one or two hidden layers and is
+suitable for relatively simple, structured problems.</li>
+<li>A deep network has multiple hidden layers and can learn increasingly
+abstract representations.</li>
+<li>A deeper network is not automatically a better network.</li>
+<li>Greater capacity increases requirements for data, computation,
+tuning, and validation.</li>
+</ul>
+<h4 id="common-activation-functions">Common activation functions</h4>
+<ul>
+<li>ReLU: commonly used in hidden layers; passes positive values and
+suppresses negative values.</li>
+<li>Sigmoid: maps output between 0 and 1; useful for binary
+probabilities.</li>
+<li>Softmax: converts several class scores into multiclass
+probabilities.</li>
+<li>Linear output: useful for continuous regression targets.</li>
+<li>Tanh: maps output between -1 and 1; historically common in sequence
+models.</li>
+</ul>
+<h4 id="architectural-example">Architectural example</h4>
+<blockquote>
+<p>Building area + height + window-to-wall ratio + orientation + weather
+→ MLP hidden layers → predicted annual energy use</p>
+</blockquote>
+<h4 id="interactive-mini-code-lab-run-an-artificial-neuron">Interactive
+mini code lab — run an artificial neuron</h4>
+<p>Change the input values, weights, or bias below. Select <strong>Run
+code</strong> to calculate the weighted sum and the ReLU output directly
+in the browser.</p>
+<div id="interactive-neuron-lab">
+
+</div>
+<script src="assets/module_code_lab.js" defer></script>
+<h3 id="episode-3.2-how-neural-networks-learn">Episode 3.2 — How neural
+networks learn</h3>
+<h4 id="central-question-1">Central question</h4>
+<p>When a neural network makes a wrong prediction, how does it determine
+which weights to change?</p>
+<h4 id="complete-training-loop">Complete training loop</h4>
+<ol type="1">
+<li>Split data into training, validation, and test sets.</li>
+<li>Forward pass: inputs move through the network and produce a
+prediction.</li>
+<li>Compute loss: compare the prediction with the known target.</li>
+<li>Backpropagation: calculate how each weight contributed to the
+error.</li>
+<li>Optimization: update weights to reduce the loss.</li>
+<li>Validation: measure performance on data not used for weight
+updates.</li>
+<li>Repeat across batches and epochs.</li>
+<li>Evaluate once on the untouched test set.</li>
+</ol>
+<h4 id="key-terms">Key terms</h4>
+<ul>
+<li>Parameter: a weight or bias learned from data.</li>
+<li>Hyperparameter: a setting selected or searched by the researcher,
+such as layer count, neuron count, learning rate, batch size, optimizer,
+dropout rate, or epoch count.</li>
+<li>Batch: a subset of training examples used for one update.</li>
+<li>Epoch: one complete pass through the training dataset.</li>
+<li>Learning rate: the size of each weight update.</li>
+<li>Loss function: the training objective that the model minimizes.</li>
+<li>Optimizer: the update strategy, such as gradient descent, SGD, or
+Adam.</li>
+</ul>
+<h4 id="loss-examples">Loss examples</h4>
+<ul>
+<li>Regression: mean squared error or mean absolute error.</li>
+<li>Classification: binary or categorical cross-entropy.</li>
+<li>Physics-informed learning: data loss + equation or physics loss +
+boundary or initial-condition loss.</li>
+</ul>
+<h4 id="architectural-interpretation">Architectural interpretation</h4>
+<blockquote>
+<p>A model does not understand energy automatically. It learns the
+relationship encouraged by the data, representation, loss function, and
+constraints selected by the researcher.</p>
+</blockquote>
+<h3
+id="episode-3.3-generalization-overfitting-and-reliable-evaluation">Episode
+3.3 — Generalization, overfitting, and reliable evaluation</h3>
+<h4 id="central-question-2">Central question</h4>
+<p>Why can a model perform extremely well on training data but fail on a
+new building or climate?</p>
+<h4 id="three-model-states">Three model states</h4>
+<ul>
+<li>Underfitting: the model is too simple or insufficiently trained;
+training and validation errors are both high.</li>
+<li>Good generalization: training and validation performance are both
+acceptable and remain close.</li>
+<li>Overfitting: training performance continues to improve while
+validation performance stops improving or becomes worse.</li>
+</ul>
+<h4 id="regularization-strategies">Regularization strategies</h4>
+<ul>
+<li>Dropout: randomly disables some neurons during training.</li>
+<li>Weight decay: discourages unnecessarily large weights.</li>
+<li>Batch normalization: stabilizes activation distributions and
+training.</li>
+<li>Early stopping: stops training when validation performance no longer
+improves and retains the best weights.</li>
+<li>Data augmentation: creates meaningful variations without changing
+the target meaning.</li>
+<li>Cross-validation: repeats training and validation across different
+data folds.</li>
+<li>Simpler architecture: reduces unnecessary depth and parameter
+count.</li>
+</ul>
+<h4 id="evaluation-must-match-the-task">Evaluation must match the
+task</h4>
+<ul>
+<li>Regression: MAE, RMSE, R², residual patterns, and errors across
+building types or climates.</li>
+<li>Classification: confusion matrix, accuracy, precision, recall, F1,
+and the consequences of false positives and false negatives.</li>
+<li>Image segmentation: intersection over union, Dice score, boundary
+quality, and failures under different image conditions.</li>
+<li>Physical-field prediction: pointwise error, field-pattern accuracy,
+boundary adherence, conservation or physical residual, and
+extreme-condition performance.</li>
+<li>Design generation: constraint satisfaction, diversity, feasibility,
+performance, expert review, and human usefulness.</li>
+</ul>
+<h4
+id="architecture-specific-generalization-tests">Architecture-specific
+generalization tests</h4>
+<ul>
+<li>New buildings from the same dataset.</li>
+<li>A building type absent from training.</li>
+<li>A different city or climate zone.</li>
+<li>A different geometric scale or topology.</li>
+<li>Extreme weather or operating conditions.</li>
+<li>Noisy or incomplete sensor data.</li>
+</ul>
+<p>Important warning:</p>
+<blockquote>
+<p>Random train/test splitting can overestimate performance when
+neighboring buildings, repeated simulations, time-adjacent samples, or
+nearly identical geometries appear in both sets.</p>
+</blockquote>
+<h3 id="episode-3.4-cnn-and-computer-vision-for-architecture">Episode
+3.4 — CNN and computer vision for architecture</h3>
+<h4 id="central-question-3">Central question</h4>
+<p>How does a neural network move from raw pixels to architectural
+features and decisions?</p>
+<h4 id="cnn-workflow">CNN workflow</h4>
+<ol type="1">
+<li>Input an image, map, voxel grid, or simulation raster.</li>
+<li>Convolution filters detect local patterns.</li>
+<li>Feature maps encode edges, textures, shapes, and higher-level
+structures.</li>
+<li>Activation functions introduce nonlinearity.</li>
+<li>Pooling or downsampling reduces spatial resolution and compresses
+information.</li>
+<li>Deeper layers combine local features into abstract
+representations.</li>
+<li>The output head produces a class, bounding box, segmentation mask,
+numerical prediction, or generated image.</li>
+</ol>
+<h4 id="architectural-applications">Architectural applications</h4>
+<ul>
+<li>Facade material classification.</li>
+<li>Window, door, roof, and building-feature detection.</li>
+<li>Construction progress, defect, and safety monitoring.</li>
+<li>Street-view, aerial-image, and satellite urban analysis.</li>
+<li>Accessibility and visual-design evaluation.</li>
+<li>Grid-based solar, wind, thermal, and pollution-field surrogate
+modeling.</li>
+</ul>
+<h4 id="example-workflow">Example workflow</h4>
+<blockquote>
+<p>Street-view facade images → image quality control and labels → CNN
+feature extractor → material classification → confidence and confusion
+matrix → GIS aggregation → human verification</p>
+</blockquote>
+<h4 id="risks-and-limitations">Risks and limitations</h4>
+<ul>
+<li>Geographic and visual-data bias.</li>
+<li>Differences in cameras, lighting, occlusion, seasons, and image
+quality.</li>
+<li>The model may learn background context instead of the intended
+architectural feature.</li>
+<li>Visible material does not reveal the complete wall assembly or
+performance.</li>
+<li>Grid-based CNNs can struggle with irregular geometry and very
+high-resolution 3D domains.</li>
+</ul>
+<h3 id="episode-3.5-graphs-gnns-and-spatial-relationships">Episode 3.5 —
+Graphs, GNNs, and spatial relationships</h3>
+<h4 id="central-question-4">Central question</h4>
+<p>Images describe appearance, but how can AI represent relationships
+among rooms, systems, buildings, or urban networks?</p>
+<h4 id="graph-representation">Graph representation</h4>
+<ul>
+<li>Node: a room, facade, sensor, building, or urban block.</li>
+<li>Edge: adjacency, circulation, visibility, airflow, similarity, or
+energy exchange.</li>
+<li>Node features: area, program, occupancy, temperature, and
+material.</li>
+<li>Edge features: distance, connection type, shared boundary,
+direction, capacity, and flow.</li>
+<li>Global features: site, climate, project target, and building-level
+properties.</li>
+</ul>
+<h4 id="gnn-message-passing">GNN message passing</h4>
+<ol type="1">
+<li>Each node begins with its own features.</li>
+<li>The node receives messages from connected neighbors.</li>
+<li>Neighbor messages are aggregated.</li>
+<li>The node updates its representation.</li>
+<li>Multiple layers allow information to travel farther through the
+graph.</li>
+<li>The model predicts node labels, edge relationships, graph-level
+properties, or new structures.</li>
+</ol>
+<h4 id="architectural-applications-1">Architectural applications</h4>
+<ul>
+<li>Room adjacency and circulation reasoning.</li>
+<li>Floor-plan analysis or generation.</li>
+<li>Building-system and energy-network modeling.</li>
+<li>Urban accessibility and mobility relationships.</li>
+<li>Mesh-based physical-field approximation.</li>
+<li>Knowledge graphs linking buildings, materials, performance, and
+regulations.</li>
+</ul>
+<h4 id="hypergraph-distinction">Hypergraph distinction</h4>
+<ul>
+<li>A normal graph edge usually connects two nodes.</li>
+<li>A hyperedge can connect several nodes simultaneously.</li>
+<li>A hyperedge can represent one apartment, shared circulation zone,
+functional group, or multi-room relationship.</li>
+</ul>
+<p>Critical distinction:</p>
+<blockquote>
+<p>A graph is a data representation. A GNN is a neural model that learns
+on graphs. A hypergraph model, adjacency algorithm, or self-organizing
+map is not automatically a GNN.</p>
+</blockquote>
+<h4 id="spatial-workflow">Spatial workflow</h4>
+<blockquote>
+<p>Program requirements → room nodes → adjacency and access edges →
+graph or hypergraph → optional GNN → geometry-generation rules →
+candidate floor plans → daylight, carbon, circulation, and
+space-efficiency evaluation → designer selection</p>
+</blockquote>
+<h4 id="research-example">Research example</h4>
+<p>Weber, Mueller, and Reinhart use a hypergraph to encode floor-plan
+organization and support automatic geometry generation. Within that
+study, improved space efficiency outperformed envelope upgrades for
+operational carbon in 72% of surveyed Zurich buildings, 61% in New York,
+and 33% in Singapore. A Zurich case study increased daylight access by
+up to 24%. These figures must remain connected to the study’s datasets,
+assumptions, and evaluation scope.</p>
+<h3
+id="episode-3.6-physics-informed-learning-surrogate-models-and-inrs">Episode
+3.6 — Physics-informed learning, surrogate models, and INRs</h3>
+<h4 id="central-question-5">Central question</h4>
+<p>Can a model provide fast simulation feedback while remaining
+physically plausible under unseen conditions?</p>
+<h4 id="modeling-spectrum">Modeling spectrum</h4>
+<h5 id="physics-based-simulation">Physics-based simulation</h5>
+<ul>
+<li>Uses governing equations, boundary conditions, material properties,
+and numerical solvers.</li>
+<li>Strength: an explicit physical foundation.</li>
+<li>Limitation: high computational cost and difficult modeling or
+calibration.</li>
+</ul>
+<h5 id="purely-data-driven-model">Purely data-driven model</h5>
+<ul>
+<li>Learns relationships from measured or simulated examples.</li>
+<li>Strength: fast inference after training.</li>
+<li>Limitation: may violate physics or fail outside the training
+range.</li>
+</ul>
+<h5 id="hybrid-or-gray-box-model">Hybrid or gray-box model</h5>
+<ul>
+<li>Combines a simplified physical model with learned components.</li>
+<li>Useful when some mechanisms are known and others are difficult to
+model.</li>
+</ul>
+<h5 id="physics-informed-machine-learning">Physics-informed machine
+learning</h5>
+<ul>
+<li>An umbrella term for introducing physical knowledge into machine
+learning.</li>
+<li>Physics may enter as inputs, features, architecture, loss terms,
+bounds, monotonic relationships, conservation rules, or model
+ensembles.</li>
+</ul>
+<h5 id="physics-informed-neural-network-pinn">Physics-informed neural
+network — PINN</h5>
+<ul>
+<li>A specific neural-network method within physics-informed
+learning.</li>
+<li>Usually adds governing-equation residuals and boundary or initial
+conditions to the loss.</li>
+<li>Can learn from both observations and physical constraints.</li>
+<li>It is not automatically superior; complex boundaries, stiff
+equations, scale, and optimization can remain difficult.</li>
+</ul>
+<h5 id="surrogate-model">Surrogate model</h5>
+<ul>
+<li>Approximates a slower high-fidelity simulator.</li>
+<li>Supports rapid repeated prediction during design exploration,
+optimization, or control.</li>
+<li>Reliability is limited by the simulation dataset, parameter range,
+geometry representation, and validation method.</li>
+</ul>
+<h5 id="implicit-neural-representation-inr">Implicit neural
+representation — INR</h5>
+<ul>
+<li>Represents geometry or a physical field as a continuous
+coordinate-based neural function.</li>
+<li>Coordinates plus a learned shape encoding can produce wind velocity,
+temperature, pressure, or another field variable.</li>
+<li>Useful for complex geometry, continuous physical fields, and
+flexible-resolution queries.</li>
+<li>An INR is not automatically physics-informed; physical constraints
+must be added explicitly when required.</li>
+</ul>
+<h4 id="hvac-example">HVAC example</h4>
+<blockquote>
+<p>Weather + HVAC control + occupancy + current indoor temperature →
+data model plus physical constraints → next-step indoor temperature →
+comfort and energy-control decision</p>
+</blockquote>
+<h4 id="building-aerodynamics-surrogate-example">Building-aerodynamics
+surrogate example</h4>
+<blockquote>
+<p>Building geometry → geometry encoder or latent representation →
+neural surrogate or neural field → wind or thermal field →
+pedestrian-comfort and facade-pressure metrics → rapid design
+iteration</p>
+</blockquote>
+<h4 id="validation-requirements">Validation requirements</h4>
+<ul>
+<li>Compare against independent simulation or measurement.</li>
+<li>Test different geometries, scales, climates, and boundary
+conditions.</li>
+<li>Report field error, extreme-value error, physical residual, and
+uncertainty.</li>
+<li>Mark interpolation and extrapolation regions.</li>
+<li>Keep high-fidelity simulation or expert review in the loop for
+critical decisions.</li>
+</ul>
+<h2 id="accuracy-boundaries-for-scripts-and-diagrams">Accuracy
+boundaries for scripts and diagrams</h2>
+<ul>
+<li>Do not describe neural networks as systems that literally think like
+a human brain.</li>
+<li>Do not interpret correlation as causation.</li>
+<li>Do not interpret a p-value as the probability that a hypothesis is
+true or as evidence of practical importance.</li>
+<li>Do not interpret high R² or accuracy as sufficient evidence of
+reliability.</li>
+<li>Do not present deeper networks as automatically more accurate.</li>
+<li>Do not use test data for hyperparameter tuning.</li>
+<li>Do not allow records from the same building or simulation family to
+leak across training and test sets.</li>
+<li>Do not describe a graph, hypergraph, adjacency algorithm, or
+self-organizing map as a GNN unless a neural message-passing model is
+used.</li>
+<li>Do not use physics-informed ML, PINN, hybrid model, surrogate model,
+and INR as interchangeable terms.</li>
+<li>Do not imply that a fast surrogate always replaces high-fidelity
+simulation.</li>
+<li>Do not treat a realistic visual output as evidence of
+constructability or performance.</li>
+<li>Always state the data range, geometry range, climate range, metrics,
+uncertainty, and known failure conditions.</li>
+</ul>
+<p>Before public production, verify each external figure, numerical
+claim, DOI, publication status, and license. Prefer redrawing
+explanatory diagrams in the team’s own visual language.</p>
+</body>
+</html>
