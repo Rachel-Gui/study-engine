@@ -593,7 +593,7 @@
       { title: 'Predict', explanation: 'Predict unseen testing buildings and inspect actual values, predictions, and residuals.', code: `test_pred = mlr_model.predict(X_test)\ntrain_pred = mlr_model.predict(X_train)\nprediction_examples = pd.DataFrame({\n    'Actual energy use': y_test.to_numpy(),\n    'Predicted energy use': test_pred,\n    'Residual': y_test.to_numpy() - test_pred\n}).head(6)\nresult = {"rows": prediction_examples.to_dict(orient='records')}` },
       { title: 'Evaluate', explanation: 'Calculate train/test RMSE and testing R², then compare every test prediction with its actual value.', code: `from sklearn.metrics import mean_squared_error, r2_score\n\nresult = {\n    "train_rmse": float(mean_squared_error(y_train, train_pred) ** 0.5),\n    "test_rmse": float(mean_squared_error(y_test, test_pred) ** 0.5),\n    "test_r2": float(r2_score(y_test, test_pred)),\n    "actual": y_test.tolist(),\n    "predicted": test_pred.tolist()\n}` }
     ];
-    host.innerHTML = `<section class="python-workflow"><div class="python-workflow__runtime" data-python-status>Open this episode to prepare the Python environment.</div><div class="python-workflow__fallback" data-python-fallback hidden><label>Connect UW_building_energy.csv <input type="file" accept=".csv,text/csv"></label><p>The file stays in this browser and is copied only into Pyodide's temporary in-memory filesystem.</p></div><div class="python-workflow__steps">${steps.map((step, index) => `<section class="python-step" data-python-step="${index}"><header><span>${index + 1}</span><div><h5>${step.title}</h5><p>${step.explanation}</p></div></header><pre><code class="language-python"></code></pre><button type="button" data-run-python="${index}" ${index ? 'disabled' : ''}>Run step</button><div class="python-step__output" data-python-output aria-live="polite">Run this step to see its Python output.</div></section>`).join('')}</div></section>`;
+    host.innerHTML = `<section class="python-workflow"><div class="python-workflow__runtime" data-python-status>Open this episode to prepare the Python environment.</div><div class="python-workflow__fallback" data-python-fallback hidden><label>Connect UW_building_energy.csv <input type="file" accept=".csv,text/csv"></label><p>Select the file once in either regression activity. It stays in this browser and is copied only into Pyodide's temporary in-memory filesystem.</p></div><div class="python-workflow__steps">${steps.map((step, index) => `<section class="python-step" data-python-step="${index}"><header><span>${index + 1}</span><div><h5>${step.title}</h5><p>${step.explanation}</p></div></header><pre><code class="language-python"></code></pre><button type="button" data-run-python="${index}" ${index ? 'disabled' : ''}>Run step</button><div class="python-step__output" data-python-output aria-live="polite">Run this step to see its Python output.</div></section>`).join('')}</div></section>`;
     host.querySelectorAll('[data-python-step]').forEach((node, index) => { node.querySelector('code').textContent = steps[index].code; });
     const status = host.querySelector('[data-python-status]');
     const fallback = host.querySelector('[data-python-fallback]');
@@ -607,11 +607,13 @@
       "  const { id, type } = data;",
       "  try {",
       "    if (type === 'init') {",
-      "      self.postMessage({ type: 'status', message: 'Preparing Python environment in the background…' });",
-      "      importScripts(INDEX_URL + 'pyodide.js');",
-      "      pyodideRuntime = await loadPyodide({ indexURL: INDEX_URL });",
-      "      self.postMessage({ type: 'status', message: 'Loading pandas and NumPy for Steps 1–4…' });",
-      "      await pyodideRuntime.loadPackage(['pandas', 'numpy']);",
+      "      if (!pyodideRuntime) {",
+      "        self.postMessage({ type: 'status', message: 'Preparing Python environment in the background…' });",
+      "        importScripts(INDEX_URL + 'pyodide.js');",
+      "        pyodideRuntime = await loadPyodide({ indexURL: INDEX_URL });",
+      "        self.postMessage({ type: 'status', message: 'Loading pandas and NumPy for Steps 1–4…' });",
+      "        await pyodideRuntime.loadPackage(['pandas', 'numpy']);",
+      "      }",
       "      pyodideRuntime.FS.writeFile('UW_building_energy.csv', data.csvText, { encoding: 'utf8' });",
       "      respond(id, true, { stage: 'base' });",
       "    } else if (type === 'ensure-modeling') {",
@@ -684,7 +686,18 @@
         const next = host.querySelector(`[data-run-python="${index + 1}"]`); if (next) next.disabled = false;
       } catch (error) { output.textContent = `Python error: ${error.message}`; button.disabled = false; }
     });
-    fallback.querySelector('input').addEventListener('change', async (event) => { if (!event.target.files[0]) return; csvText = await event.target.files[0].text(); fallback.hidden = true; preparing = null; prepare().catch(() => {}); });
+    fallback.querySelector('input').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      window.dispatchEvent(new CustomEvent('uw:csvconnected', { detail: { text: await file.text(), source: file.name } }));
+    });
+    window.addEventListener('uw:csvconnected', (event) => {
+      csvText = event.detail.text;
+      fallback.hidden = true;
+      preparing = null;
+      status.textContent = `Data connected from ${event.detail.source}. Preparing the shared Python environment…`;
+      prepare().catch(() => {});
+    });
     window.addEventListener('course:topicchange', (event) => {
       if (['episode-2.6-demo-uw-campus-building-energy-regression', 'regression-guided-workflow'].includes(event.detail.id)) prepare().catch(() => {});
     });
@@ -717,7 +730,7 @@
         <div class="uw-demo__fallback" data-fallback hidden>
           <label for="uw-csv">Connect UW_building_energy.csv</label>
           <input id="uw-csv" type="file" accept=".csv,text/csv">
-          <p>The reference CSV is not deployed. Choose your local copy to calculate real results; no file is uploaded.</p>
+          <p>The reference CSV is not deployed. Select it once here or in the guided workflow; both activities share the same browser-local copy.</p>
         </div>
         <div data-interface hidden>
           <div class="uw-demo__overview" data-overview></div>
@@ -796,7 +809,10 @@
     host.querySelector('input[type="file"]').addEventListener('change', async (event) => {
       const file = event.target.files[0];
       if (!file) return;
-      try { load(await file.text(), file.name); }
+      window.dispatchEvent(new CustomEvent('uw:csvconnected', { detail: { text: await file.text(), source: file.name } }));
+    });
+    window.addEventListener('uw:csvconnected', (event) => {
+      try { load(event.detail.text, event.detail.source); }
       catch (error) { status.textContent = error.message; }
     });
     fetch('reference_materials/UW_building_energy.csv')

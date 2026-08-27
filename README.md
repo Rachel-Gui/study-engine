@@ -27,7 +27,7 @@ The frontend is fully static and does not require a build step.
 
 - `reference_materials/` contains local development and course-reference material only. It is not tracked by Git and is not included in GitHub or Vercel deployments.
 - During local development, the Regression demo may automatically load `reference_materials/UW_building_energy.csv` when that private file exists.
-- In production, when no publishable dataset is bundled, learners connect their own local copy through the CSV file picker. The file and all resulting calculations remain inside the learner's browser.
+- In production, when no publishable dataset is bundled, learners connect their own local copy through either CSV file picker. The selected file is shared by both regression activities, and the file and all resulting calculations remain inside the learner's browser.
 - The guided workflow runs real Python in a persistent Pyodide Web Worker. It preloads pandas and NumPy for Steps 1–4 and defers scikit-learn until the modeling steps need it.
 - The faster feature-selection activity uses the browser-local JavaScript OLS implementation. It detects redundant or linearly dependent predictors and explains the resulting multicollinearity issue instead of returning arbitrary coefficients.
 
