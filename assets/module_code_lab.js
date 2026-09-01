@@ -645,11 +645,13 @@
       "  const { id, type } = data;",
       "  try {",
       "    if (type === 'init') {",
-      "      self.postMessage({ type: 'status', message: 'Preparing Python environment in the background…' });",
-      "      importScripts(INDEX_URL + 'pyodide.js');",
-      "      pyodideRuntime = await loadPyodide({ indexURL: INDEX_URL });",
-      "      self.postMessage({ type: 'status', message: 'Loading pandas and NumPy for data loading and EDA…' });",
-      "      await pyodideRuntime.loadPackage(['pandas', 'numpy']);",
+      "      if (!pyodideRuntime) {",
+      "        self.postMessage({ type: 'status', message: 'Preparing Python environment in the background…' });",
+      "        importScripts(INDEX_URL + 'pyodide.js');",
+      "        pyodideRuntime = await loadPyodide({ indexURL: INDEX_URL });",
+      "        self.postMessage({ type: 'status', message: 'Loading pandas and NumPy for data loading and EDA…' });",
+      "        await pyodideRuntime.loadPackage(['pandas', 'numpy']);",
+      "      }",
       "      pyodideRuntime.FS.writeFile('UW_building_energy.csv', data.csvText, { encoding: 'utf8' });",
       "      respond(id, true, { stage: 'base' });",
       "    } else if (type === 'ensure-modeling') {",
@@ -724,7 +726,18 @@
         const next = host.querySelector(`[data-run-python="${index + 1}"]`); if (next) next.disabled = false;
       } catch (error) { output.textContent = `Python error: ${error.message}`; button.disabled = false; }
     });
-    fallback.querySelector('input').addEventListener('change', async (event) => { if (!event.target.files[0]) return; csvText = await event.target.files[0].text(); fallback.hidden = true; preparing = null; prepare().catch(() => {}); });
+    fallback.querySelector('input').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      window.dispatchEvent(new CustomEvent('uw:csvconnected', { detail: { text: await file.text(), source: file.name } }));
+    });
+    window.addEventListener('uw:csvconnected', (event) => {
+      csvText = event.detail.text;
+      fallback.hidden = true;
+      preparing = null;
+      status.textContent = `Data connected from ${event.detail.source}. Preparing the shared Python environment…`;
+      prepare().catch(() => {});
+    });
     window.addEventListener('course:topicchange', (event) => {
       if (['episode-2.6-demo-uw-campus-building-energy-regression', 'regression-guided-workflow'].includes(event.detail.id)) prepare().catch(() => {});
     });
@@ -842,7 +855,10 @@
     host.querySelector('input[type="file"]').addEventListener('change', async (event) => {
       const file = event.target.files[0];
       if (!file) return;
-      try { load(await file.text(), file.name); }
+      window.dispatchEvent(new CustomEvent('uw:csvconnected', { detail: { text: await file.text(), source: file.name } }));
+    });
+    window.addEventListener('uw:csvconnected', (event) => {
+      try { load(event.detail.text, event.detail.source); }
       catch (error) { status.textContent = error.message; }
     });
     fetch('assets/data/UW_building_energy.csv')
