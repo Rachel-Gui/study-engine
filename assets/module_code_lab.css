@@ -541,6 +541,9 @@ th { background: #f4f4f8; }
 .prediction-flow span { flex: 1; border: 1px solid #dedbea; padding: 9px 6px; background: #faf9ff; text-align: center; }
 .prediction-flow b { color: #9188c6; }
 .prediction-compare__card p, .metric-cards p { margin: 11px 0 0; color: #6c6c6c; font-size: 15px; }
+.regression-notation { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+.regression-notation span { border: 1px solid #dedbea; padding: 12px; background: #faf9ff; font-size: 14px; }
+.regression-notation strong { display: block; color: var(--course-purple); font-size: 22px; }
 
 .regression-visual,
 .uw-demo {
@@ -572,8 +575,17 @@ th { background: #f4f4f8; }
 .plot-observed:active { cursor: grabbing; }
 .drag-cue { animation: drag-cue-pulse 1.5s ease-in-out infinite; pointer-events: none; }
 .drag-cue line { stroke: #ef789e; stroke-width: 2; }
+.drag-cue rect { fill: rgba(255, 255, 255, 0.94); stroke: #f3bfd0; stroke-width: 1; }
 .drag-cue text { fill: #b34468; font: 700 15px Arial, sans-serif; }
 @keyframes drag-cue-pulse { 0%, 100% { opacity: 0.58; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
+.regression-visual__meaning { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px 16px; border-top: 1px solid #eee; padding: 12px 18px; font-size: 13px; }
+.regression-visual__meaning span { display: flex; align-items: center; gap: 8px; }
+.regression-visual__meaning i { display: inline-block; flex: 0 0 18px; }
+.legend-observed { width: 11px; height: 11px; border-radius: 50%; background: var(--course-purple); }
+.legend-line { height: 3px; background: var(--course-purple); }
+.legend-predicted { width: 8px; height: 8px; border-radius: 50%; background: #ef789e; }
+.legend-residual { height: 16px; border-left: 2px dashed #ef789e; }
+.regression-visual__readout { display: block; border-top: 1px solid #eee; padding: 11px 18px; background: #fff8fb; color: #7b3d55; font: 700 14px ui-monospace, monospace; }
 
 .regression-visual__controls {
   display: flex;
@@ -610,16 +622,48 @@ th { background: #f4f4f8; }
 .feature-flow__groups ul { margin: 0; padding-left: 19px; font-size: 15px; }
 .feature-flow__equation { display: flex; align-items: center; justify-content: center; gap: 13px; margin-top: 12px; padding: 18px; background: #f4f1f8; text-align: center; }
 .feature-flow__equation span { color: var(--course-purple); font-size: 23px; }
-.metric-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.regression-transition { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; margin: 22px 0; }
+.regression-transition section { border: 1px solid #d9d9d9; padding: 16px; background: #fafafa; }
+.regression-transition h5 { margin: 0 0 12px; color: var(--course-purple); }
+.regression-transition section div { display: grid; gap: 7px; text-align: center; }
+.regression-transition section div span, .regression-transition section div strong { border: 1px solid #dedbea; padding: 9px; background: white; }
+.regression-transition section div b { color: var(--course-purple); }
+.regression-transition__expand { color: var(--course-purple); font-size: 28px; }
+.metric-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .metric-cards section { border-top: 3px solid #cfcafc; }
 .metric-cards strong { color: var(--course-purple); font-size: 20px; }
 
+.dataset-card { margin: 20px 0; border: 1px solid #d0d0d0; }
+.dataset-card__summary { display: grid; grid-template-columns: repeat(3, 1fr); background: #faf9ff; }
+.dataset-card__summary span { padding: 18px; text-align: center; }
+.dataset-card__summary span + span { border-left: 1px solid #dedbea; }
+.dataset-card__summary strong { display: block; color: var(--course-purple); font-size: 28px; }
+.dataset-card > details { border-top: 1px solid #ddd; padding: 14px 17px; }
+.dataset-card summary { cursor: pointer; color: var(--course-purple); font-weight: 700; }
+.data-dictionary { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-top: 15px; }
+.data-dictionary section { border-top: 3px solid #b7a57a; padding: 12px; background: #f8f8f8; }
+.data-dictionary h5 { margin: 0 0 8px; color: var(--course-purple); font-size: 16px; }
+.data-dictionary dl { margin: 0; font-size: 13px; }
+.data-dictionary dl div { margin-bottom: 7px; }
+.data-dictionary dt { font-weight: 700; overflow-wrap: anywhere; }
+.data-dictionary dd { margin: 1px 0 0; color: #6b6b6b; }
+.workflow-sequence { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 18px 0; border: 1px solid #dedbea; padding: 12px; background: #faf9ff; color: #555; font-size: 14px; font-weight: 700; }
+.workflow-sequence span { color: var(--course-purple); }
+
 .python-workflow { margin: 20px 0 30px; }
-.python-workflow__runtime { position: sticky; z-index: 5; top: calc(var(--topbar-height) + 5px); border: 1px solid #d9d4eb; padding: 12px 16px; background: #faf9ff; color: #5d547e; font-size: 14px; }
+.python-workflow__runtime { display: inline-flex; align-items: center; border: 1px solid #d9d4eb; border-radius: 999px; padding: 7px 12px; background: #faf9ff; color: #5d547e; font-size: 13px; }
 .python-workflow__fallback { border: 1px solid #ddd; border-top: 0; padding: 16px; }
 .python-workflow__fallback label { color: var(--course-purple); font-weight: 700; }
 .python-workflow__fallback p { margin: 8px 0 0; color: #777; font-size: 13px; }
 .python-workflow__steps { display: grid; gap: 16px; margin-top: 16px; }
+.python-transition { margin: 14px 0 0; border-left: 3px solid #b7a57a; padding: 9px 12px; background: #fbfaf5; }
+.split-concept { margin: 0 16px 16px; border: 1px solid #dedbea; padding: 14px; background: #faf9ff; text-align: center; }
+.split-concept > span { display: block; margin: 8px; color: var(--course-purple); font-weight: 700; }
+.split-concept > div, .split-result { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.split-concept section, .split-result section { border: 1px solid #dedbea; padding: 12px; background: #fff; }
+.split-concept p, .split-result p { margin: 5px 0 0; }
+.split-result strong { color: var(--course-purple); font-size: 24px; }
+.dataset-card__units, .data-dictionary section > p { color: #666; font-size: 13px; }
 .python-step { border: 1px solid #d0d0d0; background: #fff; }
 .python-step header { display: flex; gap: 12px; padding: 15px 17px; background: #f8f8f8; }
 .python-step header > span { display: inline-grid; flex: 0 0 30px; height: 30px; place-items: center; border-radius: 50%; background: #e8e4fa; color: var(--course-purple); font-weight: 700; }
@@ -631,7 +675,7 @@ th { background: #f4f4f8; }
 .python-summary, .outlier-flow, .xy-split { display: flex; align-items: stretch; gap: 9px; margin-bottom: 13px; }
 .python-summary strong, .outlier-flow strong, .xy-split section { flex: 1; border: 1px solid #dedbea; padding: 11px; background: #faf9ff; text-align: center; }
 .outlier-flow span { align-self: center; color: var(--course-purple); font-size: 20px; }
-.python-histograms { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.python-histograms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .python-table-wrap { overflow-x: auto; }
 .python-table-wrap table { table-layout: fixed; margin: 8px 0; font-size: 12px; }
 .python-table-wrap th, .python-table-wrap td { overflow-wrap: anywhere; padding: 7px 8px; }
@@ -646,6 +690,16 @@ th { background: #f4f4f8; }
 .python-prompt { margin: 14px 0 0; border-left: 3px solid #b7a57a; padding: 10px; background: #fffdf7; font-weight: 700; }
 .xy-split { display: grid; grid-template-columns: 1fr 1fr; }
 .xy-split section strong { color: var(--course-purple); font-size: 19px; }
+.xy-split small { color: #777; }
+.split-visual { display: grid; justify-items: center; gap: 7px; margin-bottom: 15px; }
+.split-visual > span { color: var(--course-purple); font-size: 22px; }
+.split-visual > div { display: grid; grid-template-columns: 4fr 1fr; gap: 12px; width: 100%; }
+.split-visual section { border-top: 4px solid #8d82c4; padding: 13px; background: #faf9ff; text-align: center; }
+.split-visual section:last-child { border-top-color: #b7a57a; }
+.split-visual p { margin: 4px 0 0; }
+.negative-r2 { border-left: 4px solid #b7a57a; padding: 11px 13px; background: #fffdf7; }
+.evaluation-plot { display: grid; grid-template-columns: 1fr 340px; align-items: center; margin-top: 16px; border-top: 1px solid #ddd; padding-top: 15px; }
+.interpret-output { border-left: 4px solid #8d82c4; padding: 12px 14px; background: #faf9ff; }
 
 .uw-demo__status { border-bottom: 1px solid #ddd; padding: 13px 18px; background: #faf9ff; color: #5d547e; font-size: 15px; }
 .uw-demo__fallback { padding: 22px; }
@@ -669,7 +723,13 @@ th { background: #f4f4f8; }
 .feature-toggles h5 { margin-bottom: 7px; font-size: 15px; }
 .feature-toggles label { display: flex; align-items: center; gap: 7px; font-size: 14px; }
 .feature-toggles input { accent-color: var(--course-purple); }
+.uw-demo textarea { width: 100%; margin: 7px 0 13px; resize: vertical; border: 1px solid #bbb; padding: 9px; font: inherit; }
 .uw-demo__results { padding: 20px; }
+.expectation-empty, .expectation-result, .model-reflection { border-left: 4px solid #8d82c4; padding: 12px 14px; background: #faf9ff; }
+.expectation-empty p, .expectation-result p, .model-reflection p { margin: 5px 0; }
+.expectation-result > span, .model-reflection > span { color: var(--course-purple); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.model-reflection { margin-top: 16px; }
+.model-reflection label { margin-right: 14px; font-size: 14px; }
 .metric-cards--compact { margin: 0 0 18px; gap: 8px; }
 .metric-cards--compact section { padding: 10px; }
 .metric-cards--compact strong { font-size: 17px; }
@@ -780,7 +840,13 @@ th { background: #f4f4f8; }
   .course-complete { right: 16px; left: auto; }
   .course-tools { display: none; }
   .prediction-compare, .metric-cards, .feature-flow__groups,
-  .uw-demo__distributions, .uw-demo__workspace, .uw-demo__plot { grid-template-columns: 1fr; }
+  .uw-demo__distributions, .uw-demo__workspace, .uw-demo__plot, .evaluation-plot { grid-template-columns: 1fr; }
+  .regression-notation, .dataset-card__summary, .data-dictionary,
+  .split-concept > div, .split-result { grid-template-columns: 1fr; }
+  .dataset-card__summary span + span { border-top: 1px solid #dedbea; border-left: 0; }
+  .regression-transition { grid-template-columns: 1fr; }
+  .regression-transition__expand { justify-self: center; transform: rotate(90deg); }
+  .regression-visual__meaning { grid-template-columns: 1fr; }
   .regression-visual__header { align-items: flex-start; flex-direction: column; }
   .regression-visual__controls { align-items: stretch; flex-direction: column; }
   .feature-flow__equation { align-items: stretch; flex-direction: column; }

@@ -34,7 +34,7 @@ Core message:
 
 #### Central question {#regression-central-question}
 
-How can building characteristics be used to predict a continuous performance outcome such as annual energy consumption?
+Can we predict a building's annual energy use from its physical, operational, and environmental characteristics?
 
 #### Regression versus classification {#regression-versus-classification}
 
@@ -42,13 +42,27 @@ How can building characteristics be used to predict a continuous performance out
 
 Regression predicts a number on a continuous scale. Classification predicts which discrete category an example belongs to.
 
+Regression is a supervised machine-learning method used to predict a continuous numerical outcome by learning relationships between that outcome and one or more input features. In the UW example, building characteristics are the inputs and annual energy use is the outcome.
+
+<div class="regression-notation" aria-label="Regression notation"><span><strong>X</strong> input features / predictors</span><span><strong>Y</strong> observed outcome / target</span><span><strong>ŷ</strong> predicted outcome</span></div>
+
 #### How linear regression works {#how-linear-regression-works}
 
 For one feature, a fitted line predicts an outcome with **ŷ = wx + w₀**. Here, *x* is a known building feature, *w* is the learned slope, and *w₀* is the intercept. Each vertical gap between an observed point and its prediction is a residual: **error = actual − predicted**.
 
 <div id="interactive-regression-plot"></div>
 
-With several building features, the same idea becomes **ŷ = w₁x₁ + w₂x₂ + … + wₙxₙ + w₀**. Each coefficient describes the model's fitted relationship with one feature while the other included features are held constant.
+The best-fit line is chosen to minimize the overall squared residuals.
+
+#### From simple to multiple regression {#simple-to-multiple-regression}
+
+In the interactive example above, one input **x** was used to predict **y**. The UW model uses the same idea, but **X** now contains several building characteristics.
+
+Simple linear regression uses one predictor. Multiple regression extends the same idea to several predictors at once.
+
+<div id="simple-multiple-regression-transition"></div>
+
+With several building features, the equation becomes **ŷ = w₁x₁ + w₂x₂ + … + wₙxₙ + w₀**. Each coefficient describes the model's fitted relationship with one feature while the other included features are held constant.
 
 #### Architectural example {#regression-architectural-example}
 
@@ -60,6 +74,7 @@ The observed annual building energy consumption is the target **Y**. The model l
 
 <div class="metric-cards">
   <section><strong>Prediction error</strong><p>The difference between an observed energy value and the model's prediction.</p></section>
+  <section><strong>MAE</strong><p>MAE is the average absolute difference between actual and predicted energy use. Lower is better.</p></section>
   <section><strong>RMSE</strong><p>RMSE summarizes prediction error in the target's unit and gives larger errors more weight. Lower is better.</p></section>
   <section><strong>R²</strong><p>The proportion of variation in the target explained by the fitted model on the evaluated data.</p></section>
 </div>
@@ -68,15 +83,25 @@ The observed annual building energy consumption is the target **Y**. The model l
 
 ### Episode 2.6 — Demo: UW Campus Building-Energy Regression
 
+#### About the UW Building-Energy Dataset {#uw-dataset-overview}
+
+This dataset contains building characteristics and annual energy-use values for **121 buildings on the UW campus**. It includes geometric, operational/program, and environmental information that we can use to explore which characteristics are associated with annual energy use.
+
+<div id="uw-dataset-dictionary"></div>
+
 #### Guided workflow {#regression-guided-workflow}
 
-This demonstration follows the supplied assignment notebook without reproducing its setup cells or completing its student TODOs as if they were submitted answers. Each checkpoint executes actual Python in the browser against the real UW CSV. Python loads only when this episode is opened.
+Follow the regression workflow from raw building data to an evaluated model. At each stage, run the Python code, inspect the output, and use the results to understand how the model is built and evaluated.
+
+Each checkpoint runs real Python directly in your browser using the UW building-energy dataset.
+
+<div class="workflow-sequence" aria-label="Regression modeling workflow">Load Data <span>→</span> EDA — Exploratory Data Analysis (Inspect, Clean, Explore) <span>→</span> Set Target &amp; Starting Features <span>→</span> Train/Test Split <span>→</span> Train <span>→</span> Predict <span>→</span> Evaluate <span>→</span> Interpret</div>
 
 <div id="python-regression-workflow"></div>
 
 #### Interactive feature selection {#regression-interactive-feature-selection}
 
-Choose model inputs, then select **Train model**. The browser applies the assignment's outlier rules, uses a reproducible 80/20 split, fits ordinary least squares on the training rows, and updates every result from the loaded data.
+Before fitting the model, make a hypothesis: which building characteristics do you expect to be most predictive of annual energy use? Select about three features and explain why. Then train the model and compare the result with your expectation on unseen buildings.
 
 <div id="uw-regression-demo"></div>
 

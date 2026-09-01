@@ -301,11 +301,31 @@
       <div class="feature-flow" aria-label="Building characteristics become model inputs for annual energy prediction">
         <div class="feature-flow__groups">
           <section><h5>Geometric features</h5><ul><li>Area</li><li>Height</li><li>Building length</li><li>Orientation</li><li>Relative compactness</li></ul></section>
-          <section><h5>Non-geometric features</h5><ul><li>Year built</li><li>Occupancy / program information</li></ul></section>
+          <section><h5>Non-geometric features</h5><ul><li>Year built</li><li>Occupants / program information</li></ul></section>
           <section><h5>Environmental features</h5><ul><li>Tree canopy</li><li>Land-surface temperature</li></ul></section>
         </div>
         <div class="feature-flow__equation"><strong>Building characteristics (X)</strong><span>→</span><strong>Multiple Linear Regression</strong><span>→</span><strong>Predicted Annual Energy Use (ŷ)</strong></div>
       </div>`;
+    const transition = document.getElementById('simple-multiple-regression-transition');
+    if (transition) transition.innerHTML = `
+      <div class="regression-transition">
+        <section><h5>Simple linear regression</h5><div><span>Building Area</span><b>↓</b><strong>Regression</strong><b>↓</b><span>Annual Energy</span></div></section>
+        <span class="regression-transition__expand" aria-hidden="true">→</span>
+        <section><h5>Multiple regression</h5><div><span>Area · Height · Year Built<br>Occupants · Environmental variables</span><b>↓</b><strong>Multiple Regression</strong><b>↓</b><span>Annual Energy</span></div></section>
+      </div>`;
+    const dictionary = document.getElementById('uw-dataset-dictionary');
+    if (dictionary) dictionary.innerHTML = `
+      <section class="dataset-card">
+        <div class="dataset-card__summary"><span><strong>121</strong>UW campus buildings</span><span><strong>19</strong>columns</span><span><strong>Annual Energy</strong>target</span></div>
+        <details><summary>Explore the data dictionary</summary><div class="data-dictionary">
+          <section><h5>Geometric</h5><dl><div><dt>Area_m</dt><dd>Building area</dd></div><div><dt>Height</dt><dd>Building height</dd></div><div><dt>Building_Length_m</dt><dd>Building length (m)</dd></div><div><dt>Orientation (degrees north)</dt><dd>Orientation (degrees north)</dd></div><div><dt>Relative Compactness</dt><dd>Relative compactness</dd></div></dl></section>
+          <section><h5>Operational / building characteristics</h5><dl><div><dt>Year_Built</dt><dd>Year built (year)</dd></div><div><dt>Occupants</dt><dd>Occupants value</dd></div></dl></section>
+          <section><h5>Program</h5><dl><div><dt>apartments · parking · stadium · university · utility · warehouse</dt><dd>Program categories (binary 0/1)</dd></div></dl></section>
+          <section><h5>Environmental</h5><dl><div><dt>Tree_Canopy</dt><dd>Tree-canopy value</dd></div><div><dt>Land_Surface_Temp</dt><dd>Land-surface-temperature value</dd></div></dl></section>
+          <section><h5>Metadata / location</h5><dl><div><dt>Name</dt><dd>Building name</dd></div><div><dt>Longitude</dt><dd>Building location coordinate</dd></div><div><dt>Latitude</dt><dd>Building location coordinate</dd></div></dl><p>Used to identify or locate buildings; not used as predictors in this exercise.</p></section>
+          <section><h5>Target</h5><dl><div><dt>Energy_Use_kWh</dt><dd>Annual energy use (kWh)</dd></div></dl></section>
+        </div><p class="dataset-card__units">Units are shown where they are specified in the source dataset or course materials. Some variables do not include documented units.</p></details>
+      </section>`;
   };
 
   const buildConceptRegression = () => {
@@ -323,6 +343,8 @@
           <output data-equation aria-live="polite"></output>
         </div>
         <svg viewBox="0 0 720 390" role="img" aria-label="Observed data, fitted line, predictions, and residual gaps"></svg>
+        <div class="regression-visual__meaning"><span><i class="legend-observed"></i>Purple dot = observed value</span><span><i class="legend-line"></i>Fitted line = learned relationship</span><span><i class="legend-predicted"></i>Point on line = prediction</span><span><i class="legend-residual"></i>Vertical gap = residual</span></div>
+        <output class="regression-visual__readout" data-point-readout aria-live="polite"></output>
         <div class="regression-visual__controls">
           <div><button type="button" data-fit disabled>Refit best-fit line</button><p>Find the least-squares line for the current observations.</p></div>
           <button type="button" class="secondary" data-reset-points>Reset observations</button>
@@ -334,10 +356,11 @@
     const slopeInput = host.querySelector('[data-slope]');
     const interceptInput = host.querySelector('[data-intercept]');
     const equation = host.querySelector('[data-equation]');
+    const pointReadout = host.querySelector('[data-point-readout]');
     const fitButton = host.querySelector('[data-fit]');
     const xScale = (value) => 70 + value * 5.9;
     const yScale = (value) => 335 - value * 3.05;
-    let dragging = null;
+    let dragging = null, selectedPoint = 3;
 
     const bestFit = () => {
       const meanX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
@@ -376,6 +399,11 @@
       yLabel.textContent = 'Annual energy use (illustrative scale)';
       svg.append(xLabel, yLabel);
 
+      svg.append(svgNode('line', {
+        x1: xScale(0), y1: yScale(intercept), x2: xScale(100),
+        y2: yScale(slope * 100 + intercept), class: 'plot-fit'
+      }));
+
       points.forEach((point, index) => {
         const predicted = slope * point.x + intercept;
         svg.append(svgNode('line', {
@@ -390,19 +418,24 @@
           tabindex: 0, 'data-point': index, 'aria-label': `Observed point ${index + 1}. Drag to move.`
         });
         svg.append(observed);
-        if (index === 3 && !host.dataset.interacted) {
-          const cue = svgNode('g', { class: 'drag-cue', 'aria-hidden': 'true' });
-          const cueText = svgNode('text', { x: xScale(point.x) + 17, y: yScale(point.y) - 13 });
-          cueText.textContent = 'Drag me ↕';
-          cue.append(svgNode('line', { x1: xScale(point.x) + 7, y1: yScale(point.y) - 6, x2: xScale(point.x) + 14, y2: yScale(point.y) - 11 }), cueText);
-          svg.append(cue);
-        }
       });
-      svg.append(svgNode('line', {
-        x1: xScale(0), y1: yScale(intercept), x2: xScale(100),
-        y2: yScale(slope * 100 + intercept), class: 'plot-fit'
-      }));
+      if (!host.dataset.interacted) {
+        const point = points[3];
+        const cue = svgNode('g', { class: 'drag-cue', 'aria-hidden': 'true' });
+        const cueX = xScale(point.x) + 18, cueY = yScale(point.y) - 30;
+        const cueText = svgNode('text', { x: cueX, y: cueY });
+        cueText.textContent = 'Drag me ↕';
+        cue.append(
+          svgNode('line', { x1: xScale(point.x) + 7, y1: yScale(point.y) - 7, x2: cueX - 4, y2: cueY + 5 }),
+          svgNode('rect', { x: cueX - 7, y: cueY - 18, width: 91, height: 25, rx: 5 }),
+          cueText
+        );
+        svg.append(cue);
+      }
       equation.textContent = `ŷ = ${slope.toFixed(2)}x + ${intercept.toFixed(0)}`;
+      const selected = points[selectedPoint];
+      const selectedPrediction = slope * selected.x + intercept;
+      pointReadout.textContent = `Observed y = ${selected.y.toFixed(1)}   ·   Predicted ŷ = ${selectedPrediction.toFixed(1)}   ·   Residual = observed − predicted = ${(selected.y - selectedPrediction).toFixed(1)}`;
       slopeInput.nextElementSibling.textContent = slope.toFixed(2);
       interceptInput.nextElementSibling.textContent = intercept.toFixed(0);
     };
@@ -422,6 +455,8 @@
       const point = event.target.closest('[data-point]');
       if (!point) return;
       dragging = Number(point.dataset.point);
+      selectedPoint = dragging;
+      draw();
       svg.setPointerCapture(event.pointerId);
     });
     svg.addEventListener('pointermove', movePoint);
@@ -540,9 +575,10 @@
       (sum, feature, index) => sum + coefficients[index + 1] * Number(row[feature]), 0
     ));
     const mean = actual.reduce((sum, value) => sum + value, 0) / actual.length;
+    const absoluteError = actual.reduce((sum, value, index) => sum + Math.abs(value - predicted[index]), 0);
     const squaredError = actual.reduce((sum, value, index) => sum + (value - predicted[index]) ** 2, 0);
     const totalSquares = actual.reduce((sum, value) => sum + (value - mean) ** 2, 0);
-    return { actual, predicted, rmse: Math.sqrt(squaredError / actual.length), r2: 1 - squaredError / totalSquares };
+    return { actual, predicted, mae: absoluteError / actual.length, rmse: Math.sqrt(squaredError / actual.length), r2: 1 - squaredError / totalSquares };
   };
 
   const histogramSvg = (values, label) => {
@@ -584,16 +620,18 @@
     const host = document.getElementById('python-regression-workflow');
     if (!host) return;
     const steps = [
-      { title: 'Load and inspect data', explanation: 'Read the UW CSV and inspect its structure, a focused preview, and missing values.', code: `import pandas as pd\n\ndf = pd.read_csv('UW_building_energy.csv')\npreview_columns = ['Name', 'Energy_Use_kWh', 'Area_m',\n                   'Height', 'Year_Built', 'Occupants']\nresult = {\n    "shape": list(df.shape),\n    "columns": df.columns.tolist(),\n    "head": df[preview_columns].head().fillna('').to_dict(orient='records'),\n    "missing": int(df.isna().sum().sum())\n}` },
-      { title: 'Visualize distributions', explanation: 'Use NumPy to bin the real energy-use and floor-area observations.', code: `import numpy as np\n\ndef histogram(column):\n    counts, edges = np.histogram(df[column], bins=12)\n    return {"counts": counts.tolist(), "edges": edges.tolist()}\n\nresult = {\n    "energy": histogram('Energy_Use_kWh'),\n    "area": histogram('Area_m')\n}` },
-      { title: 'Remove outliers', explanation: 'Apply the two thresholds specified by the assignment and retain a separate model-ready dataframe.', code: `outlier_mask = (df['Energy_Use_kWh'] > 10_000_000) | (df['Area_m'] > 60_000)\nremoved = df.loc[outlier_mask, ['Name', 'Energy_Use_kWh', 'Area_m']]\ndf_noout = df.loc[~outlier_mask].copy()\n\nresult = {\n    "original": len(df),\n    "removed_count": len(removed),\n    "remaining": len(df_noout),\n    "removed": removed.to_dict(orient='records')\n}` },
-      { title: 'Explore relationships', explanation: 'Calculate correlations among a readable subset of architectural variables.', code: `corr_features = ['Energy_Use_kWh', 'Area_m', 'Height', 'Year_Built',\n                 'Occupants', 'Building_Length_m', 'Tree_Canopy',\n                 'Land_Surface_Temp']\ncorr = df_noout[corr_features].corr()\nresult = {"labels": corr_features, "values": corr.values.tolist()}` },
-      { title: 'Select X and Y / split data', explanation: 'Define inputs and target, then create the reproducible 80/20 training and testing split.', code: `from sklearn.model_selection import train_test_split\n\nfeatures = ['Area_m', 'Height', 'Year_Built']\ntarget = 'Energy_Use_kWh'\nX = df_noout[features]\ny = df_noout[target]\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42\n)\nresult = {"features": features, "target": target,\n          "train_count": len(X_train), "test_count": len(X_test)}` },
-      { title: 'Fit the regression model', explanation: 'Fit the notebook’s multiple linear regression using only the training buildings.', code: `from sklearn.linear_model import LinearRegression\n\nmlr_model = LinearRegression()\nmlr_model.fit(X_train, y_train)\nresult = {\n    "intercept": float(mlr_model.intercept_),\n    "coefficients": dict(zip(features, mlr_model.coef_.tolist()))\n}` },
-      { title: 'Predict', explanation: 'Predict unseen testing buildings and inspect actual values, predictions, and residuals.', code: `test_pred = mlr_model.predict(X_test)\ntrain_pred = mlr_model.predict(X_train)\nprediction_examples = pd.DataFrame({\n    'Actual energy use': y_test.to_numpy(),\n    'Predicted energy use': test_pred,\n    'Residual': y_test.to_numpy() - test_pred\n}).head(6)\nresult = {"rows": prediction_examples.to_dict(orient='records')}` },
-      { title: 'Evaluate', explanation: 'Calculate train/test RMSE and testing R², then compare every test prediction with its actual value.', code: `from sklearn.metrics import mean_squared_error, r2_score\n\nresult = {\n    "train_rmse": float(mean_squared_error(y_train, train_pred) ** 0.5),\n    "test_rmse": float(mean_squared_error(y_test, test_pred) ** 0.5),\n    "test_r2": float(r2_score(y_test, test_pred)),\n    "actual": y_test.tolist(),\n    "predicted": test_pred.tolist()\n}` }
+      { title: 'Load Data', explanation: '<strong>What:</strong> Load the UW dataset into a dataframe.<br><strong>Why:</strong> This gives Python a structured table we can inspect and analyze.', code: `import pandas as pd\n\ndf = pd.read_csv('UW_building_energy.csv')\nresult = {"rows": len(df), "columns": len(df.columns)}` },
+      { title: 'EDA 1/3 — Understand & Inspect', explanation: '<strong>What:</strong> Check rows, columns, missing values, and sample records.<br><strong>Why:</strong> We should understand the dataset before making modeling decisions.', code: `preview_columns = ['Name', 'Energy_Use_kWh', 'Area_m',\n                   'Height', 'Year_Built', 'Occupants']\nresult = {\n    "shape": list(df.shape),\n    "columns": df.columns.tolist(),\n    "head": df[preview_columns].head().fillna('').to_dict(orient='records'),\n    "missing": int(df.isna().sum().sum())\n}` },
+      { title: 'EDA 2/3 — Clean / Preprocess', explanation: '<strong>What:</strong> Identify and remove the extreme observations defined in the assignment workflow.<br><strong>Why:</strong> Extreme observations can strongly affect the relationship learned by a regression model.', code: `outlier_mask = (df['Energy_Use_kWh'] > 10_000_000) | (df['Area_m'] > 60_000)\nremoved = df.loc[outlier_mask, ['Name', 'Energy_Use_kWh', 'Area_m']]\ndf_noout = df.loc[~outlier_mask].copy()\nresult = {\n    "original": len(df), "removed_count": len(removed),\n    "remaining": len(df_noout),\n    "removed": removed.to_dict(orient='records')\n}` },
+      { title: 'EDA 3/3 — Explore', explanation: '<strong>What:</strong> Examine distributions and relationships among variables.<br><strong>Why:</strong> This helps reveal patterns, unusual distributions, and candidate predictors. Correlation alone does not imply causation.', code: `import numpy as np\n\ndef histogram(column):\n    counts, edges = np.histogram(df_noout[column], bins=12)\n    return {"counts": counts.tolist(), "edges": edges.tolist()}\n\ncorr_features = ['Energy_Use_kWh', 'Area_m', 'Height', 'Year_Built',\n                 'Occupants', 'Building_Length_m', 'Tree_Canopy',\n                 'Land_Surface_Temp']\ncorr = df_noout[corr_features].corr()\nresult = {\n    "energy": histogram('Energy_Use_kWh'), "area": histogram('Area_m'),\n    "occupants": histogram('Occupants'),\n    "labels": corr_features, "values": corr.values.tolist()\n}` },
+      { title: 'Set the Target & Starting Features', explanation: '<strong>What:</strong> Set Y to Annual Energy and X to Building Area, Height, and Year Built for our starting model.<br><strong>Why:</strong> Using one shared baseline lets us follow the same training and evaluation workflow before testing other feature combinations. These starting features are not assumed to be the best predictors.', code: `features = ['Area_m', 'Height', 'Year_Built']\ntarget = 'Energy_Use_kWh'\nX = df_noout[features]\ny = df_noout[target]\nresult = {"features": features, "target": target, "rows": len(X)}` },
+      { title: 'Train / Test Split', explanation: '<strong>What:</strong> Separate training buildings from testing buildings.<br><strong>Why:</strong> Testing on unseen buildings tells us whether the learned relationship generalizes.', beforeCode: '<div class="split-concept"><strong>114 model-ready buildings</strong><span>↓ 80/20 split</span><div><section><strong>Training data</strong><p>Used to learn coefficients</p></section><section><strong>Testing data</strong><p>Remain unseen during training</p></section></div><p>Evaluating only on training data can make performance look better than it really is.</p></div>', code: `from sklearn.model_selection import train_test_split\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42\n)\nresult = {"train_count": len(X_train), "test_count": len(X_test)}` },
+      { title: 'Train', explanation: '<strong>What:</strong> Learn the regression coefficients from training buildings.<br><strong>Why:</strong> This is where the model fits relationships between X and Y.', code: `from sklearn.linear_model import LinearRegression\n\nmlr_model = LinearRegression()\nmlr_model.fit(X_train, y_train)\nresult = {\n    "intercept": float(mlr_model.intercept_),\n    "coefficients": dict(zip(features, mlr_model.coef_.tolist()))\n}` },
+      { title: 'Predict', explanation: '<strong>What:</strong> Apply the fitted model to testing buildings.<br><strong>Why:</strong> This produces predictions for buildings the model did not train on.', code: `test_pred = mlr_model.predict(X_test)\ntrain_pred = mlr_model.predict(X_train)\nprediction_examples = pd.DataFrame({\n    'Actual energy use': y_test.to_numpy(),\n    'Predicted energy use': test_pred,\n    'Residual': y_test.to_numpy() - test_pred\n}).head(6)\nresult = {"rows": prediction_examples.to_dict(orient='records')}` },
+      { title: 'Evaluate', explanation: '<strong>What:</strong> Compare predictions with actual energy use using MAE, RMSE, R², and Actual vs Predicted.<br><strong>Why:</strong> Evaluation tells us how well the model performs on unseen examples.', code: `from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score\n\nresult = {\n    "test_mae": float(mean_absolute_error(y_test, test_pred)),\n    "train_rmse": float(mean_squared_error(y_train, train_pred) ** 0.5),\n    "test_rmse": float(mean_squared_error(y_test, test_pred) ** 0.5),\n    "test_r2": float(r2_score(y_test, test_pred)),\n    "actual": y_test.tolist(), "predicted": test_pred.tolist()\n}` },
+      { title: 'Interpret', explanation: '<strong>What:</strong> Connect model performance and coefficients to architectural meaning.<br><strong>Why:</strong> Predictive associations can be useful, but they should not be interpreted as causal effects.', code: `result = {\n    "features": features,\n    "coefficients": dict(zip(features, mlr_model.coef_.tolist())),\n    "test_r2": float(r2_score(y_test, test_pred))\n}` }
     ];
-    host.innerHTML = `<section class="python-workflow"><div class="python-workflow__runtime" data-python-status>Open this episode to prepare the Python environment.</div><div class="python-workflow__fallback" data-python-fallback hidden><label>Connect UW_building_energy.csv <input type="file" accept=".csv,text/csv"></label><p>The file stays in this browser and is copied only into Pyodide's temporary in-memory filesystem.</p></div><div class="python-workflow__steps">${steps.map((step, index) => `<section class="python-step" data-python-step="${index}"><header><span>${index + 1}</span><div><h5>${step.title}</h5><p>${step.explanation}</p></div></header><pre><code class="language-python"></code></pre><button type="button" data-run-python="${index}" ${index ? 'disabled' : ''}>Run step</button><div class="python-step__output" data-python-output aria-live="polite">Run this step to see its Python output.</div></section>`).join('')}</div></section>`;
+    host.innerHTML = `<section class="python-workflow"><div class="python-workflow__runtime" data-python-status>Loading Python environment…</div><details class="python-workflow__fallback" data-python-fallback hidden><summary>Debug fallback: choose another CSV</summary><label>Connect UW_building_energy.csv <input type="file" accept=".csv,text/csv"></label><p>The UW dataset loads automatically. This optional file stays in the browser and is used only for local debugging.</p></details><div class="python-workflow__steps">${steps.map((step, index) => `<section class="python-step" data-python-step="${index}"><header><span>${index + 1}</span><div><h5>${step.title}</h5><p>${step.explanation}</p></div></header>${step.beforeCode || ''}<pre><code class="language-python"></code></pre><button type="button" data-run-python="${index}" ${index ? 'disabled' : ''}>Run step</button><div class="python-step__output" data-python-output aria-live="polite">Run this step to see its Python output.</div></section>`).join('')}</div></section>`;
     host.querySelectorAll('[data-python-step]').forEach((node, index) => { node.querySelector('code').textContent = steps[index].code; });
     const status = host.querySelector('[data-python-status]');
     const fallback = host.querySelector('[data-python-fallback]');
@@ -610,13 +648,13 @@
       "      self.postMessage({ type: 'status', message: 'Preparing Python environment in the background…' });",
       "      importScripts(INDEX_URL + 'pyodide.js');",
       "      pyodideRuntime = await loadPyodide({ indexURL: INDEX_URL });",
-      "      self.postMessage({ type: 'status', message: 'Loading pandas and NumPy for Steps 1–4…' });",
+      "      self.postMessage({ type: 'status', message: 'Loading pandas and NumPy for data loading and EDA…' });",
       "      await pyodideRuntime.loadPackage(['pandas', 'numpy']);",
       "      pyodideRuntime.FS.writeFile('UW_building_energy.csv', data.csvText, { encoding: 'utf8' });",
       "      respond(id, true, { stage: 'base' });",
       "    } else if (type === 'ensure-modeling') {",
       "      if (!modelingReady) {",
-      "        self.postMessage({ type: 'status', message: 'Loading scikit-learn for Steps 5–8…' });",
+      "        self.postMessage({ type: 'status', message: 'Loading scikit-learn for splitting and modeling…' });",
       "        await pyodideRuntime.loadPackage('scikit-learn'); modelingReady = true;",
       "      }",
       "      respond(id, true, { stage: 'modeling' });",
@@ -631,7 +669,7 @@
       if (pythonWorker) return pythonWorker;
       pythonWorker = new Worker(URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' })));
       pythonWorker.onmessage = ({ data }) => {
-        if (data.type === 'status') { status.textContent = data.message; return; }
+        if (data.type === 'status') return;
         const request = pending.get(data.id); if (!request) return;
         pending.delete(data.id); data.ok ? request.resolve(data) : request.reject(new Error(data.error));
       };
@@ -644,11 +682,11 @@
       if (preparing) return preparing;
       preparing = (async () => {
         if (!csvText) {
-          try { const response = await fetch('reference_materials/UW_building_energy.csv'); if (!response.ok) throw new Error(); csvText = await response.text(); }
-          catch (_) { fallback.hidden = false; status.textContent = 'Connect the local UW CSV before running Python.'; throw new Error('UW CSV is not available in this deployment.'); }
+          try { const response = await fetch('assets/data/UW_building_energy.csv'); if (!response.ok) throw new Error(); csvText = await response.text(); }
+          catch (_) { fallback.hidden = false; status.textContent = 'The UW dataset could not be loaded. Use the debug file picker if needed.'; throw new Error('The UW dataset is unavailable.'); }
         }
         await requestWorker('init', { csvText });
-        status.textContent = 'Python ready for Steps 1–4. scikit-learn will load only when Step 5 needs it.';
+        status.textContent = '✓ Python ready';
         return true;
       })().catch((error) => { preparing = null; status.textContent = `Python environment unavailable: ${error.message}`; throw error; });
       return preparing;
@@ -662,14 +700,16 @@
       return `<svg class="mini-histogram" viewBox="0 0 320 170" role="img" aria-label="${label} distribution">${item.counts.map((count, index) => { const height = count / highest * 104; return `<rect x="${34 + index * 22}" y="${130 - height}" width="18" height="${height}" />`; }).join('')}<line x1="30" y1="130" x2="302" y2="130"/><text x="166" y="157">${label}</text></svg>`;
     };
     const render = (index, result) => {
-      if (index === 0) return `<div class="python-summary"><strong>${result.shape[0]} buildings</strong><strong>${result.shape[1]} columns</strong><strong>${result.missing} missing values</strong></div>${table(result.head)}<details class="all-columns"><summary>View all 19 column names</summary><p>${result.columns.join(' · ')}</p></details>`;
-      if (index === 1) return `<div class="python-histograms">${binsSvg(result.energy, 'Energy use (kWh)')}${binsSvg(result.area, 'Building area (m²)')}</div>`;
-      if (index === 2) return `<div class="outlier-flow"><strong>${result.original} original buildings</strong><span>→</span><strong>${result.removed_count} removed</strong><span>→</span><strong>${result.remaining} model-ready</strong></div><details><summary>Show removed observations</summary>${table(result.removed)}</details>`;
-      if (index === 3) return `${heatmapHtml(result)}<p class="python-prompt">Which features appear most strongly related to annual energy use?</p>`;
-      if (index === 4) return `<div class="xy-split"><section><strong>X</strong><p>${result.features.join(' · ')}</p></section><section><strong>Y</strong><p>Annual energy consumption</p></section><section><strong>${result.train_count}</strong><p>training buildings</p></section><section><strong>${result.test_count}</strong><p>testing buildings</p></section></div>`;
-      if (index === 5) return `<p><strong>Intercept:</strong> ${Math.round(result.intercept).toLocaleString()}</p><div class="coefficient-list">${Object.entries(result.coefficients).map(([key, value]) => `<span>${key}<strong>${Math.round(value).toLocaleString()}</strong></span>`).join('')}</div>`;
-      if (index === 6) return table(result.rows);
-      return `<div class="metric-cards metric-cards--compact"><section><strong>${Math.round(result.train_rmse).toLocaleString()} kWh</strong><p>Training RMSE</p></section><section><strong>${Math.round(result.test_rmse).toLocaleString()} kWh</strong><p>Testing RMSE</p></section><section><strong>${result.test_r2.toFixed(3)}</strong><p>Testing R²</p></section></div>${scatterSvg(result.actual, result.predicted)}`;
+      if (index === 0) return `<div class="python-summary"><strong>${result.rows} buildings loaded</strong><strong>${result.columns} variables</strong></div>`;
+      if (index === 1) return `<div class="python-summary"><strong>${result.shape[0]} rows</strong><strong>${result.shape[1]} columns</strong><strong>${result.missing} missing cells</strong></div>${table(result.head)}<details class="all-columns"><summary>View all 19 column names</summary><p>${result.columns.join(' · ')}</p></details>`;
+      if (index === 2) return `<div class="outlier-flow"><strong>${result.original} original buildings</strong><span>→</span><strong>${result.removed_count} removed</strong><span>→</span><strong>${result.remaining} model-ready</strong></div><p class="code-lab__note">Only the assignment's Energy_Use_kWh and Area_m thresholds are applied.</p><details><summary>Show removed observations</summary>${table(result.removed)}</details>`;
+      if (index === 3) return `<div class="python-histograms">${binsSvg(result.energy, 'Annual Energy (kWh)')}${binsSvg(result.area, 'Building area')}${binsSvg(result.occupants, 'Occupants')}</div>${heatmapHtml(result)}<p class="python-prompt">Which features appear most strongly related to annual energy use?</p>`;
+      if (index === 4) return `<div class="xy-split"><section><strong>X</strong><small>Input features / predictors</small><p>Area · Height · Year Built</p></section><section><strong>Y</strong><small>Target / outcome</small><p>Annual Energy (Energy_Use_kWh)</p></section></div><p class="python-transition">Later, in Interactive Feature Selection, you will choose your own predictors and test whether different feature combinations improve performance on unseen buildings.</p>`;
+      if (index === 5) return `<div class="split-result"><section><strong>${result.train_count}</strong><p>training buildings</p></section><section><strong>${result.test_count}</strong><p>testing buildings</p></section></div>`;
+      if (index === 6) return `<p><strong>Intercept:</strong> ${Math.round(result.intercept).toLocaleString()}</p><div class="coefficient-list">${Object.entries(result.coefficients).map(([key, value]) => `<span>${key}<strong>${Math.round(value).toLocaleString()}</strong></span>`).join('')}</div>`;
+      if (index === 7) return table(result.rows);
+      if (index === 8) return `<div class="metric-cards metric-cards--compact"><section><strong>${Math.round(result.test_mae).toLocaleString()} kWh</strong><p>Testing MAE</p></section><section><strong>${Math.round(result.train_rmse).toLocaleString()} kWh</strong><p>Training RMSE</p></section><section><strong>${Math.round(result.test_rmse).toLocaleString()} kWh</strong><p>Testing RMSE</p></section><section><strong>${result.test_r2.toFixed(3)}</strong><p>Testing R²</p></section></div><p><strong>MAE</strong> is the average absolute prediction error. <strong>RMSE</strong> gives larger errors more weight. Lower is better for both.</p>${result.test_r2 < 0 ? '<p class="negative-r2"><strong>Why is R² negative?</strong> This model performs worse on these unseen buildings than simply predicting their average outcome.</p>' : ''}<div class="evaluation-plot"><div><h5>Actual vs Predicted</h5><p>Points closer to the diagonal indicate more accurate predictions.</p></div>${scatterSvg(result.actual, result.predicted, { min: 0, max: Math.max(...result.actual) * 1.05 })}</div>`;
+      return `<div class="interpret-output"><p><strong>Selected predictors:</strong> ${result.features.join(' · ')}</p><p>Coefficient direction describes an association while other selected predictors are held constant. Predictive relationships do not establish that changing a feature will cause Annual Energy to change.</p><p>${result.test_r2 < 0 ? 'For this fixed split, the weak negative test R² limits confidence in predictions for unseen buildings.' : 'Interpret performance together with dataset scope and architectural judgment.'}</p></div>`;
     };
     host.addEventListener('click', async (event) => {
       const button = event.target.closest('[data-run-python]'); if (!button) return;
@@ -677,7 +717,7 @@
       button.disabled = true; output.textContent = 'Running Python…';
       try {
         await prepare();
-        if (index >= 4) { await requestWorker('ensure-modeling'); status.textContent = 'Python ready — pandas, NumPy, and scikit-learn loaded.'; }
+        if (index >= 5) await requestWorker('ensure-modeling');
         const response = await requestWorker('run', { code: steps[index].code });
         output.innerHTML = render(index, JSON.parse(response.json));
         button.textContent = 'Run again'; button.disabled = false;
@@ -708,21 +748,22 @@
     };
     const groups = {
       Geometric: ['Area_m', 'Height', 'Building_Length_m', 'Orientation (degrees north)', 'Relative Compactness'],
-      'Non-geometric': ['Year_Built', 'Occupants', 'apartments', 'parking', 'stadium', 'university', 'utility', 'warehouse'],
+      'Non-geometric / operational': ['Year_Built', 'Occupants'],
+      Program: ['apartments', 'parking', 'stadium', 'university', 'utility', 'warehouse'],
       Environmental: ['Tree_Canopy', 'Land_Surface_Temp']
     };
     host.innerHTML = `
       <section class="uw-demo">
         <div class="uw-demo__status" data-status aria-live="polite">Loading the local UW dataset…</div>
         <div class="uw-demo__fallback" data-fallback hidden>
-          <label for="uw-csv">Connect UW_building_energy.csv</label>
+          <label for="uw-csv">Debug fallback: connect another UW CSV</label>
           <input id="uw-csv" type="file" accept=".csv,text/csv">
-          <p>The reference CSV is not deployed. Choose your local copy to calculate real results; no file is uploaded.</p>
+          <p>The UW dataset normally loads automatically. A selected fallback file stays in this browser.</p>
         </div>
         <div data-interface hidden>
           <div class="uw-demo__overview" data-overview></div>
           <div class="uw-demo__workspace">
-            <fieldset><legend>Choose features</legend><div class="feature-toggles">${Object.entries(groups).map(([group, items]) => `<section><h5>${group}</h5>${items.map((feature) => `<label><input type="checkbox" value="${feature}" ${['Area_m', 'Height', 'Year_Built'].includes(feature) ? 'checked' : ''}><span>${labels[feature] || feature}</span></label>`).join('')}</section>`).join('')}</div><button type="button" data-train>Train model</button></fieldset>
+            <fieldset><legend>Predict</legend><p><strong>Which variables do you expect to be most predictive of annual building energy use?</strong></p><p class="code-lab__note">Choose approximately three variables before testing your expectation. <span data-selected-count></span></p><div class="feature-toggles">${Object.entries(groups).map(([group, items]) => `<section><h5>${group}</h5>${items.map((feature) => `<label><input type="checkbox" value="${feature}" ${['Area_m', 'Height', 'Year_Built'].includes(feature) ? 'checked' : ''}><span>${labels[feature] || feature}</span></label>`).join('')}</section>`).join('')}</div><label for="feature-expectation-why"><strong>Why do you expect these variables to matter?</strong></label><textarea id="feature-expectation-why" data-prediction-why rows="3" placeholder="Record your reasoning locally…"></textarea><button type="button" data-train>Test prediction — train model</button></fieldset>
             <div class="uw-demo__results" data-results aria-live="polite"></div>
           </div>
           <div class="uw-demo__plot" data-plot></div>
@@ -755,7 +796,8 @@
       const filtered = data.filter((row) => Number(row.Energy_Use_kWh) <= 10000000 && Number(row.Area_m) <= 60000);
       axisMax = Math.max(...filtered.map((row) => Number(row.Energy_Use_kWh))) * 1.05;
       host.querySelector('[data-overview]').innerHTML = `<section><strong>${data.length}</strong><span>buildings loaded</span></section><section><strong>${Object.keys(data[0]).length}</strong><span>dataset columns</span></section><section><strong>${data.length - filtered.length}</strong><span>outliers removed</span></section><section><strong>${filtered.length}</strong><span>model-ready rows</span></section>`;
-      train();
+      host.querySelector('[data-results]').innerHTML = '<div class="expectation-empty"><strong>Predict → Test → Interpret → Reflect</strong><p>After you test your prediction, this panel will show model performance, coefficients, and how the result compares with your expectation.</p></div>';
+      updateSelectedCount();
     };
 
     const train = (requestedFeatures = null, renderInterface = true) => {
@@ -770,13 +812,15 @@
         const trainResult = modelMetrics(split.train, selected, coefficients);
         const testResult = modelMetrics(split.test, selected, coefficients);
         const formatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
-        const current = { features: [...selected], trainRmse: trainResult.rmse, testRmse: testResult.rmse, r2: testResult.r2, actual: testResult.actual, predicted: testResult.predicted };
+        const current = { features: [...selected], trainMae: trainResult.mae, testMae: testResult.mae, trainRmse: trainResult.rmse, testRmse: testResult.rmse, r2: testResult.r2, actual: testResult.actual, predicted: testResult.predicted };
         if (renderInterface) {
+          const expectationWhy = host.querySelector('[data-prediction-why]').value.trim();
+          try { localStorage.setItem('uw-regression-expectation', JSON.stringify({ features: selected, why: expectationWhy })); } catch (_) {}
           previousModel = currentModel;
           const rmseDelta = previousModel ? (current.testRmse - previousModel.testRmse) / previousModel.testRmse : null;
           const r2Delta = previousModel ? current.r2 - previousModel.r2 : null;
           const delta = (value, lowerIsBetter = false) => value === null ? '' : `<span class="model-delta ${(lowerIsBetter ? value < 0 : value > 0) ? 'positive' : ''}">${value < 0 ? '↓' : '↑'} ${lowerIsBetter ? Math.abs(value * 100).toFixed(0) + '%' : Math.abs(value).toFixed(3)} vs previous</span>`;
-          results.innerHTML = `<div class="metric-cards metric-cards--compact"><section><strong>${formatter.format(trainResult.rmse)} kWh</strong><p>Training RMSE</p></section><section><strong>${formatter.format(testResult.rmse)} kWh</strong>${delta(rmseDelta, true)}<p>Testing RMSE</p></section><section><strong>${testResult.r2.toFixed(3)}</strong>${delta(r2Delta)}<p>Testing R²</p></section></div><h5>Selected features</h5><p>${selected.map((feature) => labels[feature] || feature).join(' · ')}</p><h5>Regression coefficients</h5><div class="coefficient-list"><span>Intercept <strong>${formatter.format(coefficients[0])}</strong></span>${selected.map((feature, index) => `<span>${labels[feature] || feature} <strong>${formatter.format(coefficients[index + 1])}</strong></span>`).join('')}</div><aside class="coefficient-note" aria-label="How to interpret regression coefficients"><h5>How to interpret coefficients</h5><dl><div><dt>Direction</dt><dd>A positive coefficient means predicted energy use tends to increase as this feature increases, holding the other selected features constant. A negative coefficient means the predicted value tends to decrease.</dd></div><div><dt>Units</dt><dd>A coefficient describes the predicted change in energy use for a one-unit change in that feature. Because features use different units—such as m², meters, years, or binary categories—raw coefficient magnitudes should not be directly compared as feature importance.</dd></div><div><dt>Correlated inputs</dt><dd>If selected predictors contain overlapping information, the model may distribute their effects differently. Individual coefficients can therefore change substantially when correlated features are added or removed. This is related to multicollinearity and connects to the linear-dependence message shown when coefficients cannot be uniquely identified.</dd></div></dl></aside>`;
+          results.innerHTML = `<div class="expectation-result"><span>Predict</span><p><strong>Your expectation:</strong> ${selected.map((feature) => labels[feature] || feature).join(' · ')}</p>${expectationWhy ? `<p>“${expectationWhy.replace(/[<>]/g, '')}”</p>` : ''}<span>Test</span></div><div class="metric-cards metric-cards--compact"><section><strong>${formatter.format(testResult.mae)} kWh</strong><p>Testing MAE</p></section><section><strong>${formatter.format(trainResult.rmse)} kWh</strong><p>Training RMSE</p></section><section><strong>${formatter.format(testResult.rmse)} kWh</strong>${delta(rmseDelta, true)}<p>Testing RMSE</p></section><section><strong>${testResult.r2.toFixed(3)}</strong>${delta(r2Delta)}<p>Testing R²</p></section></div>${testResult.r2 < 0 ? '<p class="negative-r2"><strong>Negative test R²:</strong> this model performs worse on these unseen buildings than simply predicting their average outcome.</p>' : ''}<h5>Regression coefficients</h5><div class="coefficient-list"><span>Intercept <strong>${formatter.format(coefficients[0])}</strong></span>${selected.map((feature, index) => `<span>${labels[feature] || feature} <strong>${formatter.format(coefficients[index + 1])}</strong></span>`).join('')}</div><aside class="coefficient-note" aria-label="How to interpret regression coefficients"><h5>How to interpret coefficients</h5><dl><div><dt>Direction</dt><dd>A positive coefficient means predicted energy use increases as that feature increases, holding the other selected predictors constant. A negative coefficient means it decreases.</dd></div><div><dt>Units</dt><dd>A coefficient represents the predicted change per one unit of that predictor. Predictors use different units and scales, so <strong>raw coefficient magnitude is not the same as feature importance.</strong></dd></div><div><dt>Correlated inputs</dt><dd>Overlapping predictor information can make individual coefficients difficult to interpret or unstable even when overall prediction remains reasonable. For these data, the six program indicators sum to 1 in every model-ready row; include five with one reference category, not all six plus an intercept.</dd></div></dl></aside><div class="model-reflection"><span>Interpret → Reflect</span><p><strong>Did the result match your expectation?</strong></p><label><input type="radio" name="expectation-match" value="yes"> Yes</label><label><input type="radio" name="expectation-match" value="partly"> Partly</label><label><input type="radio" name="expectation-match" value="no"> No</label></div>`;
           currentModel = current;
           renderFeaturePlot(false);
           const plot = host.querySelector('[data-plot]');
@@ -791,6 +835,8 @@
     };
 
     host.querySelector('[data-train]').addEventListener('click', () => train());
+    const updateSelectedCount = () => { host.querySelector('[data-selected-count]').textContent = `${host.querySelectorAll('.feature-toggles input:checked').length} selected`; };
+    host.querySelector('.feature-toggles').addEventListener('change', updateSelectedCount);
     host.querySelector('[data-plot]').addEventListener('change', (event) => { if (event.target.matches('[data-compare-models]')) renderFeaturePlot(event.target.checked); });
     window.uwRegressionTrainer = { run: (selected) => train(selected, false), get features() { return features; } };
     host.querySelector('input[type="file"]').addEventListener('change', async (event) => {
@@ -799,11 +845,11 @@
       try { load(await file.text(), file.name); }
       catch (error) { status.textContent = error.message; }
     });
-    fetch('reference_materials/UW_building_energy.csv')
+    fetch('assets/data/UW_building_energy.csv')
       .then((response) => { if (!response.ok) throw new Error(); return response.text(); })
-      .then((text) => load(text, 'the local reference materials'))
+      .then((text) => load(text, 'the UW building-energy dataset'))
       .catch(() => {
-        status.textContent = 'The UW dataset is not included in this deployment. Connect the local CSV to begin; no numerical results are fabricated.';
+        status.textContent = 'The UW dataset could not be loaded. Use the fallback picker for local debugging.';
         fallback.hidden = false;
       });
   };
@@ -817,7 +863,7 @@
       ['Tree_Canopy', 'Tree canopy'], ['Land_Surface_Temp', 'Land-surface temperature'],
       ['university', 'University program'], ['parking', 'Parking program']
     ];
-    host.innerHTML = `<section class="regression-challenge"><header><span>Try three models</span><h5>Does adding inputs improve unseen-building performance?</h5></header><div class="challenge-grid"><section><strong>Challenge 1</strong><p>Train with Area only.</p><button type="button" data-challenge="one">Run Area model</button><output data-challenge-output="one">Not run yet</output></section><section><strong>Challenge 2</strong><p>Train with Area + Height + Year Built.</p><button type="button" data-challenge="two">Run three-feature model</button><output data-challenge-output="two">Not run yet</output></section><section><strong>Challenge 3</strong><p>Add exactly three more features.</p><div class="challenge-extras">${extraFeatures.map(([value, label]) => `<label><input type="checkbox" value="${value}"> ${label}</label>`).join('')}</div><button type="button" data-challenge="three">Run expanded model</button><output data-challenge-output="three">Not run yet</output></section></div><fieldset class="challenge-reflection" disabled><legend>Reflect after all three models</legend><p>Did adding more features necessarily improve testing performance?</p><div><label><input type="radio" name="improved" value="yes"> Yes</label><label><input type="radio" name="improved" value="no"> No</label></div><button type="button" data-check-answer>Check answer</button><output class="challenge-feedback" data-answer-feedback></output><label for="challenge-why">Why?</label><textarea id="challenge-why" rows="3"></textarea><button type="button" data-example="why" hidden>Compare with example response</button><div class="challenge-example" data-example-output="why" hidden>More predictors can reduce or increase testing error. Extra inputs may add useful information, but they may also add noise, redundancy, or instability. Compare testing—not training—performance.</div><label for="challenge-limit">What can this regression model tell an architect, and what can it not tell us?</label><textarea id="challenge-limit" rows="4"></textarea><button type="button" data-example="limit" hidden>Compare with example response</button><div class="challenge-example" data-example-output="limit" hidden>The model can estimate energy use and reveal fitted associations within this dataset. It cannot establish causation, guarantee performance for other campuses, or replace physical analysis and professional judgment.</div></fieldset></section>`;
+    host.innerHTML = `<section class="regression-challenge"><header><span>Try three models</span><h5>Does adding inputs improve unseen-building performance?</h5></header><div class="challenge-grid"><section><strong>Challenge 1</strong><p>Train with Area only.</p><button type="button" data-challenge="one">Run Area model</button><output data-challenge-output="one">Not run yet</output></section><section><strong>Challenge 2</strong><p>Train with Area + Height + Year Built.</p><button type="button" data-challenge="two">Run three-feature model</button><output data-challenge-output="two">Not run yet</output></section><section><strong>Challenge 3</strong><p>Add exactly three more features.</p><div class="challenge-extras">${extraFeatures.map(([value, label]) => `<label><input type="checkbox" value="${value}"> ${label}</label>`).join('')}</div><button type="button" data-challenge="three">Run expanded model</button><output data-challenge-output="three">Not run yet</output></section></div><fieldset class="challenge-reflection" disabled><legend>Reflect after all three models</legend><p>Did adding more features necessarily improve testing performance?</p><div><label><input type="radio" name="improved" value="yes"> Yes</label><label><input type="radio" name="improved" value="no"> No</label></div><button type="button" data-check-answer>Check answer</button><output class="challenge-feedback" data-answer-feedback></output><label for="challenge-why">Why?</label><textarea id="challenge-why" rows="3"></textarea><button type="button" data-example="why" hidden>Compare with example response</button><div class="challenge-example" data-example-output="why" hidden>More predictors can reduce or increase testing error. Extra inputs may add useful information, but they may also add noise, redundancy, or instability. Compare testing—not training—performance.</div><label for="challenge-limit">What can this regression model tell an architect, and what can it not tell us?</label><textarea id="challenge-limit" rows="4"></textarea><button type="button" data-example="limit" hidden>Compare with example response</button><div class="challenge-example" data-example-output="limit" hidden>The model can identify predictive relationships and estimate Annual Energy for similar unseen buildings. It cannot prove that changing one building feature will cause energy use to change: prediction and correlation do not establish causation. It also cannot guarantee performance for other campuses or replace physical analysis and professional judgment.</div></fieldset></section>`;
     const completed = new Set();
     const challengeResults = new Map();
     const run = (name, selected) => {
