@@ -1,0 +1,82 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# The only file the whole team shares. Adding an episode = adding one line.
+# Everything else lives in its own file, so two people rarely touch the same one.
+# ─────────────────────────────────────────────────────────────────────────────
+code:  "ARCH 594/508 · AI Seminar & Studio"
+title: "Machine Learning and Deep Learning for Architecture"
+
+instructor:
+  name:  "Narjes Abbasabadi, Ph.D."
+  role:  "Assistant Professor"
+  dept:  "Department of Architecture · College of Built Environments · University of Washington"
+  email: "nabbasab@uw.edu"
+
+voice: "en-GB-RyanNeural"        # any Microsoft neural voice; `edge-tts --list-voices`
+
+# The only place the Pyodide version appears. Bump it here if a lab stops working.
+pyodide_url: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
+
+modules:
+  - title: "Overview"
+    episodes:
+      - overview/0.1-learning-outcomes.md
+
+  - title: "Module 2 — Machine Learning Fundamentals"
+    question: >
+      How can an architectural question be turned into features, a target, and a
+      model that is evaluated on data it has never seen?
+    episodes:
+      - module-2/2.1-ml-types.md
+      - module-2/2.2-statistics.md
+      - module-2/2.3-regression.md
+      - module-2/2.4-classification.md
+      - module-2/2.5-generalization.md
+      - module-2/2.6-uw-energy-demo.md
+
+  - title: "Module 3 — Deep Learning for Architecture"
+    question: >
+      How can different deep-learning architectures process tabular data, images,
+      graphs, sequences, coordinates, and physical systems?
+    episodes:
+      - module-3/3.1-neuron.md
+      - module-3/3.2-how-networks-learn.md
+      - module-3/3.3-generalization.md
+      - module-3/3.4-cnn.md
+      - module-3/3.5-graphs-gnns.md
+      - module-3/3.6-physics-informed.md
+      - module-3/3.7-appliance-energy-demo.md
+
+  - title: "Reference"
+    episodes:
+      - reference/9.1-accuracy-boundaries.md
+
+# Wrap any of these in {{double braces}} anywhere in any episode to get a tooltip.
+glossary:
+  activation function: "A nonlinear transformation applied to a neuron's weighted sum. Without one, stacked layers collapse into a single linear map."
+  backpropagation: "Applying the chain rule backwards through a network to get the gradient of the loss with respect to every weight in one sweep."
+  baseline: "The simplest model you compare against. If it wins, use it."
+  batch: "A subset of training examples used for one weight update."
+  bias: "A learned value added to the weighted sum, shifting the threshold at which a neuron responds."
+  classification: "Predicting which of a fixed set of categories a case belongs to."
+  cross-validation: "Estimating generalization by rotating which slice of the data is held out."
+  data leakage: "When information from the test set reaches the model during training, making the reported score optimistic."
+  dropout: "Randomly switching off a fraction of neurons during training so the network cannot depend on any single one."
+  early stopping: "Halting training at the epoch where validation loss stopped improving, and keeping those weights."
+  epoch: "One complete pass through the training dataset."
+  features: "The input variables a model sees at prediction time."
+  generalization: "How well a model performs on data it was not trained on. The only performance that matters."
+  gnn: "Graph neural network. A neural model that passes messages between connected nodes. A graph on its own is not a GNN."
+  hyperparameter: "A setting you choose rather than learn: layer count, learning rate, batch size, dropout rate."
+  inr: "Implicit neural representation. Geometry or a field stored as a continuous coordinate-based function rather than a grid or mesh."
+  learning rate: "The size of each weight update. Too large and training diverges; too small and it crawls."
+  loss function: "The training objective the model minimizes — a score for how wrong its current predictions are."
+  overfitting: "When a model keeps improving on training data while getting worse on unseen data. The default failure mode."
+  pinn: "Physics-informed neural network. A network whose loss includes governing-equation residuals and boundary conditions."
+  regression: "Predicting a continuous number rather than a category."
+  relu: "Rectified Linear Unit, max(0, z). The default hidden-layer activation: cheap, and its gradient survives depth."
+  surrogate model: "A fast approximation of a slower high-fidelity simulator, valid only inside the range it was fitted on."
+  test set: "Data touched exactly once, at the very end, to report a number. Tune against it and it stops being a test."
+  uncertainty: "How much confidence a prediction deserves. A number with no stated range is not a result."
+  underfitting: "When a model is too simple or too briefly trained: training and validation error are both high."
+  validation set: "Data never trained on, used to decide when to stop and which settings to keep."
+  weights: "Learned values that set how much each input contributes to a neuron's output."
