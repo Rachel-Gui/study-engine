@@ -251,3 +251,109 @@ def scaling():
 ALL = {"timeline": timeline, "neuron": neuron, "activations": activations,
        "network": network, "training_loop": training_loop,
        "overfitting": overfitting, "scaling": scaling}
+
+
+# ------------------------------------------------------- 8. agent anatomy
+def agent_anatomy():
+    s = HEAD.format(w=880, h=330)
+    s += '<rect x="40" y="56" width="176" height="184" rx="3"/>'
+    s += _t(128, 44, "Agent definition", 12.5, weight=600)
+    for i, (k, v) in enumerate([("name", "Energy Advocate"),
+                                ("role", "argue for low EUI"),
+                                ("instructions", "your ONLY concern is..."),
+                                ("color", "#3B82F6"),
+                                ("icon", "zap")]):
+        y = 84 + i * 32
+        s += _t(56, y, k, 11.5, anchor="start", weight=500)
+        s += _t(56, y + 14, v, 10, anchor="start", style='opacity=".55"')
+    s += _t(128, 262, "five fields, no magic", 10.5, style='opacity=".55"')
+
+    s += '<path d="M216,116 L286,116" marker-end="url(#a)"/>'
+    s += '<path d="M216,180 L286,180" marker-end="url(#a)" stroke-dasharray="4 3"/>'
+    s += '<rect x="290" y="86" width="196" height="60" rx="3"/>'
+    s += _t(388, 110, "system prompt", 12.5, weight=600)
+    s += _t(388, 130, "instructions + output schema", 10.5, style='opacity=".55"')
+    s += '<rect x="290" y="158" width="196" height="60" rx="3"/>'
+    s += _t(388, 182, "user message", 12.5, weight=600)
+    s += _t(388, 202, "geometry + climate data", 10.5, style='opacity=".55"')
+    s += _t(388, 250, "context injected at run time", 10.5, style='opacity=".55"')
+
+    s += '<path d="M486,116 C 520,116 520,152 552,152" marker-end="url(#ao)"/>'
+    s += '<path d="M486,188 C 520,188 520,152 552,152" marker-end="url(#ao)"/>'
+    s += '<rect x="556" y="122" width="104" height="60" rx="3" stroke-width="2"/>'
+    s += _t(608, 158, "LLM", 17, weight=600)
+    s += '<line x1="660" y1="152" x2="716" y2="152" marker-end="url(#a)"/>'
+    s += '<rect x="720" y="122" width="120" height="60" rx="3"/>'
+    s += _t(780, 148, "structured", 12, weight=600)
+    s += _t(780, 166, "JSON response", 12, weight=600)
+
+    s += '<line x1="60" y1="288" x2="820" y2="288" opacity=".22"/>'
+    s += _t(440, 312, "Every agent framework wraps this. The wrappers differ; "
+                      "the pattern does not.", 13, weight=500)
+    return s + "</svg>"
+
+
+# ------------------------------------------------------ 9. orchestration
+def orchestration():
+    s = HEAD.format(w=880, h=320)
+    s += '<line x1="292" y1="46" x2="292" y2="236" opacity=".25" stroke-dasharray="3 4"/>'
+    s += '<line x1="596" y1="46" x2="596" y2="236" opacity=".25" stroke-dasharray="3 4"/>'
+    for x, n, lab in [(150, "PHASE 1", "sequential"), (444, "PHASE 2", "parallel"),
+                      (740, "PHASE 3", "sequential")]:
+        s += _t(x, 40, n, 10.5, weight=700)
+        s += _t(x, 258, lab, 11, style='font-style="italic" opacity=".6"')
+
+    s += '<rect x="76" y="122" width="148" height="52" rx="3"/>'
+    s += _t(150, 146, "Site Researcher", 12.5, weight=600)
+    s += _t(150, 164, "climate, grid, code", 10, style='opacity=".55"')
+    s += _t(150, 200, "everyone needs its output", 10, style='opacity=".5"')
+
+    for i, (nm, sub) in enumerate([("Energy Advocate", "wants less glass"),
+                                   ("Daylight Advocate", "wants more glass"),
+                                   ("Carbon Advocate", "wants compact form")]):
+        y = 76 + i * 62
+        s += f'<rect x="370" y="{y}" width="150" height="48" rx="3"/>'
+        s += _t(445, y + 20, nm, 11.5, weight=600)
+        s += _t(445, y + 36, sub, 9.5, style='opacity=".55"')
+        s += f'<path d="M226,148 C 300,148 300,{y+24} 366,{y+24}" marker-end="url(#ao)"/>'
+        s += f'<path d="M522,{y+24} C 590,{y+24} 590,148 662,148" marker-end="url(#ao)"/>'
+    s += _t(445, 240, "they never see each other", 10, style='opacity=".5"')
+
+    s += '<rect x="666" y="118" width="150" height="60" rx="3" stroke-width="2"/>'
+    s += _t(741, 142, "Manager", 13, weight=600)
+    s += _t(741, 160, "resolves the conflicts", 10, style='opacity=".55"')
+    s += _t(741, 200, "needs all of them", 10, style='opacity=".5"')
+
+    s += '<line x1="60" y1="276" x2="820" y2="276" opacity=".22"/>'
+    s += _t(440, 302, "Gather context, fan out in parallel, synthesise. "
+                      "The orchestration decision is what waits for what.", 13, weight=500)
+    return s + "</svg>"
+
+
+# ------------------------------------------------- 10. framework landscape
+def framework_landscape():
+    s = HEAD.format(w=880, h=360)
+    s += '<line x1="90" y1="292" x2="820" y2="292" marker-end="url(#a)"/>'
+    s += '<line x1="90" y1="292" x2="90" y2="48" marker-end="url(#a)"/>'
+    s += _t(455, 320, "programming background required &#8594;", 11.5,
+            style='opacity=".6"')
+    s += ('<text x="52" y="170" font-size="11.5" text-anchor="middle" '
+          'font-family="Montserrat, sans-serif" fill="#111" stroke="none" '
+          'opacity=".6" transform="rotate(-90 52 170)">CAD integration &#8594;</text>')
+
+    pts = [(170, 258, "01", "OpenAI SDK", "raw Python"),
+           (168, 128, "02", "OpenAI SDK", "in Grasshopper"),
+           (386, 252, "03", "FastMCP", "+ any LLM UI"),
+           (556, 160, "04", "+ RhinoCompute", "large functions"),
+           (742, 92, "05", "+ Strands + Streamlit", "3D in-app"),
+           (330, 92, "06", "Grasshopper + Swiftlet", "no code, instant 3D")]
+    for x, y, n, a, b in pts:
+        s += f'<circle cx="{x}" cy="{y}" r="17" fill="#fff" stroke-width="1.6"/>'
+        s += _t(x, y + 5, n, 12.5, weight=700)
+        s += _t(x, y - 26, a, 11, weight=600)
+        s += _t(x, y + 34, b, 9.5, style='opacity=".55"')
+    return s + "</svg>"
+
+
+ALL.update({"agent_anatomy": agent_anatomy, "orchestration": orchestration,
+            "framework_landscape": framework_landscape})

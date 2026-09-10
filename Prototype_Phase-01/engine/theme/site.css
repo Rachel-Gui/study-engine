@@ -280,3 +280,11 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;background:var(--ink)
 nav a.ep::before{content:"\25B8\00a0\00a0";color:var(--ink4);font-size:9px}
 nav a.ep.open{color:var(--ink)}
 nav a.ep.open::before{content:"\25BE\00a0\00a0"}
+
+/* prompt-anatomy preview panes */
+.pr{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pr-h{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink3)}
+.pr pre{font:400 11.5px/1.55 var(--mono);background:var(--wash);border-left:2px solid var(--ink);
+  padding:11px 13px;margin:0;white-space:pre-wrap;word-break:break-word;
+  max-height:230px;overflow:auto}

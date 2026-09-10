@@ -222,10 +222,165 @@ CAPACITY = """
 })();</script>
 """
 
+
+# ------------------------------------------------------- prompt anatomy
+# NOTE: these are RAW strings. The JS below contains \n escapes that belong to
+# JavaScript, not to Python - a plain "..." string would turn them into real
+# newlines and break the JS string literals.
+
+PROMPT_LAB = r"""
+<div class="wg" id="wg-prompt">
+  <div class="wg-hd"><span class="k">Interactive</span>
+    <strong>What actually gets sent to the model</strong>
+    <span class="wg-eq" id="pq">0 chars</span></div>
+  <div class="wg-bd" style="grid-template-columns:1fr 1.3fr">
+    <div class="wg-ctl">
+      <label class="wg-sel"><span>Instructions</span><select id="pi">
+        <option value="vague">Vague version</option>
+        <option value="sharp" selected>Sharp version</option>
+      </select></label>
+      <label class="wg-sel"><span>Output schema</span><select id="ps">
+        <option value="on" selected>appended</option>
+        <option value="off">omitted</option>
+      </select></label>
+      <label class="wg-sel"><span>Context</span><select id="pc">
+        <option value="on" selected>geometry + climate</option>
+        <option value="off">none</option>
+      </select></label>
+      <p class="wg-hint">Switch to the vague version and read what changes. The model
+        receives the same building data either way &mdash; the only difference is how
+        much you constrained it. That difference is the whole job.</p>
+      <p class="wg-hint" id="pw"></p>
+    </div>
+    <div class="pr">
+      <div class="pr-h">system prompt</div><pre id="psys"></pre>
+      <div class="pr-h">user message</div><pre id="pusr"></pre>
+    </div>
+  </div>
+</div>
+<script>(function(){
+  var $ = function(i){ return document.getElementById(i); };
+  var INSTR = {
+    vague: [
+      "You are the energy efficiency advocate.",
+      "Comment on the building's energy performance."
+    ].join("\n"),
+    sharp: [
+      "You are the energy efficiency advocate. Your ONLY concern is",
+      "reducing operational energy use.",
+      "",
+      "Argue from these angles:",
+      "- Is the surface-to-volume ratio efficient for this climate?",
+      "- Is the WWR causing excessive heat loss or cooling load?",
+      "- Does the orientation exploit passive solar heating?",
+      "",
+      "Reference specific numbers from the data. Take a strong position.",
+      "If the WWR is too high for a heating-dominated climate, say so and",
+      "propose a specific lower number.",
+      "",
+      "You may NOT consider daylight quality or embodied carbon. Those are",
+      "other advocates' concerns."
+    ].join("\n")
+  };
+  var SCHEMA = [
+    "", "",
+    "Respond ONLY with JSON:",
+    "{ 'argument': str, 'critical_finding': str,",
+    "  'proposed_changes': [ {'parameter': str, 'value': num} ] }"
+  ].join("\n");
+  var CTX = [
+    "## Geometry",
+    "A 6-storey block, 42 x 24 m, 21 m tall.",
+    "WWR 0.55, oriented 15 degrees east of south.",
+    "{ 'L': 42, 'W': 24, 'H': 21, 'floors': 6,",
+    "  'wwr': 0.55, 'orientation': 15 }",
+    "",
+    "## Climate",
+    "Seattle, WA. ASHRAE 4C, heating-dominated.",
+    "{ 'zone': '4C', 'HDD18': 2800, 'CDD18': 180 }"
+  ].join("\n");
+  function draw(){
+    var sharp = $("pi").value === "sharp";
+    var sys = INSTR[$("pi").value] + ($("ps").value === "on" ? SCHEMA : "");
+    var usr = $("pc").value === "on" ? CTX : "(no context supplied)";
+    $("psys").textContent = sys;
+    $("pusr").textContent = usr;
+    $("pq").textContent = (sys.length + usr.length) + " chars";
+    $("pw").innerHTML = sharp
+      ? "<strong>Scoped, checklisted, bounded, and forced to give a number.</strong> This is what separates an agent from a chatbot."
+      : "<strong>Nothing here constrains the answer.</strong> It will return something fluent, general, and useless for a design decision.";
+  }
+  ["pi","ps","pc"].forEach(function(i){ $(i).addEventListener("input", draw); });
+  draw();
+})();</script>
+"""
+
+# --------------------------------------------------- orchestration cost
+
+ORCH_LAB = r"""
+<div class="wg" id="wg-orch">
+  <div class="wg-hd"><span class="k">Interactive</span>
+    <strong>Sequential or parallel</strong>
+    <span class="wg-eq" id="oq">0 s</span></div>
+  <div class="wg-bd">
+    <div class="wg-ctl">
+      <label><span>Advocates</span><input type="range" id="oa" min="1" max="6"
+             step="1" value="3"><output>3</output></label>
+      <label><span>Seconds per call</span><input type="range" id="ot" min="2" max="30"
+             step="1" value="12"><output>12</output></label>
+      <label class="wg-sel"><span>Advocates run</span><select id="om">
+        <option value="par" selected>in parallel</option>
+        <option value="seq">one after another</option>
+      </select></label>
+      <p class="wg-hint">The advocates are independent &mdash; none of them reads
+        another's output &mdash; so they can all run at once. The researcher and the
+        manager cannot: everything needs the researcher's data, and the manager needs
+        every advocate. That dependency, not speed, is what decides the shape.</p>
+    </div>
+    <svg viewBox="0 0 460 250" class="wg-svg" stroke="#111" fill="none" stroke-width="1.2">
+      <g id="gantt"></g>
+    </svg>
+  </div>
+</div>
+<script>(function(){
+  var $ = function(i){ return document.getElementById(i); };
+  function draw(){
+    var n = +$("oa").value, t = +$("ot").value, par = $("om").value === "par";
+    $("oa").nextElementSibling.value = n;
+    $("ot").nextElementSibling.value = t;
+    var total = t + (par ? t : n * t) + t;
+    var px = 380 / Math.max(total, 1), x0 = 74, y = 26, g = "";
+    function bar(lab, start, dur, bold){
+      var s = '<rect x="' + (x0 + start*px) + '" y="' + y + '" width="'
+        + Math.max(2, dur*px) + '" height="18" fill="' + (bold ? "#111" : "#d4d4d4")
+        + '" stroke="#111" stroke-width=".8"/>'
+        + '<text x="' + (x0-6) + '" y="' + (y+13) + '" font-size="9.5" '
+        + 'text-anchor="end" font-family="Montserrat,sans-serif" fill="#767676" '
+        + 'stroke="none">' + lab + '</text>';
+      y += 24; return s;
+    }
+    g += bar("researcher", 0, t, true);
+    for(var i=0;i<n;i++) g += bar("advocate " + (i+1), par ? t : t + i*t, t, false);
+    g += bar("manager", par ? 2*t : t + n*t, t, true);
+    g += '<line x1="' + x0 + '" y1="' + (y+4) + '" x2="' + (x0+380) + '" y2="'
+       + (y+4) + '" stroke="#ccc"/>'
+       + '<text x="' + (x0+380) + '" y="' + (y+20) + '" font-size="9.5" '
+       + 'text-anchor="end" font-family="Montserrat,sans-serif" fill="#767676" '
+       + 'stroke="none">' + total + 's</text>';
+    $("gantt").innerHTML = g;
+    $("oq").textContent = total + " s to a verdict";
+  }
+  ["oa","ot","om"].forEach(function(i){ $(i).addEventListener("input", draw); });
+  draw();
+})();</script>
+"""
+
 ALL = {
-    "neuron-lab":     (NEURON,      "neuron"),
-    "activation-lab": (ACTIVATIONS, "activations"),
-    "capacity-lab":   (CAPACITY,    "network"),
+    "neuron-lab":        (NEURON,      "neuron"),
+    "activation-lab":    (ACTIVATIONS, "activations"),
+    "capacity-lab":      (CAPACITY,    "network"),
+    "prompt-lab":        (PROMPT_LAB,  "agent_anatomy"),
+    "orchestration-lab": (ORCH_LAB,    "orchestration"),
 }
 
 

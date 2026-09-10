@@ -46,6 +46,16 @@ modules:
       - module-3/3.6-physics-informed.md
       - module-3/3.7-appliance-energy-demo.md
 
+  - title: "Module 4 — Agentic AI for Architectural Design"
+    question: >
+      What is an AI agent, concretely, and how do several of them get orchestrated
+      into a system that surfaces real design tradeoffs?
+    episodes:
+      - module-4/4.1-what-is-an-agent.md
+      - module-4/4.2-orchestration.md
+      - module-4/4.3-frameworks.md
+      - module-4/4.4-negotiators-workshop.md
+
   - title: "Reference"
     episodes:
       - reference/9.1-accuracy-boundaries.md
@@ -80,3 +90,8 @@ glossary:
   underfitting: "When a model is too simple or too briefly trained: training and validation error are both high."
   validation set: "Data never trained on, used to decide when to stop and which settings to keep."
   weights: "Learned values that set how much each input contributes to a neuron's output."
+  agent: "A name, a role, and written instructions sent to a language model as a system prompt. Not a black box."
+  system prompt: "The standing instructions a model receives before your data. In an agent system this is the agent's definition."
+  mcp: "Model Context Protocol. A standard way for a model to discover and call tools you host, so the same server works with any client that speaks it."
+  orchestration: "The decision about which agents run first, which can run at the same time, and which must wait for others."
+  handoff: "One agent passing control to another. Not every framework supports it."

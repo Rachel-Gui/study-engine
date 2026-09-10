@@ -239,7 +239,14 @@ the site and the video and can be diffed in git. Add a function, register it in 
 `ALL` dict at the bottom, and reference it by that key in `:::figure{id=…}`.
 
 Interactive widgets live in `engine/widgets.py` and work the same way: each has a
-`web()` for the site and falls back to a static diagram in the video.
+`web()` for the site and falls back to a static diagram in the video. Five exist:
+`neuron-lab`, `activation-lab`, `capacity-lab`, `prompt-lab`, `orchestration-lab`.
+
+> ### ⚠ Widget strings must be raw strings
+> The JS inside a widget contains `\n` escapes that belong to **JavaScript**. Define
+> the constant as `r"""..."""`, not `"""..."""`, or Python turns them into real
+> newlines and the JS string literals break silently — the page renders, the widget
+> just doesn't work.
 
 ## House rules
 
@@ -385,6 +392,7 @@ content/
   overview/                   learning outcomes
   module-2/                   2.1 – 2.6, machine learning fundamentals
   module-3/                   3.1 – 3.7, deep learning + the ANN demo
+  module-4/                   4.1 – 4.4, agentic AI + the Negotiators workshop
   reference/                  accuracy boundaries
 assets/                       images, slides, and assets/data/ for lab CSVs
 engine/                       the pipeline — nobody edits this
