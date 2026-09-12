@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "python3 -m pip install pyyaml",
-  "buildCommand": "python3 Prototype_Phase-01/engine/build.py",
+  "installCommand": "python3 -m venv .venv && .venv/bin/python -m pip install pyyaml==6.0.3",
+  "buildCommand": ".venv/bin/python Prototype_Phase-01/engine/build.py",
   "outputDirectory": "Prototype_Phase-01/site"
 }
