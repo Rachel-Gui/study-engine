@@ -15,6 +15,9 @@ def build_site(course, episodes, out):
     os.makedirs(out, exist_ok=True)
     for f in ("site.css", "site.js"):
         shutil.copy(os.path.join(HERE, "theme", f), os.path.join(out, f))
+    assets = os.path.normpath(os.path.join(HERE, "..", "assets"))
+    if os.path.isdir(assets):
+        shutil.copytree(assets, os.path.join(out, "assets"), dirs_exist_ok=True)
 
     # The sample course opens each module and each episode with a landing page.
     # They are generated, never authored, so nobody has to keep them in sync.

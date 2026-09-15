@@ -8,6 +8,7 @@ Each widget is a dict with:
 A widget is a figure you can push on. Everything here is dependency-free:
 no charting library, no build step, just SVG the script rewrites.
 """
+import json
 import figures
 
 # --------------------------------------------------------------- live neuron
@@ -222,6 +223,522 @@ CAPACITY = """
 })();</script>
 """
 
+# ------------------------------------------------------ regression line lab
+# Teaching interaction adapted from Everly's buildConceptRegression prototype.
+# The script owns only the immediately preceding widget; no global IDs or state.
+REGRESSION_LINE = """
+<div class="wg wg-regression-line">
+  <div class="wg-hd"><span class="k">Interactive</span>
+    <strong>Observe, predict, refit</strong>
+    <span class="wg-eq" data-equation></span></div>
+  <div class="wg-bd">
+    <div class="wg-ctl">
+      <p class="wg-hint">Drag a filled observation. The open point is the prediction
+        at the same x; the dashed vertical gap is its residual.</p>
+      <div class="regression-actions">
+        <button type="button" data-refit>Refit</button>
+        <button type="button" data-reset>Reset</button>
+      </div>
+      <p class="wg-hint" data-status role="status"></p>
+    </div>
+    <svg class="wg-svg" viewBox="0 0 720 390" role="group"
+         aria-label="Draggable observations, predictions and vertical residuals">
+      <path d="M70,30 V335 H660" class="regression-axis"/>
+      <g data-ticks></g>
+      <text x="365" y="378" class="regression-label">Building area (illustrative scale)</text>
+      <text x="12" y="185" transform="rotate(-90 12 185)"
+            class="regression-label regression-ylabel">Annual energy (illustrative scale)</text>
+      <line data-line class="regression-fit"/>
+      <g data-residuals></g><g data-predictions></g><g data-observations></g>
+    </svg>
+    <div class="regression-legend" aria-label="Plot legend">
+      <span>● Observed y</span><span>○ Predicted ŷ</span>
+      <span>— Current line</span><span>┆ Vertical residual</span>
+    </div>
+    <output class="regression-feedback" data-feedback aria-live="polite" aria-atomic="true"></output>
+  </div>
+  <p class="wg-note">Seven illustrative observations, not UW measurements.
+    Select a point to inspect it; drag to move it. Refit minimises the sum of squared
+    residuals. Reset restores the example line and observations.</p>
+</div>
+<script>(function(){
+  const root = document.currentScript.previousElementSibling;
+  const $ = selector => root.querySelector(selector);
+  const defaults = __REGRESSION_DEFAULTS__;
+  const points = defaults.points.map(([x, y]) => ({x, y}));
+  let slope = defaults.line[0], intercept = defaults.line[1];
+  let selected = defaults.selected, drag = null;
+  const svg = $("svg"), status = $("[data-status]");
+  const X = x => 70 + x * 5.9;
+  let yMin = 0, yMax = 100;
+  const Y = y => 335 - (y - yMin) / (yMax - yMin) * 305;
+  const set = (node, attrs) => Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
+  const node = (tag, attrs) => {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    set(el, attrs); return el;
+  };
+  // Keep observation nodes stable during dragging and keyboard focus.
+  const marks = points.map((p, i) => {
+    const residual = node("line", {class: "regression-residual"});
+    const prediction = node("circle", {r: 5, class: "regression-prediction"});
+    const observation = node("circle", {r: 7, class: "regression-observation",
+      tabindex: 0, role: "button", "data-point": i});
+    $("[data-residuals]").append(residual);
+    $("[data-predictions]").append(prediction);
+    $("[data-observations]").append(observation);
+    observation.addEventListener("focus", () => { selected = i; draw(); });
+    observation.addEventListener("keydown", e => {
+      if(e.key === "Enter" || e.key === " ") {
+        e.preventDefault(); selected = i; draw();
+      }
+    });
+    return {residual, prediction, observation};
+  });
+  function draw(){
+    // Show the entire line and residuals, including predictions outside 0–100.
+    yMin = Math.floor(Math.min(0, intercept, slope * 100 + intercept) / 10) * 10;
+    yMax = Math.ceil(Math.max(100, intercept, slope * 100 + intercept) / 10) * 10;
+    set($("[data-line]"), {x1: X(0), y1: Y(intercept), x2: X(100), y2: Y(slope * 100 + intercept)});
+    const ticks = $("[data-ticks]"); ticks.replaceChildren();
+    [0, 50, 100].forEach(t => {
+      const label = node("text", {x: X(t), y: 355, class: "regression-label"});
+      label.textContent = t; ticks.append(label);
+    });
+    [yMin, (yMin + yMax) / 2, yMax].forEach(t => {
+      const label = node("text", {x: 58, y: Y(t) + 4, class: "regression-tick"});
+      label.textContent = t; ticks.append(label);
+    });
+    points.forEach((p, i) => {
+      const predicted = slope * p.x + intercept, m = marks[i];
+      set(m.residual, {x1: X(p.x), y1: Y(p.y), x2: X(p.x), y2: Y(predicted)});
+      set(m.prediction, {cx: X(p.x), cy: Y(predicted)});
+      set(m.observation, {cx: X(p.x), cy: Y(p.y), "aria-pressed": i === selected,
+        "aria-label": `Observation ${i + 1}: x ${p.x.toFixed(2)}, y ${p.y.toFixed(2)}. Select to inspect; drag to move.`});
+      m.residual.classList.toggle("is-selected", i === selected);
+    });
+    $("[data-equation]").textContent = `ŷ = ${slope.toFixed(3)}x ${intercept < 0 ? "−" : "+"} ${Math.abs(intercept).toFixed(3)}`;
+    const p = points[selected], predicted = slope * p.x + intercept, residual = p.y - predicted;
+    const signed = `${residual >= 0 ? "+" : ""}${residual.toFixed(2)}`;
+    $("[data-feedback]").textContent = `Point ${selected + 1} · x = ${p.x.toFixed(2)} · Observed y = ${p.y.toFixed(2)} · Predicted ŷ = ${predicted.toFixed(2)} · Residual y − ŷ = ${signed}`;
+  }
+  function endDrag(){
+    if(!drag) return;
+    const id = drag.id; drag = null;
+    if(svg.hasPointerCapture(id)) svg.releasePointerCapture(id);
+  }
+  svg.addEventListener("pointerdown", e => {
+    const point = e.target.closest("[data-point]");
+    if(!point || drag || !e.isPrimary || e.button !== 0) return;
+    e.preventDefault(); selected = Number(point.dataset.point);
+    point.focus({preventScroll: true});
+    drag = {id: e.pointerId, index: selected};
+    svg.setPointerCapture(e.pointerId); draw();
+  });
+  svg.addEventListener("pointermove", e => {
+    if(!drag || drag.id !== e.pointerId) return;
+    const matrix = svg.getScreenCTM(); if(!matrix) return;
+    const cursor = svg.createSVGPoint(); cursor.x = e.clientX; cursor.y = e.clientY;
+    const pos = cursor.matrixTransform(matrix.inverse());
+    const p = points[drag.index];
+    p.x = Math.max(0, Math.min(100, (pos.x - 70) / 5.9));
+    p.y = Math.max(0, Math.min(100, yMin + (335 - pos.y) / 305 * (yMax - yMin)));
+    status.textContent = "Observations changed. The current line is unchanged; press Refit.";
+    draw();
+  });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => {
+    svg.addEventListener(type, e => { if(drag?.id === e.pointerId) endDrag(); });
+  });
+  $("[data-refit]").addEventListener("click", () => {
+    endDrag();
+    const meanX = points.reduce((sum, p) => sum + p.x, 0) / points.length;
+    const meanY = points.reduce((sum, p) => sum + p.y, 0) / points.length;
+    const xx = points.reduce((sum, p) => sum + (p.x - meanX) ** 2, 0);
+    if(xx <= 1e-10) {
+      status.textContent = "Cannot fit a unique line: the x values are the same or too close together. Move a point horizontally, then Refit. The current line is retained.";
+      return;
+    }
+    const xy = points.reduce((sum, p) => sum + (p.x - meanX) * (p.y - meanY), 0);
+    slope = xy / xx; intercept = meanY - slope * meanX;
+    status.textContent = "Least-squares line fitted to the current observations. Displayed numbers are rounded; calculations use full precision.";
+    draw();
+  });
+  function reset(){
+    endDrag();
+    defaults.points.forEach(([x, y], i) => Object.assign(points[i], {x, y}));
+    [slope, intercept] = defaults.line; selected = defaults.selected;
+    status.textContent = "Example line — not yet fitted. Drag an observation or press Refit.";
+    draw();
+  }
+  $("[data-reset]").addEventListener("click", reset);
+  reset();
+})();</script>
+""".replace("__REGRESSION_DEFAULTS__", json.dumps({
+    "points": figures.REGRESSION_POINTS, "line": figures.REGRESSION_LINE,
+    "selected": figures.REGRESSION_SELECTED,
+}))
+
+
+# ------------------------------------------------------- UW feature set lab
+# A local, dependency-free adaptation of Everly's earlier feature-selection
+# interaction. It uses the same cleaned rows and fixed random_state=42 split as
+# the cumulative Python lab. Warehouse is deliberately the program reference.
+UW_FEATURE_LAB = """
+<div class="wg wg-uw-features">
+  <div class="wg-hd"><span class="k">Interactive</span>
+    <strong>Feature-set test bench</strong>
+    <span class="wg-eq">Predict → Test → Interpret → Reflect</span></div>
+  <div class="uw-feature-body">
+    <div class="uw-feature-controls">
+      <div class="uw-stage"><span>01 · Predict</span>
+        <label>Before testing, what do you expect to happen?
+          <textarea data-expectation rows="3" placeholder="I expect test MAE to… because…"></textarea>
+        </label>
+      </div>
+      <div class="uw-stage"><span>02 · Choose features</span>
+        <fieldset><legend>Geometric</legend>
+          <label><input type="checkbox" data-feature="Area_m" checked> Area_m</label>
+          <label><input type="checkbox" data-feature="Height" checked> Height</label>
+          <label><input type="checkbox" data-feature="Building_Length_m"> Building length</label>
+          <label><input type="checkbox" data-feature="Orientation (degrees north)"> Orientation</label>
+          <label><input type="checkbox" data-feature="Relative Compactness"> Relative compactness</label>
+        </fieldset>
+        <fieldset><legend>Operational</legend>
+          <label><input type="checkbox" data-feature="Year_Built" checked> Year built</label>
+          <label><input type="checkbox" data-feature="Occupants"> Occupants</label>
+        </fieldset>
+        <fieldset><legend>Program · warehouse omitted</legend>
+          <label><input type="checkbox" data-feature="apartments"> Apartments</label>
+          <label><input type="checkbox" data-feature="parking"> Parking</label>
+          <label><input type="checkbox" data-feature="stadium"> Stadium</label>
+          <label><input type="checkbox" data-feature="university"> University</label>
+          <label><input type="checkbox" data-feature="utility"> Utility</label>
+        </fieldset>
+        <fieldset><legend>Environmental</legend>
+          <label><input type="checkbox" data-feature="Tree_Canopy"> Tree canopy</label>
+          <label><input type="checkbox" data-feature="Land_Surface_Temp"> Land-surface temperature</label>
+        </fieldset>
+      </div>
+      <div class="uw-feature-actions">
+        <button type="button" data-test>Test selected features</button>
+        <button type="button" data-reset>Reset baseline</button>
+      </div>
+      <p class="uw-feature-status" data-status role="status">Choose a feature set, write a prediction, then test it.</p>
+    </div>
+    <div class="uw-feature-results" data-results>
+      <div class="uw-feature-empty">
+        <strong>03 · Test and interpret</strong>
+        <p>Results will use the same 91 training and 23 test buildings as the guided workflow.</p>
+      </div>
+    </div>
+  </div>
+  <p class="wg-note">The course scope retains 114 rows. Every comparison uses the
+    fixed <code>random_state=42</code> split. Coefficients are associations; their raw
+    magnitudes are not comparable measures of feature importance.</p>
+</div>
+<script>(function(){
+  const root = document.currentScript.previousElementSibling;
+  const $ = selector => root.querySelector(selector);
+  const $$ = selector => [...root.querySelectorAll(selector)];
+  const target = "Energy_Use_kWh";
+  const testPositions = __UW_TEST_POSITIONS__;
+  const defaults = new Set(["Area_m", "Height", "Year_Built"]);
+  const programFeatures = ["apartments", "parking", "stadium", "university", "utility"];
+  const contexts = {
+    "Area_m": "per dataset area unit; definition/unit unresolved",
+    "Height": "per dataset height unit; unit unresolved",
+    "Building_Length_m": "per metre of building length",
+    "Orientation (degrees north)": "per degree north",
+    "Relative Compactness": "per compactness unit; calculation unresolved",
+    "Year_Built": "per calendar year",
+    "Occupants": "per occupant-field unit; derivation unresolved",
+    "Tree_Canopy": "per tree-canopy unit; unit/derivation unresolved",
+    "Land_Surface_Temp": "per temperature-field unit; unit unresolved"
+  };
+  let rowsPromise = null;
+  let history = [];
+  // Only successful tests advance the pair; changing the checkboxes does not.
+  let currentModel = null, previousModel = null;
+  let axisLimits = null;
+
+  function parseCsv(text){
+    const records = []; let row = [], field = "", quoted = false;
+    for(let i = 0; i < text.length; i++){
+      const c = text[i];
+      if(c === '"'){
+        if(quoted && text[i + 1] === '"'){ field += '"'; i++; }
+        else quoted = !quoted;
+      } else if(c === "," && !quoted){ row.push(field); field = ""; }
+      else if((c === "\\n" || c === "\\r") && !quoted){
+        if(c === "\\r" && text[i + 1] === "\\n") i++;
+        row.push(field); field = "";
+        if(row.some(value => value !== "")) records.push(row);
+        row = [];
+      } else field += c;
+    }
+    if(field || row.length){ row.push(field); records.push(row); }
+    const headers = records.shift().map(h => h.trim());
+    return records.map(values => Object.fromEntries(headers.map((h, i) => [h, (values[i] || "").trim()])));
+  }
+
+  async function loadRows(){
+    if(!rowsPromise){
+      rowsPromise = fetch("assets/data/UW_building_energy.csv")
+        .then(response => {
+          if(!response.ok) throw new Error("The UW dataset could not be loaded from site assets.");
+          return response.text();
+        })
+        .then(parseCsv)
+        .then(raw => raw.map(row => {
+          const converted = {...row};
+          Object.keys(converted).forEach(key => {
+            if(key !== "Name") converted[key] = Number(converted[key]);
+          });
+          return converted;
+        }).filter(row => row[target] <= 10_000_000 && row.Area_m <= 60_000));
+    }
+    return rowsPromise;
+  }
+
+  function solve(matrix, vector){
+    const n = vector.length;
+    const augmented = matrix.map((row, i) => [...row, vector[i]]);
+    for(let col = 0; col < n; col++){
+      let pivot = col;
+      for(let row = col + 1; row < n; row++)
+        if(Math.abs(augmented[row][col]) > Math.abs(augmented[pivot][col])) pivot = row;
+      if(Math.abs(augmented[pivot][col]) < 1e-9) return null;
+      [augmented[col], augmented[pivot]] = [augmented[pivot], augmented[col]];
+      const divisor = augmented[col][col];
+      for(let j = col; j <= n; j++) augmented[col][j] /= divisor;
+      for(let row = 0; row < n; row++){
+        if(row === col) continue;
+        const factor = augmented[row][col];
+        for(let j = col; j <= n; j++) augmented[row][j] -= factor * augmented[col][j];
+      }
+    }
+    return augmented.map(row => row[n]);
+  }
+
+  function redundantFeatures(training, features){
+    const basis = [];
+    const redundant = [];
+    features.forEach(feature => {
+      const values = training.map(row => row[feature]);
+      const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+      let vector = values.map(value => value - mean);
+      const originalNorm = Math.hypot(...vector);
+      if(originalNorm < 1e-10){ redundant.push(feature); return; }
+      basis.forEach(unit => {
+        const projection = vector.reduce((sum, value, i) => sum + value * unit[i], 0);
+        vector = vector.map((value, i) => value - projection * unit[i]);
+      });
+      const norm = Math.hypot(...vector);
+      if(norm / originalNorm < 1e-8) redundant.push(feature);
+      else basis.push(vector.map(value => value / norm));
+    });
+    return redundant;
+  }
+
+  function fitModel(rows, features){
+    if(rows.length !== 114)
+      throw new Error(`Expected 114 in-scope buildings, but found ${rows.length}. Check the published dataset.`);
+    const testSet = new Set(testPositions);
+    const training = rows.filter((_, i) => !testSet.has(i));
+    const testing = rows.filter((_, i) => testSet.has(i));
+    const redundant = redundantFeatures(training, features);
+    if(redundant.length)
+      throw new Error(`These selected features repeat information already in the model: ${redundant.join(", ")}. Remove one and test again.`);
+
+    const means = {}, scales = {};
+    features.forEach(feature => {
+      means[feature] = training.reduce((sum, row) => sum + row[feature], 0) / training.length;
+      scales[feature] = Math.sqrt(training.reduce((sum, row) => sum + (row[feature] - means[feature]) ** 2, 0) / training.length);
+      if(!Number.isFinite(scales[feature]) || scales[feature] < 1e-10)
+        throw new Error(`${feature} has no usable variation in the training buildings.`);
+    });
+    const design = row => [1, ...features.map(feature => (row[feature] - means[feature]) / scales[feature])];
+    const p = features.length + 1;
+    const gram = Array.from({length: p}, () => Array(p).fill(0));
+    const rhs = Array(p).fill(0);
+    training.forEach(row => {
+      const x = design(row);
+      for(let i = 0; i < p; i++){
+        rhs[i] += x[i] * row[target];
+        for(let j = 0; j < p; j++) gram[i][j] += x[i] * x[j];
+      }
+    });
+    const standardized = solve(gram, rhs);
+    if(!standardized || standardized.some(value => !Number.isFinite(value)))
+      throw new Error("This feature combination is too redundant to fit reliably. Remove a related feature and test again.");
+    const coefficients = standardized.slice(1).map((value, i) => value / scales[features[i]]);
+    const intercept = standardized[0] - coefficients.reduce((sum, value, i) => sum + value * means[features[i]], 0);
+    const predict = row => intercept + features.reduce((sum, feature, i) => sum + coefficients[i] * row[feature], 0);
+    const actual = testing.map(row => row[target]);
+    const predicted = testing.map(predict);
+    if(predicted.some(value => !Number.isFinite(value)))
+      throw new Error("This feature combination could not produce usable predictions. Adjust it and try again.");
+    const errors = actual.map((value, i) => predicted[i] - value);
+    const mae = errors.reduce((sum, value) => sum + Math.abs(value), 0) / errors.length;
+    const rmse = Math.sqrt(errors.reduce((sum, value) => sum + value * value, 0) / errors.length);
+    const meanActual = actual.reduce((sum, value) => sum + value, 0) / actual.length;
+    const rss = errors.reduce((sum, value) => sum + value * value, 0);
+    const tss = actual.reduce((sum, value) => sum + (value - meanActual) ** 2, 0);
+    return {training, testing, features, coefficients, intercept, actual, predicted,
+            mae, rmse, r2: 1 - rss / tss};
+  }
+
+  function fmt(value, digits = 0){
+    return Number(value).toLocaleString(undefined, {maximumFractionDigits: digits, minimumFractionDigits: digits});
+  }
+
+  function extendAxisLimits(rows, result){
+    // Start with the course-scope energy range, as in the original interaction.
+    // Expand only when needed: no independent rescaling or clipped predictions.
+    const values = [0, ...rows.map(row => row[target]), ...result.predicted];
+    const low = Math.min(...values), high = Math.max(...values);
+    const padding = Math.max((high - low) * 0.06, 1);
+    axisLimits = axisLimits
+      ? [low < axisLimits[0] ? low - padding : axisLimits[0],
+         high > axisLimits[1] ? high + padding : axisLimits[1]]
+      : [low - padding, high + padding];
+  }
+
+  function plot(actual, predicted, previous = null){
+    const [low, high] = axisLimits;
+    const left = 68, top = 28, width = 332, height = 252;
+    const x = value => left + (value - low) / (high - low) * width;
+    const y = value => top + height - (value - low) / (high - low) * height;
+    // Restore the original ghost points and vertical prediction-shift connectors.
+    const shifts = previous ? actual.map((value, i) =>
+      `<line class="uw-prediction-shift" x1="${x(value).toFixed(2)}" x2="${x(value).toFixed(2)}"`
+      + ` y1="${y(previous[i]).toFixed(2)}" y2="${y(predicted[i]).toFixed(2)}"/>`).join("") : "";
+    const ghosts = previous ? actual.map((value, i) =>
+      `<circle class="uw-prediction-previous" cx="${x(value).toFixed(2)}" cy="${y(previous[i]).toFixed(2)}" r="5.5">`
+      + `<title>Actual ${fmt(value)} kWh; previous prediction ${fmt(previous[i])} kWh</title></circle>`).join("") : "";
+    const dots = actual.map((value, i) =>
+      `<circle class="uw-prediction-current" cx="${x(value).toFixed(2)}" cy="${y(predicted[i]).toFixed(2)}" r="4.2">`
+      + `<title>Actual ${fmt(value)} kWh; current prediction ${fmt(predicted[i])} kWh</title></circle>`).join("");
+    return `<svg viewBox="0 0 440 330" role="img" aria-label="Actual versus predicted annual energy use for 23 test buildings">
+      <text x="220" y="15" class="uw-plot-title">Actual vs Predicted · test buildings</text>
+      <path d="M${left},${top} V${top + height} H${left + width}" class="uw-axis"/>
+      <line x1="${x(low)}" y1="${y(low)}" x2="${x(high)}" y2="${y(high)}" class="uw-reference"/>
+      ${shifts}${ghosts}${dots}
+      <text x="${left}" y="${top + height + 20}" class="uw-tick">${fmt(low)}</text>
+      <text x="${left + width}" y="${top + height + 20}" class="uw-tick uw-end">${fmt(high)}</text>
+      <text x="${left - 8}" y="${top + height}" class="uw-tick uw-y">${fmt(low)}</text>
+      <text x="${left - 8}" y="${top + 4}" class="uw-tick uw-y">${fmt(high)}</text>
+      <text x="${left + width / 2}" y="318" class="uw-label">Actual annual energy use (kWh)</text>
+      <text x="16" y="${top + height / 2}" transform="rotate(-90 16 ${top + height / 2})" class="uw-label">Predicted annual energy use (kWh)</text>
+      <text x="${left + width - 4}" y="${top + 14}" class="uw-reference-label">y = x</text>
+    </svg>`;
+  }
+
+  function renderFeaturePlot(compare = false){
+    if(!currentModel) return;
+    const showPrevious = compare && previousModel !== null;
+    $("[data-plot]").innerHTML = `
+      <label class="uw-compare-models"><input type="checkbox" data-compare-models
+        ${showPrevious ? "checked" : ""} ${previousModel ? "" : "disabled"}> Compare with previous model</label>
+      <p class="uw-comparison-note">${previousModel
+        ? "Previous means the immediately preceding successful test."
+        : "Test another feature set to enable comparison."}
+        Both models share the same axes. Limits stay fixed unless a new prediction needs more room.</p>
+      <div class="uw-plot-legend" aria-label="Plot legend">
+        <span><i class="uw-current-key" aria-hidden="true"></i> Current model</span>
+        ${showPrevious ? `<span><i class="uw-previous-key" aria-hidden="true"></i> Previous model</span>
+        <span><i class="uw-shift-key" aria-hidden="true"></i> Prediction change</span>` : ""}
+        <span><i class="uw-reference-key" aria-hidden="true"></i> y = x</span>
+      </div>
+      ${plot(currentModel.actual, currentModel.predicted, showPrevious ? previousModel.predicted : null)}
+      ${showPrevious ? `<p class="uw-comparison-note">Previous model features: ${previousModel.features.join(", ")}</p>` : ""}`;
+    $("[data-compare-models]").addEventListener("change", event => {
+      renderFeaturePlot(event.target.checked);
+      $("[data-compare-models]").focus({preventScroll: true});
+    });
+  }
+
+  function render(result, previousMae){
+    const direction = value => value > 0 ? "positive" : value < 0 ? "negative" : "zero";
+    const allProgramDummies = programFeatures.every(feature => result.features.includes(feature));
+    const contextFor = feature => programFeatures.includes(feature)
+      ? `${feature} versus ${allProgramDummies ? "warehouse" : "pooled omitted programs"}`
+      : contexts[feature];
+    const change = previousMae == null ? "First result in this comparison." :
+      `${fmt(Math.abs(result.mae - previousMae))} kWh ${result.mae < previousMae ? "lower" : "higher"} than the previous test MAE.`;
+    const coefficientRows = result.features.map((feature, i) =>
+      `<tr><th scope="row">${feature}</th><td>${fmt(result.coefficients[i], 1)}</td>`
+      + `<td>${direction(result.coefficients[i])}</td><td>${contextFor(feature)}</td></tr>`).join("");
+    const historyRows = history.slice(0, 4).map(item =>
+      `<li><span>${item.features.join(", ")}</span><strong>${fmt(item.mae)} kWh MAE</strong></li>`).join("");
+    const negative = result.r2 < 0
+      ? `<p class="uw-warning">Negative test R² means this model generalizes poorly on the fixed split. It is a modeling result, not a software failure.</p>` : "";
+    $("[data-results]").innerHTML = `
+      <div class="uw-result-head"><span>03 · Test</span><strong>${result.features.join(", ")}</strong></div>
+      <div class="uw-metrics">
+        <div class="primary"><span>Primary · test MAE</span><b>${fmt(result.mae)} kWh</b><small>${change}</small></div>
+        <div><span>Test RMSE</span><b>${fmt(result.rmse)} kWh</b></div>
+        <div><span>Test R²</span><b>${result.r2.toFixed(3)}</b></div>
+      </div>
+      ${negative}
+      <div class="uw-plot" data-plot></div>
+      <div class="uw-stage uw-interpret"><span>04 · Interpret</span>
+        <div class="uw-table-wrap"><table><thead><tr><th>Feature</th><th>Coefficient</th><th>Direction</th><th>Context</th></tr></thead>
+        <tbody>${coefficientRows}</tbody></table></div>
+        <p>Each coefficient holds the other selected predictors constant. Coefficient does not mean causality, and raw magnitudes are not feature importance when scales differ.</p>
+      </div>
+      <div class="uw-stage uw-reflect"><span>05 · Reflect</span>
+        <label>Did the result match your prediction?
+          <select data-match><option value="">Choose after comparing</option><option>Yes</option><option>Partly</option><option>No</option></select>
+        </label>
+        <p data-reflection hidden>Use the prediction you wrote to explain what changed in test MAE, then ask whether the coefficient directions are plausible associations.</p>
+      </div>
+      <div class="uw-history"><span>Recent fixed-split comparisons</span><ol>${historyRows}</ol></div>`;
+    renderFeaturePlot();
+    $("[data-match]").addEventListener("change", event => {
+      const note = $("[data-reflection]");
+      note.hidden = !event.target.value;
+    });
+  }
+
+  $("[data-test]").addEventListener("click", async event => {
+    const button = event.currentTarget;
+    const selected = $$("[data-feature]:checked").map(input => input.dataset.feature);
+    if(!selected.length){ $("[data-status]").textContent = "Select at least one predictor."; return; }
+    button.disabled = true;
+    $("[data-reset]").disabled = true;
+    $("[data-status]").textContent = "Loading the published dataset and fitting this feature set…";
+    try {
+      const rows = await loadRows();
+      const result = fitModel(rows, selected);
+      // Fitting must succeed before either saved model or the chart range changes.
+      previousModel = currentModel;
+      currentModel = result;
+      extendAxisLimits(rows, result);
+      history.unshift({features: [...selected], mae: result.mae});
+      render(result, previousModel?.mae ?? null);
+      $("[data-status]").textContent = `Tested ${selected.length} feature${selected.length === 1 ? "" : "s"} on 23 unseen buildings.`;
+    } catch(error){
+      $("[data-status]").textContent = error.message || "This feature set could not be evaluated. Adjust it and try again.";
+    } finally {
+      button.disabled = false;
+      $("[data-reset]").disabled = false;
+    }
+  });
+
+  $("[data-reset]").addEventListener("click", () => {
+    $$("[data-feature]").forEach(input => { input.checked = defaults.has(input.dataset.feature); });
+    $("[data-expectation]").value = "";
+    history = [];
+    currentModel = null; previousModel = null; axisLimits = null;
+    $("[data-status]").textContent = "Baseline restored. Write a prediction, then test it.";
+    $("[data-results]").innerHTML = `<div class="uw-feature-empty"><strong>03 · Test and interpret</strong><p>Results will use the same 91 training and 23 test buildings as the guided workflow.</p></div>`;
+  });
+})();</script>
+""".replace("__UW_TEST_POSITIONS__", json.dumps([
+    80, 4, 40, 69, 10, 45, 70, 66, 47, 11, 98, 36,
+    83, 112, 18, 0, 72, 26, 81, 53, 103, 91, 12,
+]))
+
 
 # ------------------------------------------------------- prompt anatomy
 # NOTE: these are RAW strings. The JS below contains \n escapes that belong to
@@ -379,6 +896,8 @@ ALL = {
     "neuron-lab":        (NEURON,      "neuron"),
     "activation-lab":    (ACTIVATIONS, "activations"),
     "capacity-lab":      (CAPACITY,    "network"),
+    "regression-line-lab": (REGRESSION_LINE, "regression-line"),
+    "uw-feature-lab":    (UW_FEATURE_LAB, ""),
     "prompt-lab":        (PROMPT_LAB,  "agent_anatomy"),
     "orchestration-lab": (ORCH_LAB,    "orchestration"),
 }
