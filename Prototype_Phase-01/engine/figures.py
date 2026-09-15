@@ -248,9 +248,86 @@ def scaling():
     return s + "</svg>"
 
 
+# Shared with the live widget so its initial/reset state matches the video.
+REGRESSION_POINTS = ((14, 23), (25, 34), (36, 31), (48, 53),
+                     (61, 57), (72, 73), (86, 78))
+REGRESSION_LINE = (0.78, 12)
+REGRESSION_SELECTED = 3
+
+
+def regression_line():
+    """Illustrative observations and an example line, not a fitted UW model."""
+    slope, intercept = REGRESSION_LINE
+    X = lambda x: 70 + x * 5.9
+    Y = lambda y: 335 - y * 3.05
+    # No marker IDs or page styles: safe to embed alongside other figures.
+    s = ('<svg viewBox="0 0 720 450" xmlns="http://www.w3.org/2000/svg" '
+         'role="img" aria-label="Example regression line with observations, '
+         'predictions and vertical residuals" stroke="#111" fill="none" '
+         'stroke-width="1.4">')
+    s += _t(360, 20, "Example line: ŷ = 0.78x + 12 (not yet refitted)", 18)
+    s += '<path d="M70,30 V335 H660" stroke="#777"/>'
+    for tick in (0, 50, 100):
+        s += _t(X(tick), 355, str(tick), 14)
+        s += _t(58, Y(tick) + 4, str(tick), 14, anchor="end")
+    s += _t(365, 378, "Building area (illustrative scale)", 16)
+    s += _t(20, 185, "Annual energy (illustrative scale)", 16,
+            style='transform="rotate(-90 20 185)"')
+    s += (f'<line x1="{X(0)}" y1="{Y(intercept)}" x2="{X(100)}" '
+          f'y2="{Y(slope * 100 + intercept)}" stroke-width="2"/>')
+    for i, (x, y) in enumerate(REGRESSION_POINTS):
+        predicted = slope * x + intercept
+        s += (f'<line x1="{X(x)}" y1="{Y(y)}" x2="{X(x)}" '
+              f'y2="{Y(predicted)}" stroke="#777" stroke-dasharray="5 4"/>')
+        s += (f'<circle cx="{X(x)}" cy="{Y(predicted)}" r="5" fill="#fff"/>'
+              f'<circle cx="{X(x)}" cy="{Y(y)}" r="6" fill="#111"/>')
+        if i == REGRESSION_SELECTED:
+            s += f'<circle cx="{X(x)}" cy="{Y(y)}" r="10"/>'
+            s += _t(X(x) - 18, Y(y) - 16, "y = 53.00", 17, anchor="end")
+            s += _t(X(x) + 18, Y(predicted) + 23, "ŷ = 49.44", 17, anchor="start")
+    s += _t(360, 407, "● Observed y   ○ Predicted ŷ   — Example line   ┆ Residual", 16)
+    s += _t(360, 433, "At x = 48: y − ŷ = 53.00 − 49.44 = +3.56 (underprediction)", 17, weight=500)
+    return s + "</svg>"
+
+
+def uw_baseline_coefficients():
+    """Rounded coefficients for the documented Episode 2.6 baseline split."""
+    s = HEAD.format(w=880, h=338)
+    s += _t(44, 36, "FEATURE", 10, anchor="start", weight=600,
+            style='letter-spacing="1.4" opacity=".58"')
+    s += _t(262, 36, "COEFFICIENT", 10, anchor="start", weight=600,
+            style='letter-spacing="1.4" opacity=".58"')
+    s += _t(412, 36, "DIRECTION", 10, anchor="start", weight=600,
+            style='letter-spacing="1.4" opacity=".58"')
+    s += _t(548, 36, "UNITS / CONTEXT", 10, anchor="start", weight=600,
+            style='letter-spacing="1.4" opacity=".58"')
+    rows = [
+        ("Area_m", "+109.0", "positive", "kWh per dataset area unit; definition unresolved"),
+        ("Height", "+27,206.2", "positive", "kWh per dataset height unit; unit unresolved"),
+        ("Year_Built", "+6,977.1", "positive", "kWh per calendar year"),
+    ]
+    for i, (feature, coefficient, direction, context) in enumerate(rows):
+        y = 82 + i * 66
+        s += f'<line x1="36" y1="{y - 25}" x2="844" y2="{y - 25}" opacity=".20"/>'
+        s += _t(44, y, feature, 14, anchor="start", weight=600)
+        s += _t(262, y, coefficient, 14, anchor="start", weight=500)
+        s += _t(412, y, direction, 13, anchor="start")
+        s += _t(548, y, context, 11.5, anchor="start", style='opacity=".70"')
+    s += '<line x1="36" y1="255" x2="844" y2="255" opacity=".20"/>'
+    s += _t(44, 284, "Intercept", 12, anchor="start", weight=600)
+    s += _t(262, 284, "−13,744,068.7 kWh", 12, anchor="start")
+    s += _t(548, 284, "Model offset; zero values are outside a useful interpretation", 11,
+            anchor="start", style='opacity=".62"')
+    s += _t(44, 318, "Rounded display; the guided Python lab computes full-precision values.",
+            10.5, anchor="start", style='opacity=".58"')
+    return s + "</svg>"
+
+
 ALL = {"timeline": timeline, "neuron": neuron, "activations": activations,
        "network": network, "training_loop": training_loop,
-       "overfitting": overfitting, "scaling": scaling}
+       "overfitting": overfitting, "scaling": scaling,
+       "regression-line": regression_line,
+       "uw-baseline-coefficients": uw_baseline_coefficients}
 
 
 # ------------------------------------------------------- 8. agent anatomy

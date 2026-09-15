@@ -116,6 +116,7 @@ def pylab_web(b):
     steps = _steps(b["body"])
     pkgs = [p.strip() for p in b["attrs"].get("packages", "").split(",") if p.strip()]
     title = b["attrs"].get("title", "Python lab")
+    editor_rows = max(4, min(16, int(b["attrs"].get("editor_rows", 16))))
     cards = ""
     for i, (name, code) in enumerate(steps, 1):
         state = "ready" if i == 1 else "locked"
@@ -124,11 +125,11 @@ def pylab_web(b):
             f'<div class="hd"><span class="num">{i}</span>'
             f'<span class="nm">{html.escape(name)}</span>'
             f'<span class="state">{state}</span></div>'
-            f'<textarea class="src" spellcheck="false" rows="{min(16, code.count(chr(10)) + 2)}">'
+            f'<textarea class="src" spellcheck="false" rows="{min(editor_rows, code.count(chr(10)) + 2)}">'
             f'{html.escape(code)}</textarea>'
             f'<div class="act"><button class="run" {"disabled" if i > 1 else ""}>Run step</button>'
             f'<button class="rst">Reset</button></div>'
-            f'<pre class="out" hidden></pre></div>')
+            f'<div class="out" hidden></div></div>')
     return (f'<div class="pylab" data-packages=\'{json.dumps(pkgs)}\'>'
             f'<div class="bar"><span>Browser Python</span>'
             f'<strong>{html.escape(title)}</strong>'

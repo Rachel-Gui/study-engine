@@ -59,6 +59,61 @@ async function getPyodide(packages, onStatus){
   return py;
 }
 
+/* Optional JSON result: {type:"pylab-output", blocks:[...]}.
+   Content authors can return metrics, tables, text, PNGs and collapsed details.
+   Use DOM text nodes, never HTML from Python results. Plain results still work. */
+function pylabBlock(block){
+  const el = (tag, text, className) => {
+    const node = document.createElement(tag);
+    if(text != null) node.textContent = String(text);
+    if(className) node.className = className;
+    return node;
+  };
+  if(block.type === "text") return el("p", block.text);
+  if(block.type === "metrics"){
+    const group = el("div", null, "pylab-metrics");
+    for(const item of block.items){
+      const card = el("div", null, item.primary ? "primary" : "");
+      card.append(el("span", item.label), el("strong", item.value));
+      group.append(card);
+    }
+    return group;
+  }
+  if(block.type === "table"){
+    const wrap = el("div", null, "pylab-table-wrap");
+    wrap.tabIndex = 0;
+    wrap.setAttribute("role", "region");
+    wrap.setAttribute("aria-label", block.caption || "Python result table");
+    const table = el("table");
+    if(block.caption) table.append(el("caption", block.caption));
+    const head = el("thead"), row = el("tr"), body = el("tbody");
+    for(const label of block.columns){
+      const cell = el("th", label); cell.scope = "col"; row.append(cell);
+    }
+    head.append(row);
+    for(const values of block.rows){
+      const row = el("tr");
+      for(const value of values) row.append(el("td", value));
+      body.append(row);
+    }
+    table.append(head, body); wrap.append(table); return wrap;
+  }
+  if(block.type === "image" && String(block.src).startsWith("data:image/png;base64,")){
+    const figure = el("figure"), image = el("img");
+    image.src = block.src; image.alt = block.alt || "Python-generated plot";
+    figure.append(image);
+    if(block.caption) figure.append(el("figcaption", block.caption));
+    return figure;
+  }
+  if(block.type === "details"){
+    const details = el("details", null, "exp");
+    details.append(el("summary", block.summary));
+    for(const child of block.blocks) details.append(pylabBlock(child));
+    return details;
+  }
+  return el("p", "Unsupported result block.");
+}
+
 document.querySelectorAll(".pylab").forEach(lab => {
   const packages = JSON.parse(lab.dataset.packages || "[]");
   const boot  = lab.querySelector(".boot");
@@ -77,6 +132,7 @@ document.querySelectorAll(".pylab").forEach(lab => {
     run.onclick = async () => {
       run.disabled = true;
       out.hidden = false;
+      out.classList.remove("has-image", "has-rich-output");
       out.textContent = "running…";
       try {
         const py = await getPyodide(packages, m => { boot.textContent = m; });
@@ -84,9 +140,27 @@ document.querySelectorAll(".pylab").forEach(lab => {
         py.setStdout({ batched: t => { out.textContent += t + "\n"; } });
         out.textContent = "";
         const value = await py.runPythonAsync(src.value);
-        if(value !== undefined && value !== null)
-          out.textContent += String(value) + "\n";
-        if(!out.textContent.trim()) out.textContent = "(no output)";
+        if(value !== undefined && value !== null){
+          const result = String(value);
+          let structured;
+          try { structured = JSON.parse(result); } catch (_) { /* ordinary output */ }
+          if(structured?.type === "pylab-output" && Array.isArray(structured.blocks)){
+            const content = document.createElement("div");
+            content.className = "pylab-result";
+            for(const block of structured.blocks) content.append(pylabBlock(block));
+            out.append(content);
+            out.classList.add("has-rich-output");
+          } else if(result.startsWith("data:image/png;base64,")){
+            const image = document.createElement("img");
+            image.src = result;
+            image.alt = step.querySelector(".nm")?.textContent || "Python-generated plot";
+            out.appendChild(image);
+            out.classList.add("has-image");
+          } else {
+            out.textContent += result + "\n";
+          }
+        }
+        if(!out.textContent.trim() && !out.children.length) out.textContent = "(no output)";
         step.querySelector(".state").textContent = "done";
         const next = steps[idx + 1];
         if(next){
