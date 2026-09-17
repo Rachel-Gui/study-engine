@@ -15,6 +15,7 @@ Nothing else in the engine needs to change.
 """
 import html, json, re
 import figures, widgets
+import generative
 from parse import inline, plain, rows
 
 # --------------------------------------------------------------------- prose
@@ -406,6 +407,7 @@ todo_frame = lambda b: ""
 # -------------------------------------------------------------------- registry
 
 REGISTRY = {
+    "genlab":    (generative.web, generative.frame),
     "prose":     (prose_web, prose_frame),
     "_raw":      (lambda b: b["body"], lambda b: ""),
     "keyidea":   (keyidea_web, keyidea_frame),

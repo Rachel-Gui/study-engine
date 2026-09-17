@@ -1,0 +1,5 @@
+{
+  "archive": "controlled-task4-qz2a97bp.zip",
+  "archive_sha256": "9637f914f1998d790b09d167b8aca0fe041bbeb58f9668f834102fe4b6b9af85",
+  "checks": "All four PNG byte/pixel hashes match; per-image JSON matches aggregate; only material, prompt and image identity vary. Repeatability is attested by the supplied Colab manifest, not rerun locally."
+}
