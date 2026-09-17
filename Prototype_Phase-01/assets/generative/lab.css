@@ -1,0 +1,53 @@
+/* Only studios created by :::genlab use these selectors. */
+.ga{min-width:0;max-width:100%}
+.ga .wg-hd{flex-wrap:wrap}
+.ga .ga-body{padding:18px;min-width:0}
+.ga p{font-size:13px;line-height:1.65}
+.ga .ga-disclosure{font-size:12px;color:var(--ink3);margin:0 0 20px;border-bottom:1px solid var(--rule);padding-bottom:12px}
+.ga .ga-fields,.ga .ga-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.ga .ga-field{display:flex;flex-direction:column;gap:8px;font-size:12px;font-weight:500;min-width:0;margin:12px 0}
+.ga select,.ga textarea{box-sizing:border-box;width:100%;max-width:100%;min-width:0;border:1px solid var(--rule);background:var(--paper);color:var(--ink);padding:9px;font:400 13px/1.5 var(--sans)}
+.ga textarea{resize:vertical}
+.ga button{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+.ga button:disabled{opacity:.45;cursor:not-allowed}
+.ga :is(button,select,textarea,input):focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.ga input[type=range]{width:100%;margin:15px 0}
+.ga .ga-prompt,.ga .ga-change{padding:12px;border-left:3px solid var(--ink);background:var(--wash);overflow-wrap:anywhere}
+.ga .ga-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.ga .ga-stage{min-width:0;border:1px solid var(--rule);padding:16px;margin:18px 0}
+.ga legend{font-size:12px;font-weight:600;max-width:100%;padding:0 7px}
+.ga [hidden]{display:none!important}
+.ga figure{margin:12px 0;min-width:0}
+.ga img,.ga svg{display:block;width:100%;height:auto}
+.ga .ga-generation{border:1px solid var(--rule);align-self:start}
+.ga .ga-generation figcaption{padding:10px 12px;border-bottom:1px solid var(--rule);font-size:11px;min-height:54px}
+.ga .ga-generation figcaption strong,.ga .ga-generation figcaption span{display:block;overflow-wrap:anywhere}
+.ga .ga-generation figcaption strong{font-size:11px;letter-spacing:.08em;margin-bottom:5px}
+.ga .ga-generation p{padding:0 12px;font-size:11px}
+.ga .ga-generation.ga-current{border-color:var(--ink)}
+.ga .ga-generation.ga-current figcaption{border-top:3px solid var(--ink);padding-top:7px}
+.ga .ga-status{font-size:12px;min-height:1.6em}
+.ga .ga-diffusion{position:relative;overflow:hidden;margin:18px 0;aspect-ratio:3/2;background:#ddd}
+.ga .ga-diffusion canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+.ga .ga-checklist{display:grid;gap:12px;margin:18px 0;font-size:13px}
+.ga .ga-checklist label{display:flex;gap:9px;align-items:baseline}
+.ga .ga-review{padding:14px 0;border-bottom:1px solid var(--rule)}
+.ga .ga-review strong{font-size:13px}
+.ga .ga-pipeline{list-style:none;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ga .ga-pipeline button{width:100%;height:100%;text-align:left;letter-spacing:.03em}
+.ga .ga-pipeline button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.ga .ga-record dt{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:16px}
+.ga .ga-record dd{margin:6px 0;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:600px){
+  .ga .ga-body{padding:12px}
+  .ga .ga-fields,.ga .ga-comparison,.ga .ga-pipeline{grid-template-columns:1fr}
+  .ga .ga-stage{padding:12px}
+  .ga .ga-actions button{flex:1 1 140px}
+}
+
+/* Retain complete notebook panels, including portrait/landscape experiments.
+   A matched square display box letterboxes rather than cropping or stretching. */
+.ga .ga-real-image{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--wash);overflow:hidden}
+.ga .ga-real-image img{display:block;width:100%;height:100%;object-fit:contain}
+
+.ga [data-experiment]>p{white-space:pre-line}
