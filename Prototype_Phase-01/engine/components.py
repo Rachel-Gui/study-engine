@@ -276,7 +276,8 @@ def reflect_web(b):
     name = f"r{abs(hash(q)) % 100000}"
     o = "".join(f'<label><input type="radio" name="{name}" value="{i}">'
                 f'<span>{inline(x)}</span></label>' for i, x in enumerate(opts))
-    check = (f'<button class="chk" data-correct="{correct}">Check answer</button>'
+    feedback = html.escape(b["attrs"].get("feedback", ""), quote=True)
+    check = (f'<button class="chk" data-correct="{correct}" data-feedback="{feedback}">Check answer</button>'
              f'<p class="verdict" hidden></p>') if correct >= 0 else ""
     return (f'<div class="reflect"><p class="q">{inline(q)}</p>{o}{check}'
             f'<textarea placeholder="Your reasoning (stays in this browser)">'
@@ -370,8 +371,10 @@ def workflow_frame(b):
 
 
 def details_web(b):
-    return (f'<details class="exp"><summary>'
-            f'{html.escape(b["attrs"].get("summary", "More"))}</summary>'
+    label = b["attrs"].get("summary", "More")
+    reference = ' data-reference-answer' if label == "Show reference answer" else ''
+    return (f'<details class="exp"><summary{reference}>'
+            f'{html.escape(label)}</summary>'
             f'<div>{prose_web(b)}</div></details>')
 
 

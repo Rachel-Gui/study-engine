@@ -1,5 +1,5 @@
 /* Pure, local teaching state. No model inference, network calls or page storage. */
-import examples, {notebookExperiments,materialExperiment} from './examples.mjs?v=controlled-task4-1';
+import examples, {notebookExperiments,materialExperiment} from './examples.mjs?v=module1-editorial-1';
 export const defaults = Object.freeze({building:'Community library', material:'Timber', context:'Seattle neighborhood', lighting:'Soft overcast daylight', intent:'Contemporary', performance:'Passive daylighting', seed:100, guidance:7.5, steps:30, negative:''});
 export const promptKeys = ['building','material','context','lighting','intent','performance'];
 export const labels = {building:'Building type',material:'Material',context:'Context',lighting:'Lighting',intent:'Design intent',performance:'Performance hint',seed:'Seed',guidance:'Guidance',steps:'Inference steps',negative:'Negative prompt'};

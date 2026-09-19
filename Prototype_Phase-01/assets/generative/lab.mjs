@@ -1,6 +1,6 @@
-import {defaults,options,promptKeys,labels,prompt,changes,escapeText as esc,Experiment,controlledSeries,controlledExperiment,record,materialDefaults,materialOptions,materialPrompt,materialExperiment} from './core.mjs?v=controlled-task4-1';
+import {defaults,options,promptKeys,labels,prompt,changes,escapeText as esc,Experiment,controlledSeries,controlledExperiment,record,materialDefaults,materialOptions,materialPrompt,materialExperiment} from './core.mjs?v=module1-editorial-1';
 
-const card=(model,label)=>`<figure class="ga-generation${label.startsWith('CURRENT')?' ga-current':''}"><figcaption><strong>${esc(model.sample?label.split(' ')[0]+' — '+model.settings.material:label)}</strong><span>Example ${model.number} · ${model.sample?'Precomputed controlled Task 4 output':'Material = '+esc(model.settings.material)}</span></figcaption>${model.sample?`<div class="ga-real-image"><img src="${esc(model.sample.src)}" width="${model.sample.width}" height="${model.sample.height}" alt="Controlled Task 4 output: ${esc(model.settings.material)} pavilion"></div>`:model.svg}<p>${esc(model.prompt)}</p></figure>`;
+const card=(model,label)=>`<figure class="ga-generation${label.startsWith('CURRENT')?' ga-current':''}"><figcaption><strong>${esc(model.sample?label.split(' ')[0]+' — '+model.settings.material:label)}</strong><span>Example ${model.number} · ${model.sample?'Controlled model output':'Material = '+esc(model.settings.material)}</span></figcaption>${model.sample?`<div class="ga-real-image"><img src="${esc(model.sample.src)}" width="${model.sample.width}" height="${model.sample.height}" alt="Controlled generation: ${esc(model.settings.material)} pavilion"></div>`:model.svg}<p>${esc(model.prompt)}</p></figure>`;
 function compare(experiment, original=false){
   const previous=original?experiment.original:experiment.previous,current=experiment.current;
   if(!current)return '';
@@ -12,7 +12,11 @@ function fields(root,realMaterial){
   const initial=realMaterial?materialDefaults:defaults,choices=realMaterial?materialOptions:options,keys=realMaterial?['material']:promptKeys,format=realMaterial?materialPrompt:prompt;
   const box=root.querySelector('[data-fields]');
   box.innerHTML=keys.map(key=>`<label class="ga-field">${labels[key]}<select data-setting="${key}">${choices[key].map(v=>`<option${v===initial[key]?' selected':''}>${v}</option>`).join('')}</select></label>`).join('');
-  if(realMaterial)box.insertAdjacentHTML('afterend',`<details class="exp"><summary>Fixed inputs and output provenance</summary><p>Only the material term is selectable. The pavilion, garden, wording, seed 200, guidance 7.5, 30 steps and 512 × 512 output remain fixed. Model: ${esc(materialExperiment.model)}; scheduler: ${esc(materialExperiment.scheduler)}.</p><p><a href="${esc(materialExperiment.provenance)}" target="_blank" rel="noopener">Full generation settings, pinned revision and image hashes</a></p></details>`);
+  if(realMaterial)box.insertAdjacentHTML('afterend',`<details class="exp"><summary>View experiment settings</summary>
+    <p>Changed: material term only. Fixed: all other prompt wording, seed 200, guidance 7.5, 30 inference steps, 512 × 512 dimensions; negative prompt omitted.</p>
+    <dl class="ga-settings"><dt>Model</dt><dd>${esc(materialExperiment.model)}</dd><dt>Model revision</dt><dd>${esc(materialExperiment.revision)}</dd><dt>Scheduler</dt><dd>${esc(materialExperiment.scheduler)}</dd></dl>
+    <p>The exact prompt is shown below. The model may change several visual characteristics in response to one changed input.</p></details>`);
+
   const read=()=>({...initial,...Object.fromEntries([...box.querySelectorAll('select')].map(s=>[s.dataset.setting,s.value]))});
   const update=()=>{root.querySelector('[data-prompt]').textContent=format(read());};
   box.addEventListener('change',update);update();return read;
@@ -37,24 +41,22 @@ function diffusion(root,cfg,status){
 function controls(root,cfg,status){
   const stages=[...root.querySelectorAll('[data-experiment]')];
   stages.forEach((stage,i)=>{
+    const experiment=controlledExperiment(stage.dataset.experiment);
+    const sizes=[...new Set(experiment.samples.map(sample=>sample.settings.width && sample.settings.height ? `${sample.settings.width} × ${sample.settings.height}` : 'Not recorded'))];
+    stage.querySelector('[data-settings]').innerHTML=`<dl class="ga-settings"><dt>Model</dt><dd>Stable Diffusion v1.5 (runwayml/stable-diffusion-v1-5)</dd><dt>Generation dimensions (width × height)</dt><dd>${esc(sizes.join('; '))}</dd><dt>Exact model revision, scheduler and runtime versions</dt><dd>Not recorded for this experiment.</dd></dl>`;
     stage.querySelector('[data-reveal]').onclick=()=>{
       if(!stage.querySelector('textarea').value.trim()){status('Record your prediction first.');return;}
       const key=stage.dataset.experiment;
-      const experiment=controlledExperiment(key);
       stage.querySelector('[data-series]').innerHTML='<div class="ga-comparison">'+controlledSeries(key).map(sample=>
         `<figure class="ga-generation ga-recorded" data-source-task="${experiment.task}" data-source-panel="${sample.panel}">
-          <figcaption><strong>${esc(sample.label)}</strong><span>Task ${experiment.task} · saved notebook output</span></figcaption>
-          <div class="ga-real-image"><img src="${esc(sample.src)}" alt="${esc(sample.alt)}" width="${sample.pixel_size[0]}" height="${sample.pixel_size[1]}" loading="lazy"></div>
-          ${sample.elapsed_seconds!=null?`<p>Recorded time: ${sample.elapsed_seconds.toFixed(1)} s · this Colab run only</p>`:''}
-        </figure>`).join('')+'</div>'
-        +`<details class="exp"><summary>View original notebook figure and settings</summary>
-          <p><a href="${esc(experiment.original)}" target="_blank" rel="noopener">Original embedded PNG · Task ${experiment.task}</a></p>
-          <p><a href="assets/generative/real-experiments/provenance.json" target="_blank" rel="noopener">Full provenance, exact settings and crop coordinates</a></p>
-          <p>Model declared in notebook: runwayml/stable-diffusion-v1-5. Scheduler and runtime library versions are not recorded. The source PNG limits the available image resolution.</p></details>`;
-      stage.querySelectorAll('[data-series] img').forEach(img=>img.addEventListener('error',()=>status('A saved notebook image could not be loaded. Check the published assets; no schematic replacement has been substituted.')));
+          <figcaption><strong>${esc(sample.label)}</strong></figcaption>
+          <div class="ga-real-image"><img src="${esc(sample.src)}" alt="${esc(sample.label)} — ${esc(experiment.prompt)}" width="${sample.pixel_size[0]}" height="${sample.pixel_size[1]}" loading="lazy"></div>
+          ${sample.elapsed_seconds!=null?`<p>Recorded time: ${sample.elapsed_seconds.toFixed(1)} s · recorded run only</p>`:''}
+        </figure>`).join('')+'</div>';
+      stage.querySelectorAll('[data-series] img').forEach(img=>img.addEventListener('error',()=>status('An experiment image could not be loaded. Try refreshing the page.')));
       stage.querySelector('[data-explanation]').hidden=false;
       if(stage.querySelector('[data-unlock]'))stage.querySelector('[data-unlock]').hidden=false;
-      status(`Task ${experiment.task} outputs are precomputed from the completed notebook, not generated live. Compare the named setting within this group, then explain.`);
+      status('Compare this group, explain what changed, then continue.');
     };
     const next=stage.querySelector('[data-unlock]');
     if(next)next.onclick=()=>{stages[i+1].hidden=false;stages[i+1].querySelector('textarea').focus();};
@@ -89,7 +91,7 @@ function experimentLab(root,cfg,status,workflow){
   const $=s=>root.querySelector(s);
   root.querySelectorAll('[data-note]').forEach(el=>el.addEventListener('input',()=>{notes[el.dataset.note]=el.value;}));
   const gen=$('[data-generate]');
-  root.addEventListener('error',event=>{if(event.target.tagName==='IMG')status('A recorded image could not be loaded. Check the published assets; no schematic image has been substituted.');},true);
+  root.addEventListener('error',event=>{if(event.target.tagName==='IMG')status('An experiment image could not be loaded. Try refreshing the page.');},true);
   function display(){
     if($('[data-comparison]'))$('[data-comparison]').innerHTML=compare(experiment);
     if($('[data-initial]'))$('[data-initial]').innerHTML=card(experiment.original,'ORIGINAL GENERATION');

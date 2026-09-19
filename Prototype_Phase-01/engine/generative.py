@@ -9,12 +9,12 @@ def e(value):
     return html.escape(str(value), quote=True)
 
 
-def area(key, label):
-    return f'<label class="ga-field">{e(label)}<textarea data-note="{e(key)}" rows="3"></textarea></label>'
+def area(key, label, placeholder=""):
+    return f'<label class="ga-field">{e(label)}<textarea data-note="{e(key)}" rows="3" placeholder="{e(placeholder)}"></textarea></label>'
 
 
 def question(config, key="prediction"):
-    return area(key, config['question'])
+    return area(key, config['question'], config.get('placeholder', ''))
 
 
 def web(b):
@@ -34,7 +34,7 @@ def web(b):
             content = (fields + question(cfg, 'expectedChange') + '<div class="ga-actions"><button type="button" data-generate>Select initial example</button>'
                        '<button type="button" data-reset>Reset experiment</button></div>'
                        '<div data-comparison></div>' + area('observedChange',cfg['observe']) +
-                       f'<details class="exp" data-answer hidden><summary>Show reference answer</summary><p>{inline(cfg["explanation"])}</p></details>')
+                       f'<details class="exp" data-answer hidden><summary data-reference-answer>Show reference answer</summary><p>{inline(cfg["explanation"])}</p></details>')
         else:
             titles=cfg['stages']
             content='<p data-progress role="status">Stage 1 of 8</p>'
@@ -50,7 +50,7 @@ def web(b):
     elif mode == 'controls':
         for i,item in enumerate(cfg['experiments']):
             content+=(f'<fieldset class="ga-stage" data-experiment="{e(item["key"])}" {"hidden" if i else ""}><legend>{e(item["title"])}</legend>'
-                      +question(item,item['key'])+f'<p>{e(item["fixed"])}</p><button type="button" data-reveal>Test this prediction</button>'
+                      +question(item,item['key'])+f'<details class="exp"><summary>View experiment settings</summary><p>{e(item["fixed"])}</p><div data-settings></div></details><button type="button" data-reveal>Test this prediction</button>'
                       '<div data-series></div>'+f'<p data-explanation hidden>{inline(item["explanation"])}</p>'
                       +(f'<button type="button" data-unlock hidden>Next controlled experiment</button>' if i<len(cfg['experiments'])-1 else '')+'</fieldset>')
     elif mode == 'critic':
@@ -69,7 +69,7 @@ def web(b):
             f'<div class="ga-body"><p class="ga-disclosure">{e(cfg["disclosure"])}</p>{content}'
             '<p class="ga-status" data-status role="status" aria-live="polite"></p></div>'
             f'<script type="application/json" data-config>{payload}</script></div>'
-            '<script type="module" src="assets/generative/lab.mjs?v=controlled-task4-1"></script>')
+            '<script type="module" src="assets/generative/lab.mjs?v=module1-editorial-1"></script>')
 
 
 def frame(b):
