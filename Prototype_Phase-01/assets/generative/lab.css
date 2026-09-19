@@ -50,4 +50,12 @@
 .ga .ga-real-image{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--wash);overflow:hidden}
 .ga .ga-real-image img{display:block;width:100%;height:100%;object-fit:contain}
 
-.ga [data-experiment]>p{white-space:pre-line}
+.ga [data-experiment] > .exp > p{white-space:pre-line}
+
+.ga .ga-status:empty{min-height:0;margin:0}
+.ga .exp{overflow-wrap:anywhere}
+.ga .ga-settings{font-size:13px}
+.ga .ga-settings dt{font-weight:600}
+.ga .ga-settings dd{margin:0 0 8px}
+
+.ga .ga-recorded figcaption{min-height:0}

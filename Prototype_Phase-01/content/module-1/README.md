@@ -6,7 +6,7 @@ reflection cards, glossary and static build. It adds one registered directive,
 renders the studio shell and static video takeaway. The scoped runtime is published
 through the existing asset-copy mechanism. No global runner or routing changes.
 The studio entry script and both module imports carry the same
-`v=controlled-task4-1` release marker to avoid mixing cached schematic code with
+`v=module1-editorial-1` release marker to avoid mixing cached schematic code with
 the real-material lesson. Bump all three markers together for a future release
 that changes the studio module contract.
 
@@ -30,7 +30,7 @@ and `02_AI_Studio_Generative_AI.ipynb` (ARCH 594/508). A later completed source,
 below. Neither notebook nor the PowerPoint is published. The original blank
 notebook has no saved generation outputs; the completed notebook does. Lecture
 media are logos and Colab screenshots, not controlled generation pairs. Research context is
-attributed to the lecture's summary of Jang, Roh and Lee (2025), covering 161 studies
+attributed directly to Jang, Roh and Lee (2025), covering 161 studies
 from 2014–2024. It is not presented as a current practice survey.
 
 ## Visual provenance and replacement
@@ -201,7 +201,7 @@ DOM interaction tests require **test-only** `jsdom@26.1.0`. It is not a website
 runtime dependency. With jsdom installed in an external test directory:
 
 ```sh
-NODE_PATH=/path/to/test/node_modules node --test tests/generative-dom.test.cjs
+NODE_PATH=/path/to/test/node_modules node --test tests/generative-dom.test.cjs tests/generative-editorial.test.cjs
 ```
 
 The extraction checks verify all original PNG hashes, crop pixels and task/setting
@@ -229,3 +229,33 @@ Check card framing, slider painting, glossary focus/tap, native reference-answer
 expansions, download behavior, and absence of horizontal page overflow. The scoped
 layout keeps entire image panels visible and stacks comparison cards below 600px, wraps controls and protects content
 widths. No claims of successful visual or mobile-browser verification are made.
+
+## Student-facing editorial policy
+
+Production sources, task numbers, extraction/crop details and original files remain
+in this README, `examples.mjs` and the unchanged provenance manifests. They are not
+rendered in student instruction or image alt text. Student settings disclosures
+retain the exact prompts, controlled variables, known generation settings and
+explicit unknowns. They do not infer generation dimensions from saved panel sizes.
+The material experiment shows its pinned revision and scheduler. All raw images
+and full provenance remain unchanged, including in downloadable experiment records.
+
+The research page now cites Jang, Roh and Lee directly, verified against the
+[authors' institutional publication record](https://yonsei.elsevierpure.com/en/publications/generative-ai-in-architectural-design-application-data-and-evalua/).
+Cheung, Wang and Lei (2025), *Conversational, agentic AI-enhanced architectural
+design process*, appeared in the earlier teaching-source discussion but is not
+substantively discussed in Module 1; it is retained here rather than in the student
+reference list. No academic claims about practice adoption were added.
+
+Each multiple-choice question supplies a short `feedback` attribute. Shared quiz
+feedback says “Correct.”, and native reference disclosures alternate between
+“Show reference answer” and “Hide reference answer”. No routing, Pyodide or experiment
+state logic was changed. The image-to-architecture response uses a descriptive
+placeholder; authored pages contain no “xx” response text.
+
+Editorial verification: all 16 topic pages, 13 multiple-choice questions and 20
+reference-answer disclosures pass the cross-page DOM audit. Revealed control and
+material comparisons are scanned too, including alt text and placeholders. The
+complete suite passes 24 tests (4 state, 7 interaction, 3 editorial, 2 print and
+8 Python/build/asset checks). The build still produces 142 pages. Live browser
+verification remains unavailable; DOM checks are not a substitute for visual QA.

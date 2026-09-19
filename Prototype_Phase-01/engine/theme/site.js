@@ -38,6 +38,24 @@ document.addEventListener("keydown", e => {
 });
 
 /* ------------------------------------------------------------ python labs */
+/* Native textareas print only their editor viewport in some browsers. Keep the
+   live value and screen scroll position intact; use normal flowing text on paper. */
+function clearPrintValues(){
+  document.querySelectorAll('[data-print-value]').forEach(node=>node.remove());
+  document.querySelectorAll('textarea.print-source').forEach(node=>node.classList.remove('print-source'));
+}
+window.addEventListener('beforeprint',()=>{
+  clearPrintValues();
+  document.querySelectorAll('article textarea').forEach(editor=>{
+    if(editor.hidden)return;
+    const text=document.createElement('pre');
+    text.className='print-value';text.dataset.printValue='';
+    text.textContent=editor.value || ' ';
+    editor.after(text);editor.classList.add('print-source');
+  });
+});
+window.addEventListener('afterprint',clearPrintValues);
+
 let pyodideReady = null;
 
 async function getPyodide(packages, onStatus){
@@ -201,7 +219,16 @@ document.querySelectorAll(".reflect .chk").forEach(btn => {
     v.hidden = false;
     if (!picked) { v.textContent = "Pick an option first."; return; }
     v.textContent = picked.value === btn.dataset.correct
-      ? "That's the one."
+      ? "Correct." + (btn.dataset.feedback ? " " + btn.dataset.feedback : "")
       : "Not quite — have another look at the options.";
   };
 });
+
+/* Native disclosure state keeps reference-answer labels in sync, including studios. */
+document.addEventListener("toggle", event => {
+  if (event.target.tagName !== "DETAILS") return;
+  const summary = event.target.firstElementChild;
+  if (summary?.hasAttribute("data-reference-answer")) {
+    summary.textContent = event.target.open ? "Hide reference answer" : "Show reference answer";
+  }
+}, true);
