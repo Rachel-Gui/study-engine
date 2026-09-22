@@ -16,9 +16,10 @@ python engine\build.py --doctor
 if errorlevel 1 goto :notready
 
 echo.
-echo  Step 2 of 2 - rendering. This takes a while. Leave the window open.
+echo  Step 2 of 2 - rendering at 4K. This takes a while. Leave the window open.
+echo  (for a quick 1080p preview run:  python engine\build.py --video --engine edge --quality 1080p)
 echo  ------------------------------------------------------------------
-python engine\build.py --video --engine edge
+python engine\build.py --video --engine edge %*
 if errorlevel 1 goto :failed
 
 echo.

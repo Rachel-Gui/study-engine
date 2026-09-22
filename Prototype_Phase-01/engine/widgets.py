@@ -838,7 +838,7 @@ ORCH_LAB = r"""
 <div class="wg" id="wg-orch">
   <div class="wg-hd"><span class="k">Interactive</span>
     <strong>Sequential or parallel</strong>
-    <span class="wg-eq" id="oq">0 s</span></div>
+    <span class="wg-eq big" id="oq">0 s</span></div>
   <div class="wg-bd">
     <div class="wg-ctl">
       <label><span>Advocates</span><input type="range" id="oa" min="1" max="6"
@@ -849,12 +849,14 @@ ORCH_LAB = r"""
         <option value="par" selected>in parallel</option>
         <option value="seq">one after another</option>
       </select></label>
-      <p class="wg-hint">The advocates are independent &mdash; none of them reads
-        another's output &mdash; so they can all run at once. The researcher and the
-        manager cannot: everything needs the researcher's data, and the manager needs
-        every advocate. That dependency, not speed, is what decides the shape.</p>
+      <p class="wg-hint"><strong>Who waits for whom.</strong> The <em>researcher</em>
+        runs first and alone, because every advocate needs its site data. The
+        <em>advocates</em> are independent &mdash; none reads another's output &mdash;
+        so they can all run at once. The <em>manager</em> runs last, because it needs
+        every advocate's result. Dependency, not speed, decides the shape.</p>
+      <p class="wg-hint" id="onote"></p>
     </div>
-    <svg viewBox="0 0 460 250" class="wg-svg" stroke="#111" fill="none" stroke-width="1.2">
+    <svg viewBox="0 0 460 260" class="wg-svg" stroke="#111" fill="none" stroke-width="1.2">
       <g id="gantt"></g>
     </svg>
   </div>
@@ -866,26 +868,37 @@ ORCH_LAB = r"""
     $("oa").nextElementSibling.value = n;
     $("ot").nextElementSibling.value = t;
     var total = t + (par ? t : n * t) + t;
-    var px = 380 / Math.max(total, 1), x0 = 74, y = 26, g = "";
-    function bar(lab, start, dur, bold){
+    var px = 340 / Math.max(total, 1), x0 = 112, y = 26, g = "";
+    function bar(lab, start, dur, kind){
+      var fill = kind === "gate" ? "#4b2e83" : "#d9d3e6";
       var s = '<rect x="' + (x0 + start*px) + '" y="' + y + '" width="'
-        + Math.max(2, dur*px) + '" height="18" fill="' + (bold ? "#111" : "#d4d4d4")
-        + '" stroke="#111" stroke-width=".8"/>'
-        + '<text x="' + (x0-6) + '" y="' + (y+13) + '" font-size="9.5" '
-        + 'text-anchor="end" font-family="Montserrat,sans-serif" fill="#767676" '
+        + Math.max(2, dur*px) + '" height="20" rx="2" fill="' + fill + '" stroke="none"/>'
+        + '<text x="' + (x0-10) + '" y="' + (y+14) + '" font-size="12" font-weight="600" '
+        + 'text-anchor="end" font-family="Montserrat,sans-serif" fill="#111" '
         + 'stroke="none">' + lab + '</text>';
-      y += 24; return s;
+      y += 27; return s;
     }
-    g += bar("researcher", 0, t, true);
-    for(var i=0;i<n;i++) g += bar("advocate " + (i+1), par ? t : t + i*t, t, false);
-    g += bar("manager", par ? 2*t : t + n*t, t, true);
-    g += '<line x1="' + x0 + '" y1="' + (y+4) + '" x2="' + (x0+380) + '" y2="'
-       + (y+4) + '" stroke="#ccc"/>'
-       + '<text x="' + (x0+380) + '" y="' + (y+20) + '" font-size="9.5" '
-       + 'text-anchor="end" font-family="Montserrat,sans-serif" fill="#767676" '
-       + 'stroke="none">' + total + 's</text>';
+    g += bar("researcher", 0, t, "gate");
+    for(var i=0;i<n;i++) g += bar("advocate " + (i+1), par ? t : t + i*t, t, "par");
+    g += bar("manager", par ? 2*t : t + n*t, t, "gate");
+    // dependency markers: the two waits that cannot be parallelised away
+    var xr = x0 + t*px, xm = x0 + (par ? 2*t : t + n*t)*px;
+    g += '<line x1="' + xr + '" y1="20" x2="' + xr + '" y2="' + (y-4) + '" stroke="#4b2e83" stroke-dasharray="3 3" opacity=".6"/>'
+       + '<line x1="' + xm + '" y1="20" x2="' + xm + '" y2="' + (y-4) + '" stroke="#4b2e83" stroke-dasharray="3 3" opacity=".6"/>'
+       + '<text x="' + (xr+4) + '" y="18" font-size="9" font-family="Montserrat,sans-serif" fill="#4b2e83" stroke="none">advocates wait here</text>'
+       + '<text x="' + (xm+4) + '" y="' + (y+6) + '" font-size="9" font-family="Montserrat,sans-serif" fill="#4b2e83" stroke="none">manager waits here</text>';
+    g += '<line x1="' + x0 + '" y1="' + (y+12) + '" x2="' + (x0+340) + '" y2="'
+       + (y+12) + '" stroke="#ccc"/>'
+       + '<text x="' + (x0+340) + '" y="' + (y+28) + '" font-size="11" font-weight="600" '
+       + 'text-anchor="end" font-family="Montserrat,sans-serif" fill="#111" '
+       + 'stroke="none">' + total + ' s total</text>'
+       + '<text x="' + x0 + '" y="' + (y+28) + '" font-size="9.5" '
+       + 'font-family="Montserrat,sans-serif" fill="#767676" stroke="none">time &#8594;</text>';
     $("gantt").innerHTML = g;
     $("oq").textContent = total + " s to a verdict";
+    $("onote").innerHTML = par
+      ? "Parallel: adding an advocate costs <strong>nothing</strong> in wall-clock time. The two purple bars are the fixed cost - the researcher and the manager cannot be parallelised away."
+      : "Sequential: every advocate adds a full <strong>" + t + " s</strong>. With " + n + " advocates that is " + (n*t) + " s spent waiting on work that never needed to wait.";
   }
   ["oa","ot","om"].forEach(function(i){ $(i).addEventListener("input", draw); });
   draw();
@@ -901,6 +914,11 @@ ALL = {
     "prompt-lab":        (PROMPT_LAB,  "agent_anatomy"),
     "orchestration-lab": (ORCH_LAB,    "orchestration"),
 }
+
+
+# Module 3 (deep learning) widgets live in their own file.
+import widgets_dl
+ALL.update(widgets_dl.ALL)
 
 
 def web(name):

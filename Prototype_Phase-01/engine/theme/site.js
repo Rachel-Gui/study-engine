@@ -1,41 +1,90 @@
-/* site.js - contents highlighting, keyboard paging, and the Python labs.
+/* site.js - contents panel, page motion, keyboard paging, and the Python labs.
    Pyodide loads lazily: nothing is fetched until a student presses Run. */
 
-/* With 90+ topics the contents only stays usable if it collapses: show the
-   topic list for the episode you are in, and nothing else. */
+/* ------------------------------------------------------------ contents panel
+   Modules and lessons both collapse. Click the chevron to toggle; click the
+   name to navigate. What the student opens stays open across pages
+   (localStorage); the lesson they are reading is always shown open. */
+const NAV_KEY = "studyengine.nav";
+function navState(){ try { return JSON.parse(localStorage.getItem(NAV_KEY) || "{}"); }
+                     catch(e){ return {}; } }
+function navSave(s){ try { localStorage.setItem(NAV_KEY, JSON.stringify(s)); } catch(e){} }
+
 function markCurrent(i){
   const here = document.querySelector(`nav [data-i="${i}"]`);
-  if(!here) return;
-  here.classList.add("on");
-  const ep = here.dataset.ep;
-  document.querySelectorAll("nav a.tp").forEach(a =>
-    a.classList.toggle("show", a.dataset.ep === ep));
-  document.querySelectorAll("nav a.ep").forEach(a =>
-    a.classList.toggle("open", a.dataset.ep === ep));
-  here.scrollIntoView({block:"center"});
+  const st = navState(); st.m = st.m || {}; st.e = st.e || {};
+  let curM, curE;
+  if(here){
+    here.classList.add("on", "show");
+    curM = here.dataset.m ?? here.closest(".m")?.dataset.m;
+    curE = here.dataset.ep ?? here.closest(".e")?.dataset.ep;
+  }
+  // open = where you are now (transient) OR what you chose to open (remembered)
+  document.querySelectorAll("nav .m").forEach(x =>
+    x.classList.toggle("open", x.dataset.m === curM || !!st.m[x.dataset.m]));
+  document.querySelectorAll("nav .e").forEach(x =>
+    x.classList.toggle("open", x.dataset.ep === curE || !!st.e[x.dataset.ep]));
+  (window.requestAnimationFrame || setTimeout)(() => here?.scrollIntoView?.({block:"center"}));
 }
-
-/* clicking an episode you are not in expands it without navigating away */
-document.querySelectorAll("nav a.ep").forEach(a => {
-  a.addEventListener("click", e => {
-    if(a.classList.contains("open")) return;          // already open: follow the link
-    e.preventDefault();
-    document.querySelectorAll("nav a.ep").forEach(x => x.classList.remove("open"));
-    a.classList.add("open");
-    document.querySelectorAll("nav a.tp").forEach(t =>
-      t.classList.toggle("show", t.dataset.ep === a.dataset.ep));
-  });
+// clicking a lesson name follows the link; it also opens that lesson in the tree
+document.querySelectorAll("nav a.ep").forEach(a => a.addEventListener("click", () => {
+  const e = a.closest(".e"), st = navState(); st.e = st.e || {};
+  a.classList.add("open"); e.classList.add("open"); st.e[e.dataset.ep] = true; navSave(st);
+}));
+document.querySelectorAll("nav .m > .mh > .tg").forEach(btn => btn.onclick = () => {
+  const m = btn.closest(".m"), st = navState(); st.m = st.m || {};
+  m.classList.toggle("open"); st.m[m.dataset.m] = m.classList.contains("open"); navSave(st);
 });
-
+document.querySelectorAll("nav .e > .eh > .tg").forEach(btn => btn.onclick = () => {
+  const e = btn.closest(".e"), st = navState(); st.e = st.e || {};
+  e.classList.toggle("open"); st.e[e.dataset.ep] = e.classList.contains("open"); navSave(st);
+});
 document.getElementById("navbtn")?.addEventListener("click", () =>
   document.getElementById("nav").classList.toggle("open"));
 
+/* ----------------------------------------------------------- page motion */
+(function(){
+  const stage = document.getElementById("stage"), bar = document.getElementById("readbar");
+  if(stage && bar){
+    const upd = () => {
+      const max = stage.scrollHeight - stage.clientHeight;
+      bar.style.width = (max > 0 ? Math.min(100, 100 * stage.scrollTop / max) : 100) + "%";
+    };
+    stage.addEventListener("scroll", upd, {passive:true}); upd();
+  }
+  // reveal each block as it scrolls into view; a staggered rise, once
+  const items = [...document.querySelectorAll("article > *")];
+  items.forEach((el, i) => { el.classList.add("rv"); el.style.setProperty("--d", Math.min(i, 8) * 45 + "ms"); });
+  if("IntersectionObserver" in window){
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); }
+    }), {root: stage, rootMargin: "0px 0px -8% 0px", threshold: 0.05});
+    items.forEach(el => io.observe(el));
+  } else items.forEach(el => el.classList.add("in"));
+})();
+
 document.addEventListener("keydown", e => {
-  if(/INPUT|TEXTAREA/.test(e.target.tagName)) return;
-  const go = s => document.querySelector(`footer a.btn:${s}-of-type`)?.click();
-  if(e.key === "ArrowLeft")  go("first");
-  if(e.key === "ArrowRight") go("last");
+  if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if(e.key === "ArrowLeft")  document.querySelector("footer a.btn.prev")?.click();
+  if(e.key === "ArrowRight") document.querySelector("footer a.btn.next")?.click();
 });
+
+/* ------------------------------------------------------------ OS tabs
+   :::os blocks render Windows / macOS panes. One choice, remembered site-wide. */
+(function(){
+  const KEY = "studyengine.os";
+  let os = null;
+  try { os = localStorage.getItem(KEY); } catch(e){}
+  if(!os) os = /Mac|iPhone|iPad/.test(navigator.platform) ? "mac" : "win";
+  const apply = () => document.querySelectorAll(".os").forEach(box => {
+    box.querySelectorAll(".os-tab").forEach(t => t.classList.toggle("on", t.dataset.os === os));
+    box.querySelectorAll(".os-pane").forEach(p => p.hidden = p.dataset.os !== os);
+  });
+  document.querySelectorAll(".os .os-tab").forEach(t => t.onclick = () => {
+    os = t.dataset.os; try { localStorage.setItem(KEY, os); } catch(e){} apply();
+  });
+  apply();
+})();
 
 /* ------------------------------------------------------------ python labs */
 /* Native textareas print only their editor viewport in some browsers. Keep the
@@ -76,6 +125,22 @@ async function getPyodide(packages, onStatus){
   }
   return py;
 }
+
+/* Any matplotlib figure left open after a step is captured automatically, so a
+   lab can just call plt.plot(...) and the picture appears under the code. */
+const MPL_PRELUDE = "import os as _os\n_os.environ.setdefault('MPLBACKEND','AGG')\n";
+const MPL_HARVEST = `
+import sys as _sys, io as _io, base64 as _b64
+_out = []
+if 'matplotlib.pyplot' in _sys.modules:
+    import matplotlib.pyplot as _plt
+    for _n in _plt.get_fignums():
+        _f = _plt.figure(_n); _buf = _io.BytesIO()
+        _f.savefig(_buf, format='png', dpi=120, bbox_inches='tight', facecolor='white')
+        _out.append('data:image/png;base64,' + _b64.b64encode(_buf.getvalue()).decode())
+    _plt.close('all')
+_out
+`;
 
 /* Optional JSON result: {type:"pylab-output", blocks:[...]}.
    Content authors can return metrics, tables, text, PNGs and collapsed details.
@@ -152,12 +217,13 @@ document.querySelectorAll(".pylab").forEach(lab => {
       out.hidden = false;
       out.classList.remove("has-image", "has-rich-output");
       out.textContent = "running…";
+      step.querySelector(".state").textContent = "running";
       try {
         const py = await getPyodide(packages, m => { boot.textContent = m; });
         boot.textContent = "python ready";
         py.setStdout({ batched: t => { out.textContent += t + "\n"; } });
         out.textContent = "";
-        const value = await py.runPythonAsync(src.value);
+        const value = await py.runPythonAsync(MPL_PRELUDE + src.value);
         if(value !== undefined && value !== null){
           const result = String(value);
           let structured;
@@ -178,6 +244,15 @@ document.querySelectorAll(".pylab").forEach(lab => {
             out.textContent += result + "\n";
           }
         }
+        // harvest any matplotlib figures the step left open
+        try {
+          const figs = (await py.runPythonAsync(MPL_HARVEST)).toJs();
+          for(const src of figs){
+            const image = document.createElement("img");
+            image.src = src; image.alt = step.querySelector(".nm")?.textContent || "plot";
+            out.appendChild(image); out.classList.add("has-image");
+          }
+        } catch (_) { /* no matplotlib in this step */ }
         if(!out.textContent.trim() && !out.children.length) out.textContent = "(no output)";
         step.querySelector(".state").textContent = "done";
         const next = steps[idx + 1];
@@ -210,25 +285,38 @@ document.querySelectorAll(".deck[data-n]").forEach(deck => {
   slider.oninput = () => show(+slider.value - 1);
 });
 
-/* ------------------------------------------------------------ check answers */
+/* ------------------------------------------------------------ check answers
+   Each option may carry its own feedback (data-fb). If it does, the student
+   reads why, not just whether. A block-level data-feedback is kept for the
+   studio pages that use it. */
 document.querySelectorAll(".reflect .chk").forEach(btn => {
   btn.onclick = () => {
     const box = btn.closest(".reflect");
     const picked = box.querySelector("input[type=radio]:checked");
     const v = box.querySelector(".verdict");
     v.hidden = false;
-    if (!picked) { v.textContent = "Pick an option first."; return; }
-    v.textContent = picked.value === btn.dataset.correct
-      ? "Correct." + (btn.dataset.feedback ? " " + btn.dataset.feedback : "")
-      : "Not quite — have another look at the options.";
+    if (!picked) { v.textContent = "Pick an option first."; v.className = "verdict"; return; }
+    const ok = picked.value === btn.dataset.correct;
+    const fb = picked.dataset.fb || "";
+    v.className = "verdict " + (ok ? "ok" : "no");
+    v.textContent = ok
+      ? "Correct. " + (fb || btn.dataset.feedback || "")
+      : "Not quite. " + (fb || "Have another look at the options.");
   };
 });
 
-/* Native disclosure state keeps reference-answer labels in sync, including studios. */
-document.addEventListener("toggle", event => {
-  if (event.target.tagName !== "DETAILS") return;
-  const summary = event.target.firstElementChild;
-  if (summary?.hasAttribute("data-reference-answer")) {
-    summary.textContent = event.target.open ? "Hide reference answer" : "Show reference answer";
-  }
-}, true);
+/* Native disclosure state keeps reference-answer labels in sync, including studios.
+   Both the toggle event and the open attribute are watched, so a programmatic
+   details.open = true is reflected as well as a click. */
+(function(){
+  const sync = d => {
+    const summary = d.firstElementChild;
+    if (summary?.hasAttribute("data-reference-answer"))
+      summary.textContent = d.open ? "Hide reference answer" : "Show reference answer";
+  };
+  document.querySelectorAll("details").forEach(d => {
+    d.addEventListener("toggle", () => sync(d));
+    if ("MutationObserver" in window)
+      new MutationObserver(() => sync(d)).observe(d, {attributes: true, attributeFilter: ["open"]});
+  });
+})();

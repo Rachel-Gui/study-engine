@@ -104,6 +104,8 @@ def main():
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--engine", default="auto", choices=["auto", "edge", "gtts", "silent"])
     ap.add_argument("--voice", default=None)
+    ap.add_argument("--quality", default="4k", choices=["4k", "1440p", "1080p", "720p"],
+                    help="video resolution (default 4k = 3840x2160)")
     ap.add_argument("--out", default=os.path.join(ROOT, "site"))
     ap.add_argument("--serve", action="store_true",
                     help="serve the site on localhost and open a browser")
@@ -142,13 +144,38 @@ def main():
     if a.video:
         import render_video
         render_video.build_video(
-            episodes, os.path.join(ROOT, ".cache"),
+            episodes, course, os.path.join(ROOT, ".cache"),
             os.path.join(ROOT, "dist", "course.mp4"),
             voice=a.voice or course.get("voice", "en-GB-RyanNeural"),
-            engine=a.engine, force=a.force)
+            engine=a.engine, force=a.force, quality=a.quality)
     if a.serve:
         serve(a.out, a.port)
     print()
+
+
+def _installed_fonts():
+    """Lower-cased list of font file names / family names, or None if unknown.
+    Windows keeps fonts in two folders and has no fc-list; macOS has fc-list
+    only with Homebrew, so look at the folders directly there too."""
+    import glob, subprocess
+    names = []
+    if sys.platform.startswith("win"):
+        dirs = [os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts"),
+                os.path.join(os.environ.get("LOCALAPPDATA", ""), "Microsoft", "Windows", "Fonts")]
+    elif sys.platform == "darwin":
+        dirs = ["/Library/Fonts", os.path.expanduser("~/Library/Fonts"), "/System/Library/Fonts"]
+    else:
+        dirs = ["/usr/share/fonts", "/usr/local/share/fonts", os.path.expanduser("~/.fonts"),
+                os.path.expanduser("~/.local/share/fonts")]
+    for d in dirs:
+        if d and os.path.isdir(d):
+            names += [os.path.basename(p).lower() for p in glob.glob(os.path.join(d, "**", "*.[to]tf"), recursive=True)]
+    try:
+        names.append(subprocess.run(["fc-list"], capture_output=True, text=True,
+                                    timeout=20).stdout.lower())
+    except Exception:
+        pass
+    return " ".join(names) if names else None
 
 
 def doctor():
@@ -178,12 +205,7 @@ def doctor():
          "ships with ffmpeg - if ffmpeg is found but this is not, your PATH is stale;\n"
          "                  close and reopen the terminal")
 
-    fonts = ""
-    try:
-        fonts = subprocess.run(["fc-list"], capture_output=True, text=True,
-                               timeout=20).stdout.lower()
-    except Exception:
-        fonts = None
+    fonts = _installed_fonts()
     if fonts is None:
         print("  ?       fonts - could not check on this system.")
         print("            Montserrat and IBM Plex Mono must be installed for the")
@@ -191,7 +213,7 @@ def doctor():
     else:
         line("Montserrat font", "montserrat" in fonts,
              "download the .ttf from Google Fonts and install it (README section 4)")
-        line("IBM Plex Mono font", "plex mono" in fonts,
+        line("IBM Plex Mono font", "plexmono" in fonts or "plex mono" in fonts,
              "download the .ttf from Google Fonts and install it (README section 4)")
 
     print("  " + "-" * 60)

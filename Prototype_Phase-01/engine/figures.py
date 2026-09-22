@@ -434,3 +434,8 @@ def framework_landscape():
 
 ALL.update({"agent_anatomy": agent_anatomy, "orchestration": orchestration,
             "framework_landscape": framework_landscape})
+
+
+# Module 3 (deep learning) diagrams live in their own file to keep this one readable.
+import figures_dl
+ALL.update(figures_dl.ALL)

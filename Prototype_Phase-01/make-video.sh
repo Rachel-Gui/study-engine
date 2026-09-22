@@ -23,9 +23,10 @@ if ! python3 engine/build.py --doctor; then
 fi
 
 echo
-echo "  Step 2 of 2 - rendering. This takes a while."
+echo "  Step 2 of 2 - rendering at 4K. This takes a while."
+echo "  (quick 1080p preview:  python3 engine/build.py --video --engine edge --quality 1080p)"
 echo "  -------------------------------------------"
-if ! python3 engine/build.py --video --engine edge; then
+if ! python3 engine/build.py --video --engine edge "$@"; then
   echo
   echo "  RENDER FAILED. Read the message above - it says why."
   exit 1

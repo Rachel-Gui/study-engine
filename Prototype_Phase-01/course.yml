@@ -17,9 +17,15 @@ voice: "en-GB-RyanNeural"        # any Microsoft neural voice; `edge-tts --list-
 pyodide_url: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
 
 modules:
-  - title: "Overview"
+  - title: "Overview & Setup"
+    question: >
+      What will you be able to do by the end of this course, and what has to be
+      installed on your laptop before the first lab?
     episodes:
       - overview/0.1-learning-outcomes.md
+      - overview/0.2-setup-python.md
+      - overview/0.3-setup-ollama.md
+      - overview/0.4-setup-negotiators.md
 
   - title: "Module 1 — Generative AI"
     question: >
@@ -58,6 +64,8 @@ modules:
       - module-3/3.5-graphs-gnns.md
       - module-3/3.6-physics-informed.md
       - module-3/3.7-appliance-energy-demo.md
+      - module-3/3.8-sequences-attention.md
+      - module-3/3.9-pinn-from-scratch.md
 
   - title: "Module 4 — Agentic AI for Architectural Design"
     question: >
