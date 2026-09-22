@@ -40,3 +40,19 @@ test('print preparation preserves hidden activities and closed reference answers
   assert(!doc.querySelector('textarea[hidden]').classList.contains('print-source'));
   assert(!doc.querySelector('details').open);
 });
+
+test('print styles reveal unvisited blocks without opening hidden activity stages',()=>{
+  const dom=new JSDOM('<article><p class="rv">Below the viewport</p><fieldset class="rv" hidden>Future stage</fieldset><details class="rv"><summary>Reference</summary>Answer</details></article>');
+  const {document}=dom.window;
+  const screen=document.createElement('style');
+  screen.textContent='.rv{opacity:0;transform:translateY(12px)}';document.head.append(screen);
+  const block=document.querySelector('p');assert.equal(dom.window.getComputedStyle(block).opacity,'0');
+  // Apply only the actual print rules as a DOM-level media-emulation check.
+  const sheet=document.createElement('style');sheet.textContent=fs.readFileSync(path.join(__dirname,'../site/site.css'),'utf8');document.head.append(sheet);
+  const printRules=[...sheet.sheet.cssRules].filter(rule=>rule.media?.mediaText==='print').flatMap(rule=>[...rule.cssRules]).filter(rule=>rule.selectorText).map(rule=>rule.cssText).join('\n');sheet.remove();
+  assert(printRules);const print=document.createElement('style');print.textContent=printRules;document.head.append(print);
+  assert.equal(dom.window.getComputedStyle(block).opacity,'1');assert.equal(dom.window.getComputedStyle(block).transform,'none');
+  assert(document.querySelector('fieldset').hidden);assert(!document.querySelector('details').open);
+  assert.equal(block.className,'rv');print.remove();assert.equal(dom.window.getComputedStyle(block).opacity,'0');
+  dom.window.close();
+});

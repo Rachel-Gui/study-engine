@@ -26,10 +26,25 @@ NUMBER = re.compile(r"^\s*\d+[.)]\s+(.*)$")
 
 
 def _chunks(body):
-    """Group lines into ('p'|'ul'|'ol', [lines]) runs."""
-    out = []
+    """Group lines into ('p'|'ul'|'ol'|'code', [lines]) runs. A ``` fence opens a
+    code run that keeps its line breaks and indentation exactly."""
+    out, fence = [], False
     for line in body.split("\n"):
+        if line.strip().startswith("```"):
+            if fence:
+                fence = False
+            else:
+                fence = True; out.append(("code", []))
+            continue
+        if fence:
+            out[-1][1].append(line); continue
         if not line.strip():
+            continue
+        if line.lstrip().startswith("|"):                 # markdown table row
+            if out and out[-1][0] == "table":
+                out[-1][1].append(line)
+            else:
+                out.append(("table", [line]))
             continue
         b, n = BULLET.match(line), NUMBER.match(line)
         # an indented line continues the previous list item rather than
@@ -47,10 +62,29 @@ def _chunks(body):
     return out
 
 
+def _table(lines, esc=inline):
+    rws = []
+    for l in lines:
+        cells = [x.strip() for x in l.strip().strip("|").split("|")]
+        if all(set(x) <= set("-: ") for x in cells):     # the |---|---| separator
+            continue
+        rws.append(cells)
+    if not rws:
+        return ""
+    head = "".join(f"<th>{esc(x)}</th>" for x in rws[0])
+    body = "".join("<tr>" + "".join(f"<td>{esc(x)}</td>" for x in r) + "</tr>" for r in rws[1:])
+    return (f'<div class="tbl"><table><thead><tr>{head}</tr></thead>'
+            f'<tbody>{body}</tbody></table></div>')
+
+
 def prose_web(b):
     html_out = ""
     for kind, lines in _chunks(b["body"]):
-        if kind == "p":
+        if kind == "table":
+            html_out += _table(lines)
+        elif kind == "code":
+            html_out += f'<pre class="code"><code>{html.escape(chr(10).join(lines))}</code></pre>'
+        elif kind == "p":
             html_out += f"<p>{inline(' '.join(lines))}</p>"
         else:
             items = "".join(f"<li>{inline(l)}</li>" for l in lines)
@@ -61,7 +95,11 @@ def prose_web(b):
 def prose_frame(b):
     out = ""
     for kind, lines in _chunks(b["body"]):
-        if kind == "p":
+        if kind == "table":
+            out += _table(lines, esc=lambda x: html.escape(plain(x)))
+        elif kind == "code":
+            out += f'<pre class="f-code">{html.escape(chr(10).join(lines)[:900])}</pre>'
+        elif kind == "p":
             out += f'<p class="f-prose">{html.escape(plain(" ".join(lines)))}</p>'
         else:
             items = "".join(f"<li>{html.escape(plain(l))}</li>" for l in lines)
@@ -184,11 +222,12 @@ CMP_IC = ('<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#111" '
 
 
 def compare_web(b):
-    marks = ['<path d="M9,9 L15,15 M15,9 L9,15"/>', '<path d="M8,12.5 L11,15.5 L16,9"/>']
+    """Two (or more) options side by side. Labelled A / B by CSS - never a tick
+    or a cross, because a comparison is not a verdict."""
     return ('<div class="compare">' + "".join(
-        f'<div>{CMP_IC % marks[i % 2]}<strong>{inline(a)}</strong>'
+        f'<div><strong>{inline(a)}</strong>'
         f'<span>{inline(c)}</span><p>{inline(d)}</p></div>'
-        for i, (a, c, d) in enumerate(rows(b["body"], 3))) + "</div>")
+        for a, c, d in rows(b["body"], 3)) + "</div>")
 
 
 compare_frame = lambda b: ('<div class="f-cards">' + "".join(
@@ -259,32 +298,55 @@ refs_frame = lambda b: ('<div class="f-refs">' + " &nbsp;·&nbsp; ".join(
 #   Question text on the first line, then one option per line prefixed with "-"
 
 
-def reflect_web(b):
+def _choice(b, label, note):
     """Question on line 1, then options prefixed with '-'. Mark the correct one
-    with a leading '*' and the card gains a Check answer button."""
+    with a leading '*'. An optional '| feedback' after any option is shown when
+    that option is picked, so the student learns why, not just whether. A
+    block-level {feedback="..."} attribute is also honoured for the studios."""
+    import hashlib
     ls = [l.strip() for l in b["body"].split("\n") if l.strip()]
     if not ls:
         return ""
-    q, opts, correct = ls[0], [], -1
-    for l in ls[1:]:
+    # the question may wrap over several lines: everything before the first "-"
+    head = []
+    while ls and not ls[0].startswith("-"):
+        head.append(ls.pop(0))
+    q, opts, correct = " ".join(head), [], -1
+    for l in ls:
         if not l.startswith("-"):
             continue
         t = l[1:].strip()
         if t.startswith("*"):
             correct = len(opts); t = t[1:].strip()
-        opts.append(t)
-    name = f"r{abs(hash(q)) % 100000}"
-    o = "".join(f'<label><input type="radio" name="{name}" value="{i}">'
-                f'<span>{inline(x)}</span></label>' for i, x in enumerate(opts))
+        text, _, fb = t.partition(" | ")
+        opts.append((text.strip(), fb.strip()))
+    name = "c" + hashlib.md5(q.encode()).hexdigest()[:8]
+    o = "".join(
+        f'<label><input type="radio" name="{name}" value="{i}" '
+        f'data-fb="{html.escape(fb, quote=True)}"><span>{inline(x)}</span></label>'
+        for i, (x, fb) in enumerate(opts))
     feedback = html.escape(b["attrs"].get("feedback", ""), quote=True)
-    check = (f'<button class="chk" data-correct="{correct}" data-feedback="{feedback}">Check answer</button>'
-             f'<p class="verdict" hidden></p>') if correct >= 0 else ""
-    return (f'<div class="reflect"><p class="q">{inline(q)}</p>{o}{check}'
-            f'<textarea placeholder="Your reasoning (stays in this browser)">'
-            f'</textarea></div>')
+    check = (f'<button class="chk" data-correct="{correct}" data-feedback="{feedback}">'
+             f'Check answer</button><p class="verdict" hidden></p>') if correct >= 0 else ""
+    lbl = f'<span class="lbl">{label}</span>' if label else ""
+    return (f'<div class="reflect">{lbl}<p class="q">{inline(q)}</p>{o}{check}'
+            f'<textarea placeholder="{note}"></textarea></div>')
+
+
+def reflect_web(b):
+    return _choice(b, "", "Your reasoning (stays in this browser)")
+
+
+def predict_web(b):
+    return _choice(b, "Try / Predict", "Commit to a prediction before reading on")
+
+
+def transfer_web(b):
+    return _choice(b, "Transfer task", "Justify your method and evidence choice")
 
 
 reflect_frame = lambda b: ""        # an exercise is not a video scene
+predict_frame = transfer_frame = reflect_frame
 
 
 # ---------------------------------------------------------------------- slide
@@ -394,6 +456,75 @@ def glossarynote_web(b):
 glossarynote_frame = lambda b: ""
 
 
+# ------------------------------------------------------------------------- os
+#   Windows / macOS panes. Inside the block, a line `[windows]` or `[mac]`
+#   starts that pane; everything under it is ordinary prose (code fences ok).
+
+
+def _os_panes(body):
+    panes, cur = {"windows": [], "mac": []}, None
+    for line in body.split("\n"):
+        k = line.strip().lower()
+        if k in ("[windows]", "[win]"):
+            cur = "windows"; continue
+        if k in ("[mac]", "[macos]"):
+            cur = "mac"; continue
+        if cur:
+            panes[cur].append(line)
+    return {k: "\n".join(v) for k, v in panes.items()}
+
+
+def os_web(b):
+    p = _os_panes(b["body"])
+    return ('<div class="os"><div class="os-tabs">'
+            '<button class="os-tab" data-os="win">Windows</button>'
+            '<button class="os-tab" data-os="mac">macOS</button></div>'
+            f'<div class="os-pane" data-os="win">{prose_web({"body": p["windows"]})}</div>'
+            f'<div class="os-pane" data-os="mac" hidden>{prose_web({"body": p["mac"]})}</div></div>')
+
+
+def os_frame(b):
+    p = _os_panes(b["body"])
+    return prose_frame({"body": p["windows"]})
+
+
+# ------------------------------------------------------------ technical
+#   Technical Detail accordion: equations, code, framework specifics.
+
+
+def technical_web(b):
+    return (f'<details class="exp tech"><summary>'
+            f'<span class="tl">Technical detail</span>'
+            f'{html.escape(b["attrs"].get("summary", "Show"))}</summary>'
+            f'<div>{prose_web(b)}</div></details>')
+
+
+technical_frame = lambda b: ""
+
+
+# ------------------------------------------------------------- boundary
+#   Claim Boundary card. Rows:  Data | ...   Split | ...   Evidence | [[simulated]]
+#          Establishes | ...          Does not establish | ...
+
+
+def boundary_web(b):
+    out = ""
+    for k, v in rows(b["body"], 2):
+        key = k.strip().lower()
+        cls = ("yes" if key.startswith("establish") else
+               "no" if key.startswith("does not") or key.startswith("not ") else "")
+        out += (f'<div class="row {cls}"><span class="k">{html.escape(k)}</span>'
+                f'<span class="v">{inline(v)}</span></div>')
+    return f'<div class="bound"><span class="lbl">Claim boundary</span>{out}</div>'
+
+
+def boundary_frame(b):
+    out = "".join(f'<div><strong>{html.escape(plain(k))}</strong>'
+                  f'<span>{html.escape(plain(v))}</span></div>'
+                  for k, v in rows(b["body"], 2)[:4])
+    return f'<div class="f-cards">{out}</div>'
+
+
 # ------------------------------------------------------------------------ todo
 #   :::todo  - a visible "this section still needs work" marker. Delete the
 #   block when the section is done; it is meant to be impossible to miss.
@@ -430,6 +561,11 @@ REGISTRY = {
     "details":       (details_web, details_frame),
     "glossarynote":  (glossarynote_web, glossarynote_frame),
     "todo":          (todo_web, todo_frame),
+    "predict":       (predict_web, predict_frame),
+    "transfer":      (transfer_web, transfer_frame),
+    "os":            (os_web, os_frame),
+    "technical":     (technical_web, technical_frame),
+    "boundary":      (boundary_web, boundary_frame),
 }
 
 

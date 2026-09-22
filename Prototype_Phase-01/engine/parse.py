@@ -115,7 +115,29 @@ def inline(s, glossary=True):
                r'<a href="\2" target="_blank" rel="noopener">\1</a>', s)
     if glossary:
         s = re.sub(r"\{\{([^}]+)\}\}", _term, s)
+    s = re.sub(r"\[\[([a-z -]+)\]\]", _evidence, s)
     return re.sub(r"&amp;([#\w]+;)", r"&\1", s)      # let HTML entities through
+
+
+# The six evidence labels the course uses everywhere, and nowhere else.
+EVIDENCE = {
+    "measured":        ("measured",  "Measured"),
+    "simulated":       ("simulated", "Simulated"),
+    "model-predicted": ("predicted", "Model-predicted"),
+    "predicted":       ("predicted", "Model-predicted"),
+    "generated":       ("generated", "LLM-generated"),
+    "llm-generated":   ("generated", "LLM-generated"),
+    "retrieved":       ("retrieved", "Retrieved"),
+    "human":           ("human",     "Human judgment"),
+    "human-judged":    ("human",     "Human judgment"),
+}
+
+
+def _evidence(m):
+    hit = EVIDENCE.get(m.group(1).strip().lower())
+    if not hit:
+        return m.group(0)
+    return f'<span class="ev ev-{hit[0]}">{hit[1]}</span>'
 
 
 def _term(m):
@@ -130,6 +152,8 @@ def _term(m):
 def plain(s):
     """Strip markup - used for video frames and alt text."""
     s = re.sub(r"\{\{([^}]+)\}\}", r"\1", s)
+    s = re.sub(r"\[\[([a-z -]+)\]\]",
+               lambda m: EVIDENCE.get(m.group(1).lower(), ("", m.group(1)))[1], s)
     s = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", s)
     return re.sub(r"[*`]", "", s)
 
