@@ -917,8 +917,9 @@ ALL = {
 
 
 # Module 3 (deep learning) widgets live in their own file.
-import widgets_dl
+import widgets_dl, widgets_py
 ALL.update(widgets_dl.ALL)
+ALL.update(widgets_py.register())
 
 
 def web(name):

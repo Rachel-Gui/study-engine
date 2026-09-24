@@ -20,8 +20,9 @@ HEAD = ('<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" '
 
 
 def _t(x, y, s, size=13, anchor="middle", weight=400, style=""):
+    base = _S.replace(' fill="#111"', "") if "fill=" in style else _S   # first attribute wins in SVG
     return (f'<text x="{x}" y="{y}" font-size="{size}" text-anchor="{anchor}" '
-            f'font-weight="{weight}" {_S} stroke="none" {style}>{s}</text>')
+            f'font-weight="{weight}" {base} stroke="none" {style}>{s}</text>')
 
 
 def _grid(x0, y0, n, cell, vals=None, hi=None, hi_stroke=ACC, lw=1.1):

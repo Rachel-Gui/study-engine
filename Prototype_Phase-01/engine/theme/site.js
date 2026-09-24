@@ -107,7 +107,7 @@ window.addEventListener('afterprint',clearPrintValues);
 
 let pyodideReady = null;
 
-async function getPyodide(packages, onStatus){
+async function getPyodide(packages, onStatus, pip){
   if(!pyodideReady){
     const url = document.body.dataset.pyodide;
     onStatus("loading python…");
@@ -123,8 +123,23 @@ async function getPyodide(packages, onStatus){
     onStatus("loading " + packages.join(", ") + "…");
     await py.loadPackage(packages);
   }
+  if(pip && pip.length){
+    // pure-Python wheels vendored under assets/wheels/, installed through micropip
+    // so a lab can use seaborn without reaching PyPI (works offline once served)
+    await py.loadPackage("micropip");
+    for(const name of pip){
+      if(pipDone.has(name)) continue;
+      onStatus("installing " + name + "…");
+      const wheel = PIP_WHEELS[name] || name;
+      const url = /^https?:/.test(wheel) ? wheel : new URL(wheel, location.href).href;
+      await py.runPythonAsync(`import micropip\nawait micropip.install(${JSON.stringify(url)})`);
+      pipDone.add(name);
+    }
+  }
   return py;
 }
+const PIP_WHEELS = { seaborn: "assets/wheels/seaborn-0.13.2-py3-none-any.whl" };
+const pipDone = new Set();
 
 /* Any matplotlib figure left open after a step is captured automatically, so a
    lab can just call plt.plot(...) and the picture appears under the code. */
@@ -197,8 +212,22 @@ function pylabBlock(block){
   return el("p", "Unsupported result block.");
 }
 
+function friendlyError(text){
+  const lines = text.split("\n").filter(l => l.trim());
+  const keep = [];
+  for(let i = 0; i < lines.length; i++){
+    if(/File "<exec>"/.test(lines[i])){
+      keep.push(lines[i].replace(/^\s*File "<exec>", /, "  ").replace(", in <module>", ""));
+      if(lines[i + 1] && !/^\s*File /.test(lines[i + 1]) && !/^\w+Error|^\w+Exception/.test(lines[i + 1])) keep.push("    " + lines[i + 1].trim());
+    }
+  }
+  const last = lines[lines.length - 1] || text;
+  return "--- error ---\n" + (keep.length ? keep.join("\n") + "\n" : "") + last.replace(/^PythonError: /, "");
+}
+
 document.querySelectorAll(".pylab").forEach(lab => {
   const packages = JSON.parse(lab.dataset.packages || "[]");
+  const pip = JSON.parse(lab.dataset.pip || "[]");
   const boot  = lab.querySelector(".boot");
   const steps = [...lab.querySelectorAll(".step")];
   const original = steps.map(s => s.querySelector(".src").value);
@@ -215,11 +244,11 @@ document.querySelectorAll(".pylab").forEach(lab => {
     run.onclick = async () => {
       run.disabled = true;
       out.hidden = false;
-      out.classList.remove("has-image", "has-rich-output");
+      out.classList.remove("has-image", "has-rich-output", "has-error");
       out.textContent = "running…";
       step.querySelector(".state").textContent = "running";
       try {
-        const py = await getPyodide(packages, m => { boot.textContent = m; });
+        const py = await getPyodide(packages, m => { boot.textContent = m; }, pip);
         boot.textContent = "python ready";
         py.setStdout({ batched: t => { out.textContent += t + "\n"; } });
         out.textContent = "";
@@ -255,16 +284,21 @@ document.querySelectorAll(".pylab").forEach(lab => {
         } catch (_) { /* no matplotlib in this step */ }
         if(!out.textContent.trim() && !out.children.length) out.textContent = "(no output)";
         step.querySelector(".state").textContent = "done";
-        const next = steps[idx + 1];
-        if(next){
-          next.querySelector(".run").disabled = false;
-          next.querySelector(".state").textContent = "ready";
-        }
       } catch (err) {
-        out.textContent = String(err);
+        // keep what was printed before the error, then show the part of the
+        // traceback that belongs to the student's code, not Pyodide's internals
+        const printed = out.textContent === "running…" ? "" : out.textContent;
+        out.textContent = (printed ? printed.replace(/\n?$/, "\n") : "") + friendlyError(String(err));
+        out.classList.add("has-error");
         step.querySelector(".state").textContent = "error";
       } finally {
         run.disabled = false;
+        // the next step unlocks either way: some labs make an error on purpose
+        const next = steps[idx + 1];
+        if(next && next.querySelector(".run").disabled){
+          next.querySelector(".run").disabled = false;
+          next.querySelector(".state").textContent = "ready";
+        }
       }
     };
   });
@@ -320,3 +354,50 @@ document.querySelectorAll(".reflect .chk").forEach(btn => {
       new MutationObserver(() => sync(d)).observe(d, {attributes: true, attributeFilter: ["open"]});
   });
 })();
+
+
+/* ------------------------------------------------------------ step-through
+   :::trace blocks were run once at build time (engine/tracer.py). The page
+   replays the recording: which line is about to run, every variable, and
+   the output so far. Nothing executes in the browser. */
+document.querySelectorAll(".trace").forEach(box => {
+  let rec;
+  try { rec = JSON.parse(box.dataset.trace); } catch(e){ return; }
+  const steps = rec.steps, lines = [...box.querySelectorAll(".ln")];
+  const pos = box.querySelector(".tr-pos"), note = box.querySelector(".tr-note");
+  const tables = box.querySelector(".tr-tables"), out = box.querySelector(".tr-out pre");
+  const prev = box.querySelector(".tr-prev"), next = box.querySelector(".tr-next");
+  let k = 0;
+  const esc = t => t.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  const table = (title, rows, cls) => {
+    if(!rows.length) return `<div class="tr-frame ${cls}"><b>${title}</b><p class="tr-empty">nothing yet</p></div>`;
+    return `<div class="tr-frame ${cls}"><b>${title}</b><table>` +
+      rows.map(([n, v, t]) => `<tr><th>${esc(n)}</th><td>${esc(v)}</td><td class="ty">${esc(t)}</td></tr>`).join("") +
+      `</table></div>`;
+  };
+  function show(){
+    const s = steps[k];
+    lines.forEach(l => { l.classList.toggle("cur", +l.dataset.l === s.line && s.ev !== "end");
+                         l.classList.toggle("err", s.ev === "exception" && +l.dataset.l === s.line); });
+    tables.innerHTML = table("global frame", s.g, "g") +
+      (s.l ? table(`inside ${s.fn}()`, s.l, "l") : "");
+    out.textContent = s.out || "";
+    out.parentElement.classList.toggle("empty", !s.out);
+    pos.textContent = `step ${k + 1} of ${steps.length}`;
+    note.textContent = s.note + (rec.truncated && k === steps.length - 1 ? " (recording capped)" : "");
+    note.className = "tr-note" + (s.ev === "exception" || (s.ev === "end" && rec.error) ? " bad" : s.ev === "end" ? " done" : "");
+    prev.disabled = k === 0; next.disabled = k === steps.length - 1;
+    const cur = lines.find(l => l.classList.contains("cur"));
+    if(cur && cur.scrollIntoView) cur.scrollIntoView({block: "nearest"});
+  }
+  prev.onclick = () => { if(k > 0){ k--; show(); } };
+  next.onclick = () => { if(k < steps.length - 1){ k++; show(); } };
+  box.querySelector(".tr-end").onclick = () => { k = steps.length - 1; show(); };
+  box.querySelector(".tr-reset").onclick = () => { k = 0; show(); };
+  box.addEventListener("keydown", e => {
+    if(e.key === "ArrowRight" || e.key === " "){ e.preventDefault(); e.stopPropagation(); next.onclick(); }
+    if(e.key === "ArrowLeft"){ e.preventDefault(); e.stopPropagation(); prev.onclick(); }
+  });
+  box.tabIndex = 0;
+  show();
+});

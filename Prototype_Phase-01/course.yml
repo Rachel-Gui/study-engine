@@ -17,15 +17,19 @@ voice: "en-GB-RyanNeural"        # any Microsoft neural voice; `edge-tts --list-
 pyodide_url: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
 
 modules:
-  - title: "Overview & Setup"
+  - title: "Getting Started"
     question: >
-      What will you be able to do by the end of this course, and what has to be
-      installed on your laptop before the first lab?
+      What will you be able to do by the end of this course, what has to be
+      installed before the first lab, and how much Python do you need to begin?
     episodes:
       - overview/0.1-learning-outcomes.md
       - overview/0.2-setup-python.md
-      - overview/0.3-setup-ollama.md
-      - overview/0.4-setup-negotiators.md
+      - overview/0.3-python-1-values-and-decisions.md
+      - overview/0.4-python-2-collections-and-loops.md
+      - overview/0.5-python-3-functions-classes-libraries.md
+      - overview/0.6-exploratory-data-analysis.md
+      - overview/0.7-setup-ollama.md
+      - overview/0.8-setup-negotiators.md
 
   - title: "Module 1 — Generative AI"
     question: >
