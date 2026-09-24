@@ -37,9 +37,9 @@ That's everything you need to write and read content.
 
 > ### Am I in the right folder?
 > `run.bat` prints the folder path and a list of every episode it built, then a line
-> like `207 pages · 31 episodes · 103 video scenes`. **If it says 1 episode, you are
+> like `248 pages · 35 episodes · 107 video scenes`. **If it says 1 episode, you are
 > running an old copy.** The site footer agrees — the small grey counter under
-> *Topic k of n in this lesson* should read *… / 207*. Delete stale folders rather
+> *Topic k of n in this lesson* should read *… / 248*. Delete stale folders rather
 > than keeping them around.
 
 It builds the site and opens `http://localhost:8000`. Leave the window open; press
@@ -159,6 +159,7 @@ Every component is `:::name` … `:::`. Options go in `{braces}` on the opening 
 | `:::technical{summary="…"}` | Collapsed **Technical detail** accordion: equations, framework code |
 | `:::boundary` | **Claim boundary** card: `Data \| …`, `Split \| …`, `Evidence \| …`, `Establishes \| …`, `Does not establish \| …` |
 | `:::os` | Windows / macOS tabs — see below |
+| `:::trace{title="…"}` | A **step-through recording**: the program runs once at build time and the page replays it line by line with a variables table and output pane (Python Tutor style). See below. |
 | `:::resources` | Link cards |
 | `:::refs` | Reference list with DOIs |
 | `:::slide{src=… label=…}` | One lecture slide, labelled |
@@ -222,6 +223,39 @@ python3 --version
 
 A student picks a tab once and the site remembers it on every page. The video frame
 shows the Windows pane.
+
+### Step-through recordings
+
+```markdown
+:::trace{title="A running total"}
+areas = [12, 30, 5]
+total = 0
+for a in areas:
+    total = total + a
+print(total)
+:::
+```
+
+`engine/tracer.py` runs the program **while the site builds** (it is course content,
+not student input) and records, before every line, which line is about to run, every
+variable in the global frame and in the current function frame, and what has been
+printed. The page replays that recording with Back / Next / Run to end; nothing
+executes in the browser. Functions, classes, loops, and crashes all work — a program
+that raises shows the error as its last step, which is the point of the errors page.
+`inputs="4|3.5"` feeds `input()` calls. Recordings are capped at 300 steps. The video
+frame shows the code and the final variables.
+
+### Labs that need a library the browser Python does not ship
+
+```markdown
+:::pylab{title="seaborn" packages=numpy,pandas,matplotlib pip=seaborn}
+```
+
+`packages=` names Pyodide's own packages (numpy, pandas, scipy, matplotlib,
+scikit-learn). `pip=` names pure-Python wheels vendored under `assets/wheels/`, which
+the page installs with micropip from the site itself — no PyPI, works offline. Seaborn
+0.13.2 is the one shipped; to add another, `pip download <name> --no-deps -d
+assets/wheels` and add its file name to `PIP_WHEELS` in `engine/theme/site.js`.
 
 ### Reflect questions
 
@@ -287,7 +321,7 @@ element per figure.
 
 Interactive widgets live in `engine/widgets.py` and `engine/widgets_dl.py` and work
 the same way: each has a `web()` for the site and falls back to a static diagram in
-the video. Fourteen exist:
+the video. Sixteen exist:
 
 | Widget | Episode | What you push on |
 |---|---|---|
@@ -299,6 +333,8 @@ the video. Fourteen exist:
 | `pinn-lab` | 3.6, 3.9 | a PINN training live: collocation points, λ boundary, λ data, extrapolation |
 | `surrogate-lab` | 3.6 | a surrogate queried inside and outside its sampled range |
 | `attention-lab` | 3.8 | attention weights over 24 hours of load |
+| `slice-lab` | 0.4 | list indexing and slicing with Python's exact rules, errors included |
+| `hist-lab` | 0.6 | the 768-building dataset: bins, columns, split by orientation |
 | `regression-line-lab`, `uw-feature-lab` | 2.3, 2.6 | Everly's regression widgets |
 | `prompt-lab`, `orchestration-lab` | 4.1, 4.2 | an agent's prompt; sequential vs parallel time-to-result |
 
@@ -484,9 +520,13 @@ python engine/build.py --no-video             explicit site-only
 ```
 course.yml                    module order, instructor, glossary, Pyodide version
 content/
-  overview/                   0.1 learning outcomes · 0.2–0.4 setup guides
-                                (Python + VS Code + Colab · Ollama + Claude Code ·
-                                 the Negotiators workshop), Windows and macOS
+  overview/                   "Getting Started":
+                                0.1 learning outcomes · 0.2 Setup 1 (Python, VS Code, Colab)
+                                0.3–0.5 Python from zero, three chapters for students who
+                                  have never coded (step-through recordings, labs, quizzes)
+                                0.6 exploratory data analysis: numpy, pandas, matplotlib,
+                                  seaborn, scipy on the Energy Efficiency dataset + resources
+                                0.7 Setup 2 (Ollama, Claude Code) · 0.8 Setup 3 (Negotiators)
   module-1/                   1.1 – 1.7, generative AI (Rachel)
   module-2/                   2.1 – 2.6, machine learning fundamentals
   module-3/                   3.1 – 3.9, deep learning: neuron, learning, generalization,
@@ -494,13 +534,16 @@ content/
                                 and a PINN from scratch
   module-4/                   4.1 – 4.4, agentic AI + the Negotiators workshop
   reference/                  accuracy boundaries
-assets/                       images, slides, and assets/data/ for lab CSVs
+assets/                       images, slides, assets/data/ for lab CSVs (UW campus energy;
+                                Energy Efficiency, Tsanas & Xifara 2012, UCI/Kaggle, CC BY 4.0),
+                                assets/wheels/ for pure-Python wheels the browser labs install
 engine/                       the pipeline — nobody edits this
   build.py                      the only command
   parse.py                      markdown + :::directives → topic tree
   components.py                 each component: web() and frame()
-  figures.py  figures_dl.py     static SVG diagrams
-  widgets.py  widgets_dl.py     interactive figures
+  figures.py  figures_dl.py  figures_py.py    static SVG diagrams
+  widgets.py  widgets_dl.py  widgets_py.py    interactive figures
+  tracer.py                     runs :::trace programs at build time and records them
   generative.py                 Module 1's generative lab component
   render_web.py                 → site/
   render_video.py               → .cache/ → dist/course.mp4 (4K)

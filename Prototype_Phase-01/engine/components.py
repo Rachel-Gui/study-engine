@@ -15,7 +15,7 @@ Nothing else in the engine needs to change.
 """
 import html, json, re
 import figures, widgets
-import generative
+import generative, tracer
 from parse import inline, plain, rows
 
 # --------------------------------------------------------------------- prose
@@ -154,8 +154,9 @@ def _steps(body):
 def pylab_web(b):
     steps = _steps(b["body"])
     pkgs = [p.strip() for p in b["attrs"].get("packages", "").split(",") if p.strip()]
+    pip = [p.strip() for p in b["attrs"].get("pip", "").split(",") if p.strip()]
     title = b["attrs"].get("title", "Python lab")
-    editor_rows = max(4, min(16, int(b["attrs"].get("editor_rows", 16))))
+    editor_rows = max(4, min(30, int(b["attrs"].get("editor_rows", 24))))
     cards = ""
     for i, (name, code) in enumerate(steps, 1):
         state = "ready" if i == 1 else "locked"
@@ -164,12 +165,12 @@ def pylab_web(b):
             f'<div class="hd"><span class="num">{i}</span>'
             f'<span class="nm">{html.escape(name)}</span>'
             f'<span class="state">{state}</span></div>'
-            f'<textarea class="src" spellcheck="false" rows="{min(editor_rows, code.count(chr(10)) + 2)}">'
+            f'<textarea class="src" spellcheck="false" rows="{min(editor_rows, sum(1 + len(l) // 92 for l in code.split(chr(10))) + 1)}">'
             f'{html.escape(code)}</textarea>'
             f'<div class="act"><button class="run" {"disabled" if i > 1 else ""}>Run step</button>'
             f'<button class="rst">Reset</button></div>'
             f'<div class="out" hidden></div></div>')
-    return (f'<div class="pylab" data-packages=\'{json.dumps(pkgs)}\'>'
+    return (f'<div class="pylab" data-packages=\'{json.dumps(pkgs)}\' data-pip=\'{json.dumps(pip)}\'>'
             f'<div class="bar"><span>Browser Python</span>'
             f'<strong>{html.escape(title)}</strong>'
             f'<span class="boot">Python loads when you run step 1</span></div>'
@@ -538,6 +539,45 @@ def todo_web(b):
 todo_frame = lambda b: ""
 
 
+# ---------------------------------------------------------------------- trace
+#   :::trace{title="..." inputs="a,b"}  - a small program, run at build time and
+#   replayed line by line on the site (see tracer.py). `inputs` feeds input().
+
+
+def trace_web(b):
+    code = b["body"].strip("\n")
+    a = b["attrs"]
+    inputs = [x for x in a.get("inputs", "").split("|")] if a.get("inputs") else None
+    r = tracer.run(code, inputs)
+    lines = "".join(
+        f'<span class="ln" data-l="{i}"><i>{i}</i>{html.escape(l) or " "}</span>'
+        for i, l in enumerate(code.split("\n"), 1))
+    data = html.escape(json.dumps(r, separators=(",", ":")), quote=True)
+    return (f'<div class="trace" data-trace="{data}">'
+            f'<div class="tr-hd"><span class="k">Step through it</span>'
+            f'<strong>{html.escape(a.get("title", "How Python runs this"))}</strong>'
+            f'<span class="tr-pos"></span></div>'
+            f'<div class="tr-bd"><pre class="tr-code">{lines}</pre>'
+            f'<div class="tr-side"><div class="tr-vars"><span class="lbl">Variables</span>'
+            f'<div class="tr-tables"></div></div>'
+            f'<div class="tr-out"><span class="lbl">Output</span><pre></pre></div></div></div>'
+            f'<div class="tr-ctl"><button class="wg-btn tr-prev">&larr; Back</button>'
+            f'<button class="wg-btn primary tr-next">Next line &rarr;</button>'
+            f'<button class="wg-btn tr-end">Run to end</button>'
+            f'<button class="wg-btn tr-reset">Reset</button>'
+            f'<span class="tr-note"></span></div></div>')
+
+
+def trace_frame(b):
+    code = b["body"].strip("\n")
+    r = tracer.run(code)
+    final = r["steps"][-1]
+    rows = "".join(f'<div><strong>{html.escape(k)}</strong><span>{html.escape(v)}</span></div>'
+                   for k, v, t in final["g"][:6])
+    return (f'<pre class="f-code">{html.escape(code[:900])}</pre>'
+            f'<div class="f-cards">{rows}</div>')
+
+
 # -------------------------------------------------------------------- registry
 
 REGISTRY = {
@@ -566,6 +606,7 @@ REGISTRY = {
     "os":            (os_web, os_frame),
     "technical":     (technical_web, technical_frame),
     "boundary":      (boundary_web, boundary_frame),
+    "trace":         (trace_web, trace_frame),
 }
 
 
