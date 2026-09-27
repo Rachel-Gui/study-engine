@@ -6,9 +6,12 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {pathToFileURL}=require('node:url');
 const site=path.join(__dirname,'../site');
-const banned=/lecture slides|the (?:supplied )?lecture|the notebook|Task\s+(?:2|3|4|11|12|13)\b|\bColab\b|saved notebook output|original notebook|subplot|crop coordinates|embedded PNG|\.pptx|\.ipynb|Episode (?:1\.7|2\.3)|\bxx\b|\uFFFD/i;
-const entry=new JSDOM(fs.readFileSync(path.join(site,'1-1-central-question.html'),'utf8'));
-const topics=[...entry.window.document.querySelectorAll('nav a.tp[data-ep^="1."]')].map(a=>a.getAttribute('href'));
+const banned=/lecture slides|the (?:supplied )?lecture|the notebook|Task\s+(?:2|3|4|11|12|13)\b|\bColab\b|saved notebook output|original notebook|subplot|crop coordinates|embedded PNG|\.pptx|\.ipynb|Episode (?:1\.[1-7]|0\.\d)\b|\bxx\b|\uFFFD/i;
+// Module 2 is Generative AI; lessons 2.1-2.7 are the studio lessons this file checks
+// (2.8 and 2.9 are the LLM lesson and the local-model setup guide, which legitimately mention Colab).
+const STUDIO=new Set(['2.1','2.2','2.3','2.4','2.5','2.6','2.7']);
+const entry=new JSDOM(fs.readFileSync(path.join(site,'2-1-what-generative-ai-is.html'),'utf8'));
+const topics=[...entry.window.document.querySelectorAll('nav a.tp[data-ep^="2."]')].filter(a=>STUDIO.has(a.dataset.ep)).map(a=>a.getAttribute('href'));
 const modulePromise=import(pathToFileURL(path.join(__dirname,'../assets/generative/lab.mjs')));
 async function open(file){
   const errors=[];const vc=new VirtualConsole();
@@ -29,8 +32,8 @@ function checkCopy(doc,file){
   assert.doesNotMatch(article.textContent,/That's the one\./,file);
 }
 
-test('all 16 Module 1 topics have clean student copy and working navigation',async()=>{
-  assert.equal(topics.length,16);
+test('all 19 Generative AI studio topics have clean student copy and working navigation',async()=>{
+  assert.equal(topics.length,19);
   for(const file of topics){
     const t=await open(file);checkCopy(t.doc,file);
     for(const a of t.doc.querySelectorAll('nav a[href],footer a[href]')){const href=a.getAttribute('href');if(!/^[a-z]+:|^#/.test(href))assert(fs.existsSync(path.join(site,href)),a.href);}
@@ -60,11 +63,11 @@ test('all quizzes give explanatory feedback and native reference labels track op
     }
     assert.deepEqual(t.errors,[],file);t.w.close();
   }
-  assert.equal(quizzes,13);assert.equal(answers,20);
+  assert.equal(quizzes,14);assert.equal(answers,21);
 });
 
 test('revealed experiments retain conditions and images without exposing production metadata',async()=>{
-  const t=await open('1-4-generation-control-lab.html');
+  const t=await open('2-4-generation-control-lab.html');
   for(const stage of t.root.querySelectorAll('[data-experiment]')){
     assert(!stage.hidden);stage.querySelector('textarea').value='I expect a change in composition.';
     stage.querySelector('[data-reveal]').click();
@@ -77,11 +80,11 @@ test('revealed experiments retain conditions and images without exposing product
     stage.querySelector('[data-unlock]')?.click();
   }
   checkCopy(t.doc,'revealed controls');assert.deepEqual(t.errors,[]);t.w.close();
-  const p=await open('1-3-architectural-prompt-builder.html');
+  const p=await open('2-3-architectural-prompt-builder.html');
   const prediction=p.root.querySelector('textarea');prediction.value='The surface will change.';prediction.dispatchEvent(new p.w.Event('input',{bubbles:true}));
   p.root.querySelector('[data-generate]').click();const material=p.root.querySelector('select');material.value='Concrete';material.dispatchEvent(new p.w.Event('change',{bubbles:true}));p.root.querySelector('[data-generate]').click();
   assert.match(p.root.textContent,/PREVIOUS — Timber/);assert.match(p.root.textContent,/CURRENT — Concrete/);
   assert.match(p.root.textContent,/PNDMScheduler/);assert.match(p.root.textContent,/451f4fe16113bff5a5d2269ed5ad43b0592e9a14/);
   checkCopy(p.doc,'revealed material comparison');assert.deepEqual(p.errors,[]);p.w.close();
-  const pipeline=await open('1-6-translate-before-evaluating.html');assert.equal(pipeline.root.querySelector('textarea').placeholder,'e.g., orientation, dimensions, material properties...');pipeline.w.close();
+  const pipeline=await open('2-6-translate-before-evaluating.html');assert.equal(pipeline.root.querySelector('textarea').placeholder,'e.g., orientation, dimensions, material properties...');pipeline.w.close();
 });

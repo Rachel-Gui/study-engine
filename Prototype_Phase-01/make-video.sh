@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Renders the narrated MP4 into dist/course.mp4.
+# Renders one narrated, animated MP4 per lesson and per module into dist/video/,
+# and a narration script per video into dist/scripts/.
 # First run takes a while. After that, only changed scenes re-render.
 cd "$(dirname "$0")"
 
@@ -23,10 +24,11 @@ if ! python3 engine/build.py --doctor; then
 fi
 
 echo
-echo "  Step 2 of 2 - rendering at 4K. This takes a while."
-echo "  (quick 1080p preview:  python3 engine/build.py --video --engine edge --quality 1080p)"
+echo "  Step 2 of 2 - rendering every lesson and module video at 4K. This takes a while."
+echo "  (one lesson:  python3 engine/make_videos.py --engine edge --episode 2.8)"
+echo "  (quick 1080p preview:  python3 engine/make_videos.py --engine edge --quality 1080p)"
 echo "  -------------------------------------------"
-if ! python3 engine/build.py --video --engine edge "$@"; then
+if ! python3 engine/make_videos.py --engine edge "$@"; then
   echo
   echo "  RENDER FAILED. Read the message above - it says why."
   exit 1
@@ -34,5 +36,6 @@ fi
 
 echo
 echo "  =========================================================="
-echo "   DONE. The video is at:  $(pwd)/dist/course.mp4"
+echo "   DONE. Videos:   $(pwd)/dist/video/"
+echo "         Scripts:  $(pwd)/dist/scripts/"
 echo "  =========================================================="

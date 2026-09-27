@@ -7,7 +7,7 @@ const path=require('node:path');
 
 test('printing captures complete live editor values without altering screen state',()=>{
   const root=path.join(__dirname,'../site');
-  const dom=new JSDOM(fs.readFileSync(path.join(root,'2-6-guided-regression-workflow.html'),'utf8'),{runScripts:'outside-only'});
+  const dom=new JSDOM(fs.readFileSync(path.join(root,'6-6-guided-regression-workflow.html'),'utf8'),{runScripts:'outside-only'});
   const {window}=dom,doc=window.document;
   window.eval(fs.readFileSync(path.join(root,'site.js'),'utf8'));
   const editor=doc.querySelector('textarea'),before=editor.defaultValue;

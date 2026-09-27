@@ -25,6 +25,21 @@ function markCurrent(i){
   document.querySelectorAll("nav .e").forEach(x =>
     x.classList.toggle("open", x.dataset.ep === curE || !!st.e[x.dataset.ep]));
   (window.requestAnimationFrame || setTimeout)(() => here?.scrollIntoView?.({block:"center"}));
+  // remember where the student is, so the landing page can offer to continue
+  const LAST = "studyengine.last";
+  if(here && here.classList.contains("tp")){
+    try { localStorage.setItem(LAST, JSON.stringify({
+      href: here.getAttribute("href"), ep: here.dataset.ep, title: here.textContent })); } catch(e){}
+  }
+  if(i < 0){
+    document.querySelector("nav a.home")?.classList.add("on");
+    let last = null; try { last = JSON.parse(localStorage.getItem(LAST) || "null"); } catch(e){}
+    const r = document.getElementById("resume"), rt = document.getElementById("resume-t");
+    if(r && last && last.href){
+      r.href = last.href; if(rt) rt.textContent = (last.ep ? last.ep + " · " : "") + last.title;
+      r.hidden = false;
+    }
+  }
 }
 // clicking a lesson name follows the link; it also opens that lesson in the tree
 document.querySelectorAll("nav a.ep").forEach(a => a.addEventListener("click", () => {
@@ -401,3 +416,81 @@ document.querySelectorAll(".trace").forEach(box => {
   box.tabIndex = 0;
   show();
 });
+
+
+/* ------------------------------------------------------------------ search
+   A static index (search.json, written by the build) searched in the browser.
+   "/" focuses the box; arrows move through the hits; Enter opens the first. */
+(function(){
+  const q = document.getElementById("q"), hits = document.getElementById("hits");
+  if(!q || !hits) return;
+  let idx = null, loading = null;
+  const load = () => loading || (loading = fetch("search.json").then(r => r.json())
+                                   .then(j => { idx = j; }).catch(() => { idx = []; }));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const norm = s => String(s || "").toLowerCase();
+  const rx = w => new RegExp("(" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig");
+  function search(term){
+    const words = norm(term).split(/\s+/).filter(w => w.length > 1);
+    if(!words.length) return [];
+    const out = [];
+    for(const e of idx){
+      const t = norm(e.t), l = norm(e.l), m = norm(e.m), x = norm(e.x);
+      let score = 0, ok = true;
+      for(const w of words){
+        let sc = 0;
+        if(t.includes(w)) sc += 6;
+        if(l.includes(w)) sc += 3;
+        if(m.includes(w)) sc += 1;
+        const n = x.split(w).length - 1; if(n) sc += Math.min(n, 5);
+        if(!sc){ ok = false; break; }
+        score += sc;
+      }
+      if(ok) out.push([score + (e.k === "topic" ? 0 : 1), e]);
+    }
+    out.sort((a, b) => b[0] - a[0]);
+    return out.slice(0, 12).map(x => x[1]);
+  }
+  function snippet(e, term){
+    const words = norm(term).split(/\s+/).filter(w => w.length > 1);
+    const x = e.x || "", lx = norm(x);
+    let pos = -1;
+    for(const w of words){ pos = lx.indexOf(w); if(pos >= 0) break; }
+    let s;
+    if(pos < 0) s = esc(x.slice(0, 120) + (x.length > 120 ? "…" : ""));
+    else {
+      const a = Math.max(0, pos - 50), b = Math.min(x.length, pos + 95);
+      s = esc((a ? "…" : "") + x.slice(a, b) + (b < x.length ? "…" : ""));
+    }
+    for(const w of words) s = s.replace(rx(w), "<mark>$1</mark>");
+    return s;
+  }
+  function render(term){
+    if(!term.trim()){ hits.hidden = true; return; }
+    if(!idx){ hits.innerHTML = '<div class="h-note">Loading the index…</div>'; hits.hidden = false; return; }
+    const res = search(term);
+    hits.innerHTML = res.length
+      ? res.map(e => `<a href="${esc(e.p)}"><span class="h-c">${esc(e.m)}${e.e ? " · " + esc(e.e) + " " + esc(e.l) : ""}</span>`
+                     + `<strong>${esc(e.t)}</strong><span class="h-x">${snippet(e, term)}</span></a>`).join("")
+      : '<div class="h-note">No results for “' + esc(term) + '”</div>';
+    hits.hidden = false;
+  }
+  q.addEventListener("focus", () => load().then(() => render(q.value)));
+  q.addEventListener("input", () => load().then(() => render(q.value)));
+  q.addEventListener("keydown", e => {
+    if(e.key === "Escape"){ hits.hidden = true; q.blur(); }
+    if(e.key === "Enter"){ e.preventDefault(); const a = hits.querySelector("a"); if(a) location.href = a.getAttribute("href"); }
+    if(e.key === "ArrowDown"){ e.preventDefault(); hits.querySelector("a")?.focus(); }
+  });
+  hits.addEventListener("keydown", e => {
+    const as = [...hits.querySelectorAll("a")], i = as.indexOf(document.activeElement);
+    if(e.key === "ArrowDown"){ e.preventDefault(); as[Math.min(i + 1, as.length - 1)]?.focus(); }
+    if(e.key === "ArrowUp"){ e.preventDefault(); if(i <= 0) q.focus(); else as[i - 1].focus(); }
+    if(e.key === "Escape"){ hits.hidden = true; q.focus(); }
+  });
+  document.addEventListener("click", e => { if(!e.target.closest(".search")) hits.hidden = true; });
+  document.addEventListener("keydown", e => {
+    if(e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){ e.preventDefault(); q.focus(); q.select(); }
+  });
+  q.form?.addEventListener("submit", e => e.preventDefault());
+})();

@@ -1,5 +1,5 @@
 """render_web.py - writes the static site: one HTML page per topic."""
-import html, io, os, re, shutil
+import html, io, json, os, re, shutil
 import components
 from parse import inline
 
@@ -45,12 +45,59 @@ def build_site(course, episodes, out):
         io.open(os.path.join(out, p["path"]), "w", encoding="utf-8").write(
             _page(course, p, flat, nav))
 
+    home = {"t": _home_page(course, flat), "meta": {}, "mod": {},
+            "kind": "home", "mi": -1, "i": -1, "path": "index.html"}
+    mods = {"t": _modules_page(course, episodes, flat), "meta": {}, "mod": {},
+            "kind": "modules", "mi": -1, "i": -1, "path": "modules.html"}
     io.open(os.path.join(out, "index.html"), "w", encoding="utf-8").write(
-        _redirect(flat[0]["path"]) if flat else "<p>No content.</p>")
+        _page(course, home, flat, nav) if flat else "<p>No content.</p>")
+    io.open(os.path.join(out, "modules.html"), "w", encoding="utf-8").write(
+        _page(course, mods, flat, nav) if flat else "<p>No content.</p>")
+    io.open(os.path.join(out, "search.json"), "w", encoding="utf-8").write(
+        json.dumps(_search_index(flat), ensure_ascii=False))
+    open(os.path.join(out, ".nojekyll"), "w").close()     # GitHub Pages: serve as-is
     return flat
 
 
+def _search_index(flat):
+    """One entry per page: what the search box looks through."""
+    idx = []
+    for p in flat:
+        if p["kind"] == "module":
+            text = " ".join(str(p["mod"].get("question", "")).split())
+            idx.append({"t": p["mod"]["title"], "e": "", "l": "", "m": p["mod"].get("short") or p["mod"]["title"],
+                        "p": p["path"], "x": text, "k": "module"})
+            continue
+        meta = p["meta"]
+        if p["kind"] == "episode":
+            text = " ".join(" ".join(str(o) for o in (meta.get("objectives") or [])).split())
+            idx.append({"t": meta["title"], "e": meta["episode"], "l": meta["title"],
+                        "m": p["mod"].get("short") or p["mod"]["title"], "p": p["path"], "x": text, "k": "lesson"})
+            continue
+        body = "".join(components.render(b, "web") for b in p["t"]["blocks"])
+        body = re.sub(r"<(script|style|svg)\b.*?</\1>", " ", body, flags=re.S | re.I)
+        text = html.unescape(re.sub(r"<[^>]+>", " ", body))
+        text = re.sub(r"\s+", " ", text).strip()[:1600]
+        idx.append({"t": p["t"]["title"], "e": meta["episode"], "l": meta["title"],
+                    "m": p["mod"].get("short") or p["mod"]["title"], "p": p["path"], "x": text, "k": "topic"})
+    return idx
+
+
 # ------------------------------------------------------------ landing pages
+
+def _objectives(items, label):
+    items = [" ".join(str(x).split()) for x in (items or []) if str(x).strip()]
+    if not items:
+        return ""
+    return (f'<div class="objs"><span class="lbl">{label}</span><ol>'
+            + "".join(f"<li>{inline(x)}</li>" for x in items) + "</ol></div>")
+
+
+def _module_num(mod):
+    """'Module 3 — AI-Assisted Coding' -> '3'; anything else -> ''."""
+    m = re.match(r"\s*Module\s+(\d+)", mod.get("title", ""))
+    return m.group(1) if m else ""
+
 
 def _module_page(mod, episodes):
     eps = [(m, ts) for m, ts, md in episodes if md is mod]
@@ -64,10 +111,15 @@ def _module_page(mod, episodes):
                   f'<span class="meta">{" &middot; ".join(html.escape(str(b)) for b in bits)}'
                   f' &middot; {len(ts)} topics</span></a>')
     q = " ".join(str(mod.get("question", "")).split())
-    return {"title": mod["title"], "narration": "", "hero": True,
-            "blocks": ([{"kind": "_raw", "attrs": {},
-                         "body": f'<p class="lede">{html.escape(q)}</p>'}] if q else [])
-                      + [{"kind": "_raw", "attrs": {}, "body": f'<div class="epgrid">{cards}</div>'}]}
+    blocks = []
+    if q:
+        blocks.append({"kind": "_raw", "attrs": {}, "body": f'<p class="lede">{html.escape(q)}</p>'})
+    objs = _objectives(mod.get("objectives"), "By the end of this module you will be able to")
+    if objs:
+        blocks.append({"kind": "_raw", "attrs": {}, "body": objs})
+    blocks.append({"kind": "_raw", "attrs": {},
+                   "body": f'<span class="lbl sec">Lessons</span><div class="epgrid">{cards}</div>'})
+    return {"title": mod["title"], "narration": "", "hero": True, "blocks": blocks}
 
 
 def _episode_page(meta, topics):
@@ -75,23 +127,106 @@ def _episode_page(meta, topics):
         f'<li><a href="{slug(meta["episode"])}-{slug(t["title"])}.html">{html.escape(t["title"])}</a>'
         + ('<span class="v">narrated</span>' if t.get("narration") else "") + "</li>"
         for t in topics)
+    blocks = []
+    objs = _objectives(meta.get("objectives"), "In this lesson you will")
+    if objs:
+        blocks.append({"kind": "_raw", "attrs": {}, "body": objs})
+    blocks.append({"kind": "_raw", "attrs": {},
+                   "body": f'<span class="lbl sec">Topics</span><ol class="toclist">{items}</ol>'})
     return {"title": f'{meta["episode"]} — {meta["title"]}', "narration": "",
-            "hero": True, "blocks": [
-                {"kind": "_raw", "attrs": {}, "body": f'<ol class="toclist">{items}</ol>'}]}
+            "hero": True, "blocks": blocks}
+
+
+# one line icon per module on the landing page (24x24 viewBox, stroke only)
+_ICONS = {
+    "0": '<path d="M4 6h16M4 12h16M4 18h10"/>',
+    "1": '<path d="M8 6l-5 6 5 6M16 6l5 6-5 6M13 4l-2 16"/>',
+    "2": '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/><circle cx="12" cy="12" r="3"/>',
+    "3": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/>',
+    "4": '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 7.5l2.8 8M16 7.5l-2.8 8M8.5 6h7"/>',
+    "5": '<path d="M3 20h18M6 17V9M11 17V5M16 17v-7M21 17v-4"/>',
+    "6": '<path d="M3 20h18M3 20V4"/><circle cx="8" cy="14" r="1.3"/><circle cx="11" cy="10" r="1.3"/><circle cx="15" cy="11" r="1.3"/><circle cx="18" cy="6" r="1.3"/><path d="M5 17L20 5" stroke-dasharray="2 2"/>',
+    "7": '<circle cx="5" cy="7" r="2"/><circle cx="5" cy="17" r="2"/><circle cx="12" cy="12" r="2.5"/><circle cx="19" cy="12" r="2"/><path d="M7 8l3 3M7 16l3-3M14.5 12h2.5"/>',
+    "8": '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4M6.5 10v4M17.5 10v4M10 17.5h4"/>',
+    "ref": '<path d="M4 4h12l4 4v12H4z"/><path d="M8 12h8M8 16h8"/>',
+}
+
+
+def _icon(key):
+    return (f'<svg class="mico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" '
+            f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{_ICONS.get(key, _ICONS["ref"])}</svg>')
+
+
+def _home_page(course, flat):
+    """The landing page: the course, one button. Nothing else."""
+    ins = course["instructor"]
+    hero = (f'<div class="land-hero"><span class="eyebrow">{html.escape(course["code"])}</span>'
+            f'<span class="land-title">{html.escape(course["title"])}</span>'
+            f'<p class="tag">{html.escape(course.get("subtitle", ""))}</p>'
+            f'<div class="land-cta"><a class="btn primary" href="modules.html">Start the course</a>'
+            f'<a class="btn ghost" id="resume" href="{flat[0]["path"]}" hidden>'
+            f'Continue <span id="resume-t"></span></a></div>'
+            f'<div class="land-who"><span class="lbl">Course instructor</span>'
+            f'<b>{html.escape(ins["name"])}</b><span>{html.escape(ins["role"])} &middot; '
+            f'{html.escape(ins["dept"])}</span></div></div>')
+    return {"title": course["title"], "narration": "", "hero": True,
+            "blocks": [{"kind": "_raw", "attrs": {}, "body": hero}]}
+
+
+def _modules_page(course, episodes, flat):
+    """Every module as a block, so a student can jump straight in."""
+    mods, seen = [], []
+    for meta, topics, mod in episodes:
+        if id(mod) not in seen:
+            seen.append(id(mod)); mods.append(mod)
+    cards = ""
+    for mod in mods:
+        eps = [(m, ts) for m, ts, md in episodes if md is mod]
+        first = next(p for p in flat if p["kind"] == "module" and p["mod"] is mod)
+        num = _module_num(mod)
+        mins = sum(int(m.get("duration") or 0) for m, _ in eps)
+        q = " ".join(str(mod.get("question", "")).split())
+        short = mod.get("short") or mod["title"]
+        kind = "intro" if not num and "Introduction" in mod["title"] else ("ref" if not num else "mod")
+        lessons = "".join(f'<li><a href="{slug(m["episode"])}-index.html"><span>{html.escape(m["episode"])}</span>'
+                          f'{html.escape(m["title"])}</a></li>' for m, _ in eps)
+        cards += (f'<div class="mcard {kind}">'
+                  f'<a class="mhead" href="{first["path"]}">'
+                  f'<span class="mnum">{_icon(num or ("0" if kind == "intro" else "ref"))}'
+                  f'{("Module " + num) if num else html.escape(short)}</span>'
+                  f'<strong>{html.escape(short if num else mod["title"])}</strong>'
+                  + (f'<span class="mq">{html.escape(q)}</span>' if q else "")
+                  + f'<span class="mmeta">{len(eps)} lesson{"s" if len(eps) != 1 else ""}'
+                  + (f' &middot; ~{mins} min' if mins else "") + '</span>'
+                  f'<span class="go">Open<i>&rarr;</i></span></a>'
+                  f'<details class="mless"><summary>Lessons</summary><ul>{lessons}</ul></details></div>')
+    howto = ('<span class="lbl sec">How to use the Study Engine</span><div class="cards howto">'
+             '<div class="card"><strong>Jump in anywhere</strong><span>Open any module below. Inside a module the contents panel on the left lists every lesson and topic, and the arrows at the bottom of each page (or the &larr; &rarr; keys) walk the course in order.</span></div>'
+             '<div class="card"><strong>Run the labs</strong><span>Grey code boxes run Python in your browser: press Run step, change a number, run it again. Nothing to install.</span></div>'
+             '<div class="card"><strong>Predict before you reveal</strong><span>Try / Predict cards ask you to commit to an answer first. Every option gets feedback; the wrong ones are the useful ones.</span></div>'
+             '<div class="card"><strong>Search, or watch</strong><span>The search box at the top finds any topic, lab or term. Each lesson also has a narrated video made from the same text.</span></div>'
+             '</div>')
+    return {"title": "Modules", "narration": "", "hero": True, "blocks": [
+        {"kind": "_raw", "attrs": {}, "body": f'<p class="lede modlede">{html.escape(course.get("subtitle", ""))}</p>'},
+        {"kind": "_raw", "attrs": {}, "body": f'<div class="mgrid">{cards}</div>'},
+        {"kind": "_raw", "attrs": {}, "body": howto}]}
 
 
 # ---------------------------------------------------------------- contents
 
 def _nav(flat):
     """Modules and lessons both collapse. The chevron toggles, the name navigates."""
-    out, open_m, open_e = [], False, False
+    out, open_m, open_e = ['<a class="home" href="modules.html"><span class="mn">&#8962;</span>All modules</a>'], False, False
     for p in flat:
         if p["kind"] == "module":
             if open_e: out.append("</div></div></div>"); open_e = False
             if open_m: out.append("</div></div></div>"); open_m = False
+            num = _module_num(p["mod"])
+            label = (f'<span class="mn">{num}</span>{html.escape(p["mod"].get("short") or p["mod"]["title"])}'
+                     if num else html.escape(p["mod"].get("short") or p["mod"]["title"]))
             out.append(f'<div class="m" data-m="{p["mi"]}">'
                        f'<div class="mh"><a class="mod" data-i="{p["i"]}" data-m="{p["mi"]}" '
-                       f'href="{p["path"]}">{html.escape(p["mod"]["title"])}</a>'
+                       f'href="{p["path"]}" title="{html.escape(p["mod"]["title"])}">{label}</a>'
                        f'<button class="tg" aria-label="Expand module"></button></div>'
                        f'<div class="ml"><div class="in">')
             open_m = True
@@ -127,7 +262,9 @@ def _page(course, p, flat, nav):
                 f'{html.escape(mod["title"])}</a><span>&middot;</span>'
                 f'<a href="{slug(meta["episode"])}-index.html">{html.escape(meta["episode"])} '
                 f'&mdash; {html.escape(meta["title"])}</a>'
-                f'<span class="k">{p["k"]} of {p["nk"]}</span></div>')
+                f'<span class="k"><span class="seg">'
+                + "".join(f'<i class="{"done" if j < p["k"] else ""}{" cur" if j == p["k"] else ""}"></i>' for j in range(1, p["nk"] + 1))
+                + f'</span>{p["k"]} of {p["nk"]}</span></div>')
     elif p["kind"] == "episode":
         bits = [x for x in (meta.get("duration") and f'{meta["duration"]} min',
                             meta.get("level"), meta.get("kind")) if x]
@@ -136,17 +273,24 @@ def _page(course, p, flat, nav):
                 f'<div class="epmeta">{" &middot; ".join(html.escape(str(b)) for b in bits)}</div>')
     elif p["kind"] == "module":
         head = f'<div class="epmeta">Module</div>'
+    elif p["kind"] in ("home", "modules"):
+        head = ""
 
-    prev = flat[p["i"] - 1] if p["i"] > 0 else None
-    nxt = flat[p["i"] + 1] if p["i"] < len(flat) - 1 else None
+    all_mods = {"kind": "modules", "path": "modules.html", "t": {"title": "All modules"}, "mod": {}}
+    if p["kind"] == "home":
+        prev, nxt = None, None
+    elif p["kind"] == "modules":
+        prev, nxt = None, flat[0]
+    else:
+        prev = flat[p["i"] - 1] if p["i"] > 0 else all_mods
+        nxt = flat[p["i"] + 1] if p["i"] < len(flat) - 1 else None
     ins = course["instructor"]
     hero = " hero" if t.get("hero") else ""
 
     def btn(q, arrow_left):
         if not q:
             return f'<span class="btn off">{"&larr;" if arrow_left else "&rarr;"}</span>'
-        title = q["t"]["title"] if q["kind"] == "topic" else (
-            q["t"]["title"] if q["kind"] == "episode" else q["mod"]["title"])
+        title = q["t"]["title"] if q["kind"] in ("topic", "episode", "modules") else q["mod"]["title"]
         lab = "Previous" if arrow_left else "Next"
         inner = (f'<span class="ar">&larr;</span><span class="tx"><small>{lab}</small>'
                  f'{html.escape(title)}</span>' if arrow_left else
@@ -154,8 +298,10 @@ def _page(course, p, flat, nav):
                  f'<span class="ar">&rarr;</span>')
         return f'<a class="btn {"prev" if arrow_left else "next"}" href="{q["path"]}">{inner}</a>'
 
-    lesson_pos = (f'<span class="pos">Topic {p["k"]} of {p["nk"]} in this lesson</span>'
-                  if p["kind"] == "topic" else "")
+    body_cls = f' class="{p["kind"]}"'
+    search = ('<form class="search" role="search" autocomplete="off">'
+              '<input type="search" id="q" placeholder="Search the course" aria-label="Search the course">'
+              '<kbd>/</kbd><div id="hits" hidden></div></form>')
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -164,11 +310,12 @@ def _page(course, p, flat, nav):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300..700;1,300..500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
-</head><body data-pyodide="{course.get('pyodide_url','')}">
+</head><body{body_cls} data-pyodide="{course.get('pyodide_url','')}">
 <div class="readbar"><i id="readbar"></i></div>
 <header>
   <div><div class="code">{html.escape(course['code'])}</div>
-       <h1>{html.escape(course['title'])}</h1></div>
+       <h1><a href="index.html">{html.escape(course['title'])}</a></h1></div>
+  {search}
   <button id="navbtn" aria-label="Contents">Contents</button>
 </header>
 <main>
@@ -191,15 +338,9 @@ def _page(course, p, flat, nav):
 </main>
 <footer>
   {btn(prev, True)}
-  <span class="count">{lesson_pos}<span class="all">{p['i']+1} / {len(flat)}</span></span>
+  <span class="count"></span>
   {btn(nxt, False)}
 </footer>
 <script src="site.js"></script>
 <script>markCurrent({p['i']});</script>
 </body></html>"""
-
-
-def _redirect(to):
-    return (f'<!doctype html><meta charset="utf-8">'
-            f'<meta http-equiv="refresh" content="0;url={to}">'
-            f'<a href="{to}">Start the course</a>')

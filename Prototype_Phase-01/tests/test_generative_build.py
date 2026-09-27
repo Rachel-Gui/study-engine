@@ -32,23 +32,25 @@ class GenerativeBuild(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.course=yaml.safe_load((ROOT/'course.yml').read_text());GLOSSARY.update(cls.course['glossary'])
-        cls.modules=[m for m in cls.course['modules'] if m['title']=='Module 1 — Generative AI']
+        cls.modules=[m for m in cls.course['modules'] if m['title']=='Module 2 — Generative AI']
+        # the seven studio lessons (2.1-2.7); 2.8 and 2.9 were added after Narjes's review
+        cls.studio=[e for e in cls.modules[0]['episodes'] if e.split('/')[-1][:3] in ('2.1','2.2','2.3','2.4','2.5','2.6','2.7')]
     def test_navigation_and_all_episodes(self):
         self.assertEqual(len(self.modules),1)
-        self.assertEqual(self.course['modules'][1],self.modules[0])
-        self.assertEqual(len(self.modules[0]['episodes']),7)
+        self.assertEqual(self.course['modules'][2],self.modules[0])
+        self.assertEqual(len(self.studio),7)
         total=0
-        for file in self.modules[0]['episodes']:
+        for file in self.studio:
             meta,topics=parse_episode(ROOT/'content'/file)
             for topic in topics:
                 page=ROOT/'site'/f'{slug(meta["episode"])}-{slug(topic["title"])}.html'
-                self.assertTrue(page.is_file());self.assertIn('Module 1',page.read_text());total+=1
+                self.assertTrue(page.is_file());self.assertIn('Module 2',page.read_text());total+=1
                 for block in topic['blocks']:
                     self.assertIn(block['kind'],components.REGISTRY)
                     components.render(block,'frame')
-        self.assertEqual(total,16)
+        self.assertEqual(total,19)
     def test_local_assets_and_clean_popovers(self):
-        for path in (ROOT/'site').glob('1-*.html'):
+        for path in (ROOT/'site').glob('2-*.html'):
             page=Page(path.read_text());self.assertNotIn('{{',''.join(page.text))
             self.assertNotIn('}}',''.join(page.text))
             for tag,attrs in page.tags:
@@ -68,7 +70,7 @@ class GenerativeBuild(unittest.TestCase):
         self.assertNotIn('Do not use </script>',html)
         self.assertIn('A &gt; B',components.render({'kind':'genlab',**block},'frame'))
     def test_python_record_and_existing_agentic_lab(self):
-        for file in ('module-1/1.6-image-to-architecture.md','module-4/4.1-what-is-an-agent.md'):
+        for file in ('generative/2.6-image-to-architecture.md','agentic/4.1-what-is-an-agent.md'):
             _,topics=parse_episode(ROOT/'content'/file)
             for topic in topics:
                 for block in topic['blocks']:
@@ -76,7 +78,7 @@ class GenerativeBuild(unittest.TestCase):
                         ns={}
                         for _,code in components._steps(block['body']):
                             with contextlib.redirect_stdout(io.StringIO()):exec(code,ns)
-                        if file.startswith('module-1'):
+                        if file.startswith('generative'):
                             self.assertEqual(ns['changed'],{'seed':(100,200)})
                             self.assertEqual(ns['experiment']['current']['seed'],200)
 

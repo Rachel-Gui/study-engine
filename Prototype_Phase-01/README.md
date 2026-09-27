@@ -1,9 +1,11 @@
 # DesignAI Curriculum — Prototype, Phase 01
 
-Machine learning and deep learning for architecture, ARCH 594/508.
+**AI for Architecture**, ARCH 594/508 — generative AI, agentic AI, machine learning
+and deep learning for the built environment.
 
-**One markdown file per episode. Two outputs: an interactive site and a narrated
-video.** Change one topic, re-render one scene. Nobody writes anything twice.
+**One markdown file per lesson. Two outputs: an interactive site and narrated,
+animated videos — one per lesson and one per module.** Change one topic, re-render
+one scene. Nobody writes anything twice.
 
 > **Where this sits.** This folder is `Prototype_Phase 01/` inside the
 > **DesignAI-Curriculum** repository. It is self-contained — everything it needs is
@@ -36,11 +38,22 @@ That's everything you need to write and read content.
 **Windows:** double-click **`run.bat`**  ·  **Mac/Linux:** run **`./run.sh`**
 
 > ### Am I in the right folder?
-> `run.bat` prints the folder path and a list of every episode it built, then a line
-> like `248 pages · 35 episodes · 107 video scenes`. **If it says 1 episode, you are
+> `run.bat` prints the folder path and a list of every lesson it built, then a line
+> like `288 pages · 42 episodes · 127 video scenes`. **If it says 1 episode, you are
 > running an old copy.** The site footer agrees — the small grey counter under
-> *Topic k of n in this lesson* should read *… / 248*. Delete stale folders rather
+> *Topic k of n in this lesson* should read *… / 288*. Delete stale folders rather
 > than keeping them around.
+
+The site opens on a full-screen **landing page** (`index.html`): the course title,
+the instructor, one *Start the course* button and — once a student has read
+something — a *Continue where you left off* link. *Start* leads to the **modules
+page** (`modules.html`): a block for every module with its question, an expandable
+list of its lessons and an *Open* link, plus a short "how to use" strip. Neither
+page shows the contents panel; it appears once a module is opened, and *All modules*
+at its top goes back. Every page except the landing has a **search box** in the
+header (press `/` to focus it) that searches every topic, lab and lesson from a
+static index the build writes to `site/search.json`. The footer has only the
+Previous / Next arrows.
 
 It builds the site and opens `http://localhost:8000`. Leave the window open; press
 `Ctrl+C` when you're done. Or type it yourself:
@@ -52,6 +65,38 @@ python engine/build.py --serve
 > **Don't double-click `site/index.html`.** Most of it looks fine, which is the trap
 > — but the Python labs won't run. Pyodide fetches its WebAssembly from a CDN, and a
 > `file://` page has a null origin, so the browser blocks it. `--serve` fixes it.
+
+## Publish it as a website
+
+The built `site/` folder is a static website: no server code, so any static host
+serves it. The lab's DesignAI-Curriculum repository is private, and GitHub Pages
+only publishes private repositories on paid organisation plans, so the simplest
+route is a **public repository of your own that holds only the built site**:
+
+1. On github.com, **New repository** → name it (say `ai-for-architecture`) → **Public**
+   → tick *Add a README* → Create.
+2. Clone it with GitHub Desktop (*File → Clone repository*) to a short path such as
+   `D:\ai-for-architecture`.
+3. Repo **Settings → Pages → Build and deployment**: Source *Deploy from a branch*,
+   Branch *main*, folder */ (root)* → Save.
+4. Open `publish-site.bat` (Mac: `publish-site.sh`) in a text editor and set the
+   `SITE_REPO` line to that folder. Save.
+5. Double-click **`publish-site.bat`**. It builds the site and mirrors `site/` into the
+   website repo. Then, in GitHub Desktop with that repo selected: type a summary,
+   **Commit to main**, **Push origin**.
+6. About a minute later the site is live at `https://<your-username>.github.io/ai-for-architecture/`
+   (the exact URL is on the Settings → Pages screen). Repeat step 5 to update it.
+
+The build writes a `.nojekyll` file into `site/`, which tells GitHub Pages to serve the
+files exactly as built. The labs (Pyodide from a CDN), the fonts and the search box all
+work on Pages as they do locally. If the lab repository is ever made public, or the
+organisation is on a plan that publishes private repositories, the workflow in
+`publish-to-github-pages/` (delivered alongside this folder) does the same thing
+automatically on every push, straight from the lab repo.
+
+Alternatives that also work with a private source: Netlify Drop (drag the `site/`
+folder onto app.netlify.com/drop — instant URL, no git), or Cloudflare Pages, which
+can also put the site behind an email login for a class.
 
 ### Before a presentation
 
@@ -68,26 +113,34 @@ Two steps. That's the whole process.
 **Step 1** — create the file:
 
 ```
-content/module-3/3.10-vision-transformers.md
+content/advanced-dl/8.6-vision-transformers.md
 ```
 
 **Step 2** — add one line to `course.yml`, under the right module:
 
 ```yaml
-  - title: "Module 3 — Deep Learning for Architecture"
+  - title: "Module 8 — Advanced Deep Learning for Architecture"
+    short: "Advanced Deep Learning"
     episodes:
-      - module-3/3.9-pinn-from-scratch.md
-      - module-3/3.10-vision-transformers.md  # ← your new line
+      - advanced-dl/8.5-pinn-from-scratch.md
+      - advanced-dl/8.6-vision-transformers.md  # ← your new line
 ```
 
-The sidebar, the topic counters, the Previous/Next buttons (with the neighbouring
-topic's title), the module and episode landing pages, and the instructor block all
-generate themselves. You never edit them.
+The sidebar, the landing page, the topic counters, the Previous/Next buttons (with
+the neighbouring topic's title), the module and lesson landing pages, and the
+instructor block all generate themselves. You never edit them.
 
-**The fastest start is to copy an existing episode.** `module-3/3.6-physics-informed.md`
-uses nearly every feature (figures, two widgets, a lab, predict, technical, boundary);
-`module-2/2.2-statistics.md` is a simpler one; `overview/0.2-setup-python.md` shows
-the Windows/macOS panes and tables.
+Each module in `course.yml` has a `title`, a `short` name (used in the contents
+panel and on the landing-page cards), a `question` (the module's lede) and,
+optionally, a list of module-level `objectives` shown on its landing page. Each
+lesson carries one or two specific `objectives:` in its frontmatter (see §3); they
+appear on the lesson's landing page and are read out on its video title card.
+
+**The fastest start is to copy an existing lesson.** `advanced-dl/8.4-physics-informed.md`
+uses nearly every feature (figures, two widgets, a lab, a step-through, predict,
+technical, boundary); `ml/6.2-statistics.md` is a simpler one; `coding/1.1-setup-python.md`
+shows the Windows/macOS panes and tables; `generative/2.8-llms-and-structured-generation.md`
+is a compact concept-plus-lab lesson with objectives.
 
 ## Editing on github.com — no git needed
 
@@ -121,6 +174,18 @@ kind: Concept                        # Concept / Interactive lab / Demo / Refere
 > `episode: 3.1` — no quotes — is read by YAML as the **number** 3.1, and every
 > filename is built from it. The build stops with an error naming your file. Write
 > `episode: "3.1"`. This is the single most common way to break the build.
+
+Add one or two lesson objectives right there in the frontmatter — they are shown
+on the lesson's landing page and spoken on its video title card:
+
+```yaml
+objectives:
+  - Explain what a language model does — predict the next token, repeatedly — and why that makes its output fluent but not verified.
+  - Turn a prompt and context into a structured output and validate it before anything downstream depends on it.
+```
+
+Keep them specific to the lesson; module-wide goals belong in `course.yml` under
+the module's `objectives:`.
 
 ## Narration
 
@@ -372,39 +437,40 @@ two that catch people most:
 
 ---
 
-# 4 · Make the video
+# 4 · Make the videos
 
-The site and the video come from the same markdown. You do not write a separate
-script, and you do not re-record when something changes.
+The site and the videos come from the same markdown. You do not write a separate
+script, and you do not re-record when something changes. Since September 2026
+there is **one video per lesson and one per module** (and, optionally, one for the
+whole course), and the scenes are **animated**: content appears in time with the
+narration, the spoken sentence is shown as a caption, and a progress bar runs
+along the bottom. A separate tool, `engine/make_videos.py`, renders them and also
+writes a **narration script** for every video.
 
-## How it works
+## What a scene looks like now
 
-Every narrated topic becomes a **scene**, content-addressed:
+Every narrated topic is a scene. Its blocks — paragraphs, cards, list items, flow
+steps, code, figures — are revealed one at a time, each reveal cross-faded and
+timed to the sentence the voice is on (figures "draw" in with a wipe). Long topics
+are **paged** instead of cut off. The sentence being spoken is shown as a caption
+in the footer band, and the thin purple bar at the bottom shows how far through
+the scene you are. A lesson video opens with a title card that names the lesson
+and reads its objectives; a module video opens with the module's question.
+
+With edge-tts, the voice comes back with word timings, so captions and reveals
+are synchronised to the speech. With any other engine the words are assumed to be
+evenly spaced, which looks right in practice.
+
+Scenes are content-addressed:
 
 ```
-scene_id = sha256(quality + kind + title + narration + every block's rendered frame)[:12]
+scene_id = sha256(quality + kind + lesson + title + narration + every block's rendered frame)[:12]
 ```
 
-The course opens with a title card, and every module opens with a purple card that
-speaks the module's question. Those are scenes too.
-
-Rendered frames, audio and per-scene MP4s cache under `.cache/` by that id. Rebuild,
-and **only the scenes whose hash moved get re-rendered.**
-
-```
-$ python engine/build.py --video          # cold
-  28 rebuilt, 0 cached
-
-$ # change one sentence of narration in one topic
-$ python engine/build.py --video
-  06  REBUILT  46bfa6c8e918  Where neural networks came from
-      ...27 others cached...
-  1 rebuilt, 27 cached
-```
-
-Scene 03's audio is byte-identical to the previous run. That is what makes partial
-re-rendering possible at all: a human voice varies take to take and the splice is
-audible; a synthetic one doesn't.
+Frames (one PNG per reveal state), audio, captions and the encoded scene cache
+under `.cache/` by that id. Rebuild, and **only the scenes whose hash moved get
+re-rendered** — and a lesson video and its module video share every scene, so the
+module render after the lesson renders is just stitching.
 
 ## Setup — only on the machine that renders
 
@@ -416,7 +482,8 @@ playwright install chromium
 ```
 
 **ffmpeg** — this is a *program*, not a Python package. `pip install ffmpeg` does
-**not** work.
+**not** work. The captions need an ffmpeg built with libass, which every normal
+build (winget, Homebrew, apt) is.
 
 - Windows: `winget install Gyan.FFmpeg`
 - Mac: `brew install ffmpeg`
@@ -427,8 +494,9 @@ playwright install chromium
 > the window, open a fresh one, then run `python engine/build.py --doctor`. If it
 > still says MISSING, the install didn't land on PATH.
 
-**Fonts** — headless Chromium renders the video frames, so Montserrat and IBM Plex
-Mono must be installed *on this machine*. The web fonts in the site don't cover it.
+**Fonts** — headless Chromium renders the video frames and libass renders the
+captions, so Montserrat and IBM Plex Mono must be installed *on this machine*. The
+web fonts in the site don't cover it.
 
 ```
 mkdir -p ~/.fonts && cd ~/.fonts
@@ -445,35 +513,65 @@ On Windows, download those two `.ttf` files in a browser, select both, right-cli
 **Windows:** double-click **`make-video.bat`**  ·  **Mac/Linux:** run **`./make-video.sh`**
 
 It checks what's installed, tells you exactly what's missing and how to install it,
-and only then renders. Or do it by hand:
+and then renders every lesson video and every module video at 4K. Or do it by hand,
+one lesson or module at a time:
 
 ```
-python engine/build.py --doctor                 # what's installed?
-python engine/build.py --video --engine edge    # render, 4K
+python engine/build.py --doctor                             # what's installed?
+python engine/make_videos.py --engine edge                  # every lesson + every module, 4K
+python engine/make_videos.py --engine edge --episode 2.8    # one lesson
+python engine/make_videos.py --engine edge --module 2       # one module and its lessons
+python engine/make_videos.py --engine edge --course         # ...plus the single full-course MP4
+python engine/make_videos.py --scripts                      # only the narration scripts, no render
+python engine/make_videos.py --engine edge --quality 1080p  # a fast preview
 ```
+
+Output:
+
+```
+dist/video/2-8-llms-and-structured-generation.mp4     one per lesson
+dist/video/module-2-generative-ai.mp4                 one per module
+dist/video/course.mp4                                 with --course
+dist/scripts/2-8-llms-and-structured-generation.md    the narration script for that video
+dist/scripts/module-2-generative-ai.md                one per video
+```
+
+`python engine/build.py --video` still works — it builds the site and then runs
+`make_videos.py` for everything.
+
+### The narration scripts
+
+Every video gets a markdown script in `dist/scripts/`: a table of scenes with start
+times and lengths, and for every scene what appears on screen (in the order it is
+revealed) and the narration, sentence by sentence. Timings are estimated at 2.45
+words per second before a render and measured from the audio after one. The
+scripts are the thing to share for review before spending hours on a 4K render —
+`--scripts` writes them in a second, with no ffmpeg or voice needed.
 
 ### Resolution
 
-The video renders at **3840×2160 (4K, 16:9) by default.** The frames are laid out on
-a fixed 1280×720 canvas and rendered at three device pixels per CSS pixel, so text,
-diagrams and code scale together — enlarging the viewport would only add empty
-margin. Lower resolutions for a quick preview:
+Videos render at **3840×2160 (4K, 16:9) by default.** The frames are laid out on a
+fixed 1280×720 canvas and rendered at three device pixels per CSS pixel, so text,
+diagrams, code and captions scale together — enlarging the viewport would only add
+empty margin. Lower resolutions for a quick preview:
 
 ```
-python engine/build.py --video --engine edge --quality 1080p    # 1920×1080
-python engine/build.py --video --engine edge --quality 720p     # 1280×720
+python engine/make_videos.py --engine edge --quality 1080p    # 1920×1080
+python engine/make_videos.py --engine edge --quality 720p     # 1280×720
 ```
 
 Choices: `4k` (default), `1440p`, `1080p`, `720p`. The quality is part of the scene
-id, so a 720p preview and the 4K render cache separately and never mix. A 4K scene
-takes a few seconds longer to encode; the audio step is unchanged.
+id, so a 720p preview and the 4K render cache separately and never mix. Budget
+roughly a minute per scene at 4K on a laptop (the cross-fades are encoded at full
+resolution), a few seconds at 720p; the voice step is the same at every quality.
 
 > ### Rendering can stop partway, and that's fine
 > edge-tts uses Microsoft's free online voice service, which throttles a long run of
 > requests. If it stops at scene 19, **every scene before it is already cached** —
-> wait a minute, run `make-video` again, and it resumes from 19. The build retries
-> four times with backoff before giving up, so this is rarer than it was, but on a
-> 28-scene course it can still happen. Two or three runs and you have the whole video.
+> wait a minute, run the same command again, and it resumes from 19. The renderer
+> retries four times with backoff before giving up, so this is rarer than it was,
+> but on a 120-scene course it can still happen. Two or three runs and you have
+> everything.
 
 `--doctor` prints a checklist:
 
@@ -488,29 +586,29 @@ takes a few seconds longer to encode; the audio step is unchanged.
 
 > ### ⚠ Always pass `--engine edge`
 > Without it, a missing or offline edge-tts **silently falls back to correctly-timed
-> silence** and you get a mute video that reports success. `--engine edge` makes that
+> silence** and you get mute videos that report success. `--engine edge` makes that
 > a hard error instead.
 
 Any Microsoft neural voice works, and re-rendering the whole course in a different
 voice costs only the audio step:
 
 ```
-python engine/build.py --video --engine edge --voice en-US-AriaNeural
+python engine/make_videos.py --engine edge --voice en-US-AriaNeural
 edge-tts --list-voices | grep en-        # see them all
 ```
 
-The MP4 lands in `dist/course.mp4` and is gitignored. Send the file, or attach it to
-a GitHub Release.
+`dist/` is gitignored. Send the files, or attach them to a GitHub Release.
 
 ## All the commands
 
 ```
 python engine/build.py                        site only, about a second
 python engine/build.py --serve                site + local server + browser
-python engine/build.py --video --engine edge  site + 4K MP4
-python engine/build.py --video --engine edge --quality 1080p   faster preview
-python engine/build.py --video --force        ignore the scene cache
-python engine/build.py --no-video             explicit site-only
+python engine/build.py --video --engine edge  site + every lesson and module video, 4K
+python engine/make_videos.py --engine edge    the videos alone (see above for --episode, --module, --course)
+python engine/make_videos.py --scripts        the narration scripts alone
+python engine/make_videos.py --engine edge --quality 1080p   faster preview
+python engine/make_videos.py --engine edge --force           ignore the scene cache
 ```
 
 ---
@@ -518,38 +616,48 @@ python engine/build.py --no-video             explicit site-only
 # 5 · What's in here
 
 ```
-course.yml                    module order, instructor, glossary, Pyodide version
+course.yml                    module order, short names, questions, objectives, instructor, glossary
 content/
-  overview/                   "Getting Started":
-                                0.1 learning outcomes · 0.2 Setup 1 (Python, VS Code, Colab)
-                                0.3–0.5 Python from zero, three chapters for students who
-                                  have never coded (step-through recordings, labs, quizzes)
-                                0.6 exploratory data analysis: numpy, pandas, matplotlib,
-                                  seaborn, scipy on the Energy Efficiency dataset + resources
-                                0.7 Setup 2 (Ollama, Claude Code) · 0.8 Setup 3 (Negotiators)
-  module-1/                   1.1 – 1.7, generative AI (Rachel)
-  module-2/                   2.1 – 2.6, machine learning fundamentals
-  module-3/                   3.1 – 3.9, deep learning: neuron, learning, generalization,
-                                CNN, GNN, physics-informed, the ANN demo, sequences,
-                                and a PINN from scratch
-  module-4/                   4.1 – 4.4, agentic AI + the Negotiators workshop
-  reference/                  accuracy boundaries
+  intro/                      0.1 Course Introduction (Narjes's text goes here; a :::todo marks the draft)
+  coding/                     Module 1 · Coding Foundations: 1.1 setup (Python, VS Code, Colab);
+                                1.2–1.4 Python from zero, three chapters for students who have
+                                never coded (step-through recordings, labs, quizzes)
+  generative/                 Module 2 · Generative AI: 2.1–2.7 (Rachel's studio lessons),
+                                2.8 LLMs and structured generation, 2.9 a local model with Ollama
+  vibe-coding/                Module 3 · AI-Assisted Coding: 3.1 what changes when AI writes code,
+                                3.2 code as design medium, 3.3 Claude Code on your own model,
+                                3.4 workshop: vibe-code a design tool
+  agentic/                    Module 4 · Agentic AI: 4.1–4.3 concepts, 4.4 workshop setup,
+                                4.5 the Environmental Negotiators workshop
+  eda/                        Module 5 · Exploratory Data Analysis: numpy, pandas, matplotlib,
+                                seaborn, scipy on the Energy Efficiency dataset + resources
+  ml/                         Module 6 · Machine Learning: 6.1–6.6
+  deep-learning/              Module 7 · Deep Learning Foundations: neuron, learning,
+                                generalization, the ANN demo
+  advanced-dl/                Module 8 · Advanced Deep Learning: CNN, GNN, sequences,
+                                physics-informed + INR, a PINN from scratch
+  reference/                  9.1 accuracy boundaries
 assets/                       images, slides, assets/data/ for lab CSVs (UW campus energy;
                                 Energy Efficiency, Tsanas & Xifara 2012, UCI/Kaggle, CC BY 4.0),
-                                assets/wheels/ for pure-Python wheels the browser labs install
+                                assets/wheels/ for pure-Python wheels the browser labs install,
+                                assets/generative/ for Rachel's studio component
 engine/                       the pipeline — nobody edits this
-  build.py                      the only command
+  build.py                      the only command for the site
+  make_videos.py                the videos: one per lesson, one per module, plus narration scripts
   parse.py                      markdown + :::directives → topic tree
   components.py                 each component: web() and frame()
-  figures.py  figures_dl.py  figures_py.py    static SVG diagrams
+  figures.py  figures_dl.py  figures_py.py  figures_gen.py    static SVG diagrams
   widgets.py  widgets_dl.py  widgets_py.py    interactive figures
   tracer.py                     runs :::trace programs at build time and records them
-  generative.py                 Module 1's generative lab component
-  render_web.py                 → site/
-  render_video.py               → .cache/ → dist/course.mp4 (4K)
+  generative.py                 Module 2's generative studio component
+  render_web.py                 → site/  (landing page, module and lesson pages, topics)
+  render_video.py               → .cache/ → dist/video/*.mp4  (animated, captioned, 4K)
   theme/site.css  site.js       theme: black, white, greys, Spirit Purple, Husky Gold
+tests/                        checks for the studio component, quizzes, printing and the build
+                                (python -m pytest tests · NODE_PATH=<jsdom> node --test tests/*.cjs tests/*.mjs)
 run.bat  run.sh               build and open the site
-make-video.bat  make-video.sh  check prerequisites, then render the MP4
+publish-site.bat  publish-site.sh   build, then copy site/ into your public website repo (README section 1)
+make-video.bat  make-video.sh  check prerequisites, then render every lesson and module video
 ```
 
 ## Why the engine has two renderers
@@ -565,10 +673,11 @@ Nothing else changes.
 ## Episodes that still need work
 
 Search the site for the **Needs work** marker, or grep `:::todo` in `content/`.
-Currently: **2.1, 2.2, 2.5** are starter drafts. Module 3 is now complete to a
-first full draft (every topic narrated, a widget or lab in every episode); the
-natural next additions are a 2D PINN in 3.9 and a real facade-image lab in 3.4, both
-of which need Colab rather than the browser.
+Currently: **0.1** carries a draft Course Introduction until Narjes's text arrives;
+**6.1, 6.2, 6.5** are starter drafts. Modules 7 and 8 are complete to a first full
+draft (every topic narrated, a widget, step-through or lab in every lesson); the
+natural next additions are a 2D PINN in 8.5 and a real facade-image lab in 8.1,
+both of which need Colab rather than the browser.
 
 ---
 
@@ -586,7 +695,9 @@ of which need Colab rather than the browser.
 | `NO SPEECH` warning after `--video` | edge-tts wasn't available. `pip install edge-tts`, then re-render with `--engine edge`. |
 | Everything looks stale | Delete `site/` and rebuild. It's generated; nothing in it is precious. |
 | Only one episode shows up | You're running an old copy of the folder. Check the path `run.bat` prints. |
-| No video anywhere | The site build never makes one. Run `make-video.bat`. |
+| No video anywhere | The site build never makes one. Run `make-video.bat`, or `python engine/make_videos.py --engine edge`. |
+| Videos have no captions | Your ffmpeg was built without libass. The winget / Homebrew / apt builds have it; a minimal static build may not. |
+| A scene's text is cut off in the video | It shouldn't be — long topics are paged. If it happens, that block is taller than one frame on its own (a very long code block); split it into two `:::pylab` blocks. |
 | `WinError 2 · cannot find the file specified` | ffmpeg isn't on PATH. Install it, then **open a new terminal**. |
 | `NOT READY` from make-video | Something in the checklist is missing. It names each one and how to fix it. Nothing was rendered. |
 | Render stops partway with a TTS error | Microsoft's free voice service throttles long runs. Every scene before it is cached — wait a minute and run `make-video` again; it resumes where it stopped. |
