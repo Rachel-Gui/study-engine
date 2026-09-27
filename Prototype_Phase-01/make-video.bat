@@ -1,7 +1,8 @@
 @echo off
 setlocal
 REM ===========================================================================
-REM  Renders the narrated MP4 into dist\course.mp4
+REM  Renders one narrated, animated MP4 per lesson and per module into dist\video\,
+REM  and a narration script per video into dist\scripts\.
 REM  First run takes a while. After that, only changed scenes re-render.
 REM ===========================================================================
 cd /d "%~dp0"
@@ -16,15 +17,17 @@ python engine\build.py --doctor
 if errorlevel 1 goto :notready
 
 echo.
-echo  Step 2 of 2 - rendering at 4K. This takes a while. Leave the window open.
-echo  (for a quick 1080p preview run:  python engine\build.py --video --engine edge --quality 1080p)
+echo  Step 2 of 2 - rendering every lesson and module video at 4K. Leave the window open.
+echo  (one lesson:  python engine\make_videos.py --engine edge --episode 2.8)
+echo  (quick 1080p preview:  python engine\make_videos.py --engine edge --quality 1080p)
 echo  ------------------------------------------------------------------
-python engine\build.py --video --engine edge %*
+python engine\make_videos.py --engine edge %*
 if errorlevel 1 goto :failed
 
 echo.
 echo  ==========================================================
-echo   DONE. The video is at:  %cd%\dist\course.mp4
+echo   DONE. Videos:   %cd%\dist\video\
+echo         Scripts:  %cd%\dist\scripts\
 echo  ==========================================================
 echo.
 pause

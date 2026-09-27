@@ -181,7 +181,7 @@ CAPACITY = """
              step="16" value="256"><output>256</output></label>
       <p class="wg-hint">Each layer halves. Inputs are the 28 sensor channels plus
         three clock features. Watch how fast the parameter count climbs &mdash; and
-        remember that on the Episode 3.7 data, <strong>64-32 scored R&sup2; 0.380
+        remember that on the Episode 7.4 data, <strong>64-32 scored R&sup2; 0.380
         while 512-256-128-64 scored 0.353</strong>. Capacity is not accuracy.</p>
     </div>
     <svg viewBox="0 0 460 260" class="wg-svg" stroke="#111" fill="none" stroke-width="1.2">

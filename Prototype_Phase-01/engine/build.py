@@ -3,9 +3,13 @@
 build.py - the only command anyone runs.
 
     python engine/build.py                 site only  (fast)
-    python engine/build.py --video         site + MP4
+    python engine/build.py --video         site + one MP4 per lesson and per module
+    python engine/build.py --video --course  ... plus the single full-course MP4
     python engine/build.py --video --force ignore the scene cache
     python engine/build.py --engine edge   fail loudly if TTS is unavailable
+
+Videos can also be rendered on their own, one lesson or module at a time,
+with engine/make_videos.py - see its --help.
 
 Reads course.yml, parses every episode listed there, and hands the same topic
 tree to both renderers. Content authors never open this file.
@@ -100,7 +104,8 @@ def load_course():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--video", action="store_true")
+    ap.add_argument("--video", action="store_true", help="also render the lesson and module videos")
+    ap.add_argument("--course", action="store_true", help="with --video: also the single full-course MP4")
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--engine", default="auto", choices=["auto", "edge", "gtts", "silent"])
     ap.add_argument("--voice", default=None)
@@ -142,12 +147,11 @@ def main():
               "      the top of this output.")
 
     if a.video:
-        import render_video
-        render_video.build_video(
-            episodes, course, os.path.join(ROOT, ".cache"),
-            os.path.join(ROOT, "dist", "course.mp4"),
-            voice=a.voice or course.get("voice", "en-GB-RyanNeural"),
-            engine=a.engine, force=a.force, quality=a.quality)
+        import make_videos
+        make_videos.main(["--quality", a.quality, "--engine", a.engine]
+                         + (["--force"] if a.force else [])
+                         + (["--voice", a.voice] if a.voice else [])
+                         + (["--course"] if a.course else []))
     if a.serve:
         serve(a.out, a.port)
     print()
@@ -217,7 +221,7 @@ def doctor():
              "download the .ttf from Google Fonts and install it (README section 4)")
 
     print("  " + "-" * 60)
-    print("  Everything is ready. Run:  python engine/build.py --video --engine edge\n"
+    print("  Everything is ready. Run:  python engine/make_videos.py --engine edge\n"
           if ok else
           "  Install what is missing above, then run this check again.\n")
     return 0 if ok else 1

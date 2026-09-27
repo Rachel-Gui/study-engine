@@ -123,9 +123,18 @@ def keyidea_frame(b):
 # -------------------------------------------------------------------- figure
 
 
+_TEXT_OPACITY = re.compile(r'(<text\b[^>]*?\bopacity=")(0?\.\d+)(")')
+
+
+def _legible(svg):
+    """Readability pass on figure text: secondary labels drawn at low opacity are
+    lifted to at least .78 so they read on a projector. Shapes are untouched."""
+    return _TEXT_OPACITY.sub(lambda m: m.group(1) + (m.group(2) if float(m.group(2)) >= .78 else ".78") + m.group(3), svg)
+
+
 def _svg(b):
     fn = figures.ALL.get(b["attrs"].get("id", ""))
-    return fn() if fn else ""
+    return _legible(fn()) if fn else ""
 
 
 def figure_web(b):

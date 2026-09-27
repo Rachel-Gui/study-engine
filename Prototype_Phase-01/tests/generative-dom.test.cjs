@@ -20,7 +20,7 @@ async function open(slug){
 }
 
 test('diffusion requires prediction, enables slider and reveals explanation after interaction',async()=>{
-  const t=await open('1-2-diffusion-playground.html');
+  const t=await open('2-2-diffusion-playground.html');
   t.click('[data-start]');assert(t.$('[data-denoise]').disabled);
   t.change('textarea','Structure will emerge before fine detail.');t.click('[data-start]');assert(!t.$('[data-denoise]').disabled);
   t.change('[data-denoise]',15);assert.equal(t.$('canvas').style.opacity,'0.5');assert(!t.$('[data-explanation]').hidden);
@@ -28,7 +28,7 @@ test('diffusion requires prediction, enables slider and reveals explanation afte
 });
 
 test('prompt edits and rejected tests preserve successful comparison pair',async()=>{
-  const t=await open('1-3-architectural-prompt-builder.html');t.click('[data-generate]');assert.equal(t.$('[data-comparison]').innerHTML,'');
+  const t=await open('2-3-architectural-prompt-builder.html');t.click('[data-generate]');assert.equal(t.$('[data-comparison]').innerHTML,'');
   t.change('[data-note=expectedChange]','A timber pavilion.');t.click('[data-generate]');
   const first=t.$('[data-comparison]').innerHTML;assert(!first.includes('PREVIOUS GENERATION'));
   t.change('[data-setting=material]','Concrete','change');assert.equal(t.$('[data-comparison]').innerHTML,first);
@@ -45,7 +45,7 @@ test('prompt edits and rejected tests preserve successful comparison pair',async
 });
 
 test('real notebook experiments unlock progressively and retain earlier outputs and predictions',async()=>{
-  const t=await open('1-4-generation-control-lab.html');
+  const t=await open('2-4-generation-control-lab.html');
   const stages=[...t.root.querySelectorAll('[data-experiment]')];
   assert(stages[1].hidden);
   for(let i=0;i<stages.length;i++){
@@ -68,9 +68,9 @@ test('real notebook experiments unlock progressively and retain earlier outputs 
 });
 
 test('critic and pipeline require observation before revealing reasoning',async()=>{
-  const c=await open('1-5-architectural-ai-critic.html');c.click('[data-critique-reveal]');assert(c.$('[data-critique-output]').hidden);
+  const c=await open('2-5-architectural-ai-critic.html');c.click('[data-critique-reveal]');assert(c.$('[data-critique-output]').hidden);
   c.change('textarea','The cantilever is attractive, but its support is unclear.');c.$('[data-critique]').checked=true;c.click('[data-critique-reveal]');assert(!c.$('[data-critique-output]').hidden);assert.match(c.$('[data-critique-output]').textContent,/You flagged/);
-  const p=await open('1-6-translate-before-evaluating.html');p.click('[data-start]');assert(p.$('[data-pipeline-step]').disabled);
+  const p=await open('2-6-translate-before-evaluating.html');p.click('[data-start]');assert(p.$('[data-pipeline-step]').disabled);
   p.change('textarea','Dimensions and thermal properties');p.click('[data-start]');
   const buttons=[...p.root.querySelectorAll('[data-pipeline-step]')];
   buttons.forEach((button,i)=>{assert(!button.disabled);button.click();assert.equal(button.getAttribute('aria-pressed'),'true');if(i<6)assert(!buttons[i+1].disabled);});
@@ -78,7 +78,7 @@ test('critic and pipeline require observation before revealing reasoning',async(
 });
 
 test('eight-stage workflow retains inputs, exact one-change history and downloadable record',async()=>{
-  const t=await open('1-7-one-experiment-from-intent-to-evaluation.html');
+  const t=await open('2-7-one-experiment-from-intent-to-evaluation.html');
   const visible=()=>[...t.root.querySelectorAll('[data-stage]')].filter(el=>!el.hidden).map(el=>+el.dataset.stage);
   t.click('[data-next]');assert.deepEqual(visible(),[0]);
   t.change('[data-note=designIntent]','A neighborhood library');t.click('[data-next]');assert.deepEqual(visible(),[1]);
@@ -105,14 +105,14 @@ test('eight-stage workflow retains inputs, exact one-change history and download
 });
 
 test('new form keyboard events do not trigger page navigation',async()=>{
-  const t=await open('1-3-architectural-prompt-builder.html');let bubbled=false;
+  const t=await open('2-3-architectural-prompt-builder.html');let bubbled=false;
   t.dom.window.document.addEventListener('keydown',()=>{bubbled=true;});
   t.$('select').dispatchEvent(new t.dom.window.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
   assert.equal(bubbled,false);
 });
 
-test('existing Episode 2.3 observation, residual, drag, refit and reset still work',()=>{
-  const html=fs.readFileSync(path.join(site,'2-3-how-linear-regression-works.html'),'utf8').replace(/<script>markCurrent\(\d+\);<\/script>/,'');
+test('existing Episode 6.3 observation, residual, drag, refit and reset still work',()=>{
+  const html=fs.readFileSync(path.join(site,'6-3-how-linear-regression-works.html'),'utf8').replace(/<script>markCurrent\(\d+\);<\/script>/,'');
   const dom=new JSDOM(html,{runScripts:'dangerously'}),doc=dom.window.document;
   const root=doc.querySelector('[data-feedback]').closest('.wg');
   const $=s=>root.querySelector(s),svg=$('svg');

@@ -9,7 +9,7 @@ const script=fs.readFileSync(path.join(site,'site.js'),'utf8');
 
 test('trace controls replay recordings and keep arrow keys within the activity',()=>{
   let count=0;
-  for(const file of fs.readdirSync(site).filter(n=>/^0-[345]-.*\.html$/.test(n))){
+  for(const file of fs.readdirSync(site).filter(n=>/^1-[234]-.*\.html$/.test(n))){
     const html=fs.readFileSync(path.join(site,file),'utf8');
     if(!html.includes('class="trace"'))continue;
     const dom=new JSDOM(html,{runScripts:'outside-only',url:'http://localhost/'+file});
@@ -38,8 +38,8 @@ test('trace controls replay recordings and keep arrow keys within the activity',
 });
 
 test('a corrected Python step clears its previous error styling and preserves teaching-error progression',async()=>{
-  const html=fs.readFileSync(path.join(site,'0-3-your-first-program.html'),'utf8');
-  const dom=new JSDOM(html,{runScripts:'outside-only',url:'http://localhost/0-3-your-first-program.html'});
+  const html=fs.readFileSync(path.join(site,'1-2-your-first-program.html'),'utf8');
+  const dom=new JSDOM(html,{runScripts:'outside-only',url:'http://localhost/1-2-your-first-program.html'});
   try{
     const w=dom.window,d=w.document;
     let fail=true;

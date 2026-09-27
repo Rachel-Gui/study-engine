@@ -51,7 +51,7 @@ GRADIENT_LAB = r"""
   <p class="wg-note">The long axis of the bowl is the badly scaled feature. One learning
     rate has to serve both axes: small enough not to overshoot the narrow one, which
     makes it slow along the wide one. Standardise the features and the problem goes
-    away &mdash; that is why Episode 3.7 scales its inputs before training.</p>
+    away &mdash; that is why Episode 7.4 scales its inputs before training.</p>
 </div>
 <script>(function(){
   const $ = i => document.getElementById(i);

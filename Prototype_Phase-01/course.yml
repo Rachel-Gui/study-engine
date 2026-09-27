@@ -3,7 +3,8 @@
 # Everything else lives in its own file, so two people rarely touch the same one.
 # ─────────────────────────────────────────────────────────────────────────────
 code:  "ARCH 594/508 · AI Seminar & Studio"
-title: "Machine Learning and Deep Learning for Architecture"
+title: "AI for Architecture"
+subtitle: "Generative AI, agentic AI, machine learning and deep learning for the built environment"
 
 instructor:
   name:  "Narjes Abbasabadi, Ph.D."
@@ -17,71 +18,120 @@ voice: "en-GB-RyanNeural"        # any Microsoft neural voice; `edge-tts --list-
 pyodide_url: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
 
 modules:
-  - title: "Getting Started"
+  - title: "Course Introduction"
+    short: "Introduction"
     question: >
-      What will you be able to do by the end of this course, what has to be
-      installed before the first lab, and how much Python do you need to begin?
+      What is this course about, what will you be able to do, and how do the
+      modules connect?
     episodes:
-      - overview/0.1-learning-outcomes.md
-      - overview/0.2-setup-python.md
-      - overview/0.3-python-1-values-and-decisions.md
-      - overview/0.4-python-2-collections-and-loops.md
-      - overview/0.5-python-3-functions-classes-libraries.md
-      - overview/0.6-exploratory-data-analysis.md
-      - overview/0.7-setup-ollama.md
-      - overview/0.8-setup-negotiators.md
+      - intro/0.1-course-introduction.md
 
-  - title: "Module 1 — Generative AI"
+  - title: "Module 1 — Coding Foundations"
+    short: "Coding Foundations"
+    question: >
+      How does a laptop that has never run Python become a working setup, and how
+      does someone who has never coded learn to read and write the Python this
+      course uses?
+    episodes:
+      - coding/1.1-setup-python.md
+      - coding/1.2-python-1-values-and-decisions.md
+      - coding/1.3-python-2-collections-and-loops.md
+      - coding/1.4-python-3-functions-classes-libraries.md
+
+  - title: "Module 2 — Generative AI"
+    short: "Generative AI"
     question: >
       How can generative AI help architects explore design possibilities while
       maintaining meaningful control and architectural judgment?
+    objectives:
+      - Define generative AI on its own terms and explain what "generate" means as sampling under a condition.
+      - Distinguish the major generative model approaches — GANs, VAEs, diffusion, autoregressive/transformer models — and multimodal systems that work across them.
+      - Construct a structured architectural prompt and explain why one changed term can affect several visual qualities.
+      - Experiment with the control hierarchy — prompt, settings and seed, reference conditioning, structural control, explicit constraints — and compare generations systematically.
+      - Distinguish visual plausibility from architectural validity, and say which structured information is needed before simulation or evaluation.
+      - Use a language model for text and structured output, and state where human judgment and verification remain necessary.
     episodes:
-      - module-1/1.1-generative-possibilities.md
-      - module-1/1.2-noise-to-design.md
-      - module-1/1.3-prompting-as-design.md
-      - module-1/1.4-control-the-generator.md
-      - module-1/1.5-architectural-judgment.md
-      - module-1/1.6-image-to-architecture.md
-      - module-1/1.7-guided-design-workflow.md
+      - generative/2.1-generative-possibilities.md
+      - generative/2.2-noise-to-design.md
+      - generative/2.3-prompting-as-design.md
+      - generative/2.4-control-the-generator.md
+      - generative/2.5-architectural-judgment.md
+      - generative/2.6-image-to-architecture.md
+      - generative/2.7-guided-design-workflow.md
+      - generative/2.8-llms-and-structured-generation.md
+      - generative/2.9-run-a-model-locally.md
 
-  - title: "Module 2 — Machine Learning Fundamentals"
+  - title: "Module 3 — AI-Assisted Coding"
+    short: "AI-Assisted Coding"
     question: >
-      How can an architectural question be turned into features, a target, and a
-      model that is evaluated on data it has never seen?
+      When a language model writes the code, what is left for the architect to do —
+      and why is that the part that matters?
     episodes:
-      - module-2/2.1-ml-types.md
-      - module-2/2.2-statistics.md
-      - module-2/2.3-regression.md
-      - module-2/2.4-classification.md
-      - module-2/2.5-generalization.md
-      - module-2/2.6-uw-energy-demo.md
+      - vibe-coding/3.1-what-changes-when-ai-writes-code.md
+      - vibe-coding/3.2-code-as-design-medium.md
+      - vibe-coding/3.3-claude-code-on-your-own-model.md
+      - vibe-coding/3.4-workshop-vibe-code-a-design-tool.md
 
-  - title: "Module 3 — Deep Learning for Architecture"
-    question: >
-      How can different deep-learning architectures process tabular data, images,
-      graphs, sequences, coordinates, and physical systems?
-    episodes:
-      - module-3/3.1-neuron.md
-      - module-3/3.2-how-networks-learn.md
-      - module-3/3.3-generalization.md
-      - module-3/3.4-cnn.md
-      - module-3/3.5-graphs-gnns.md
-      - module-3/3.6-physics-informed.md
-      - module-3/3.7-appliance-energy-demo.md
-      - module-3/3.8-sequences-attention.md
-      - module-3/3.9-pinn-from-scratch.md
-
-  - title: "Module 4 — Agentic AI for Architectural Design"
+  - title: "Module 4 — Agentic AI"
+    short: "Agentic AI"
     question: >
       What is an AI agent, concretely, and how do several of them get orchestrated
       into a system that surfaces real design tradeoffs?
     episodes:
-      - module-4/4.1-what-is-an-agent.md
-      - module-4/4.2-orchestration.md
-      - module-4/4.3-frameworks.md
-      - module-4/4.4-negotiators-workshop.md
+      - agentic/4.1-what-is-an-agent.md
+      - agentic/4.2-orchestration.md
+      - agentic/4.3-frameworks.md
+      - agentic/4.4-setup-negotiators.md
+      - agentic/4.5-negotiators-workshop.md
+
+  - title: "Module 5 — Exploratory Data Analysis"
+    short: "Exploratory Data Analysis"
+    question: >
+      What does a dataset look like before any model touches it, and what can looking
+      establish on its own?
+    episodes:
+      - eda/5.1-looking-before-modelling.md
+      - eda/5.2-seeing-the-data.md
+      - eda/5.3-putting-numbers-on-it.md
+
+  - title: "Module 6 — Machine Learning"
+    short: "Machine Learning"
+    question: >
+      How can an architectural question be turned into features, a target, and a
+      model that is evaluated on data it has never seen?
+    episodes:
+      - ml/6.1-ml-types.md
+      - ml/6.2-statistics.md
+      - ml/6.3-regression.md
+      - ml/6.4-classification.md
+      - ml/6.5-generalization.md
+      - ml/6.6-uw-energy-demo.md
+
+  - title: "Module 7 — Deep Learning Foundations"
+    short: "Deep Learning Foundations"
+    question: >
+      How does a network of simple units learn a relationship no formula captures,
+      and how do you know whether it learned or memorised?
+    episodes:
+      - deep-learning/7.1-neuron.md
+      - deep-learning/7.2-how-networks-learn.md
+      - deep-learning/7.3-generalization.md
+      - deep-learning/7.4-appliance-energy-demo.md
+
+  - title: "Module 8 — Advanced Deep Learning for Architecture"
+    short: "Advanced Deep Learning"
+    question: >
+      How can different deep-learning architectures process images, graphs,
+      sequences, coordinates, and physical systems?
+    episodes:
+      - advanced-dl/8.1-cnn.md
+      - advanced-dl/8.2-graphs-gnns.md
+      - advanced-dl/8.3-sequences-attention.md
+      - advanced-dl/8.4-physics-informed.md
+      - advanced-dl/8.5-pinn-from-scratch.md
 
   - title: "Reference"
+    short: "Reference"
     episodes:
       - reference/9.1-accuracy-boundaries.md
 
