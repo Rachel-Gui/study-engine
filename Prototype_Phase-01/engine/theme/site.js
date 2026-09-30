@@ -32,7 +32,8 @@ function markCurrent(i){
       href: here.getAttribute("href"), ep: here.dataset.ep, title: here.textContent })); } catch(e){}
   }
   if(i < 0){
-    document.querySelector("nav a.home")?.classList.add("on");
+    const home = document.body.classList.contains("readings") ? "readings.html" : "modules.html";
+    document.querySelector(`nav a.home[href="${home}"]`)?.classList.add("on");
     let last = null; try { last = JSON.parse(localStorage.getItem(LAST) || "null"); } catch(e){}
     const r = document.getElementById("resume"), rt = document.getElementById("resume-t");
     if(r && last && last.href){
@@ -424,7 +425,8 @@ document.querySelectorAll(".trace").forEach(box => {
 (function(){
   const q = document.getElementById("q"), hits = document.getElementById("hits");
   if(!q || !hits) return;
-  let idx = null, loading = null;
+  let idx = null, loading = null, request = 0;
+  function dismiss(){ request++; hits.hidden = true; }
   const load = () => loading || (loading = fetch("search.json").then(r => r.json())
                                    .then(j => { idx = j; }).catch(() => { idx = []; }));
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -466,7 +468,7 @@ document.querySelectorAll(".trace").forEach(box => {
     return s;
   }
   function render(term){
-    if(!term.trim()){ hits.hidden = true; return; }
+    if(!term.trim()){ hits.replaceChildren(); hits.hidden = true; return; }
     if(!idx){ hits.innerHTML = '<div class="h-note">Loading the index…</div>'; hits.hidden = false; return; }
     const res = search(term);
     hits.innerHTML = res.length
@@ -475,20 +477,25 @@ document.querySelectorAll(".trace").forEach(box => {
       : '<div class="h-note">No results for “' + esc(term) + '”</div>';
     hits.hidden = false;
   }
-  q.addEventListener("focus", () => load().then(() => render(q.value)));
-  q.addEventListener("input", () => load().then(() => render(q.value)));
+  function refresh(){
+    const current = ++request;
+    render(q.value);
+    load().then(() => { if(current === request) render(q.value); });
+  }
+  q.addEventListener("focus", refresh);
+  q.addEventListener("input", refresh);
   q.addEventListener("keydown", e => {
-    if(e.key === "Escape"){ hits.hidden = true; q.blur(); }
-    if(e.key === "Enter"){ e.preventDefault(); const a = hits.querySelector("a"); if(a) location.href = a.getAttribute("href"); }
-    if(e.key === "ArrowDown"){ e.preventDefault(); hits.querySelector("a")?.focus(); }
+    if(e.key === "Escape"){ dismiss(); q.blur(); }
+    if(e.key === "Enter"){ e.preventDefault(); const a = !hits.hidden && q.value.trim() && hits.querySelector("a"); if(a) location.href = a.getAttribute("href"); }
+    if(e.key === "ArrowDown"){ e.preventDefault(); if(!hits.hidden) hits.querySelector("a")?.focus(); }
   });
   hits.addEventListener("keydown", e => {
     const as = [...hits.querySelectorAll("a")], i = as.indexOf(document.activeElement);
     if(e.key === "ArrowDown"){ e.preventDefault(); as[Math.min(i + 1, as.length - 1)]?.focus(); }
     if(e.key === "ArrowUp"){ e.preventDefault(); if(i <= 0) q.focus(); else as[i - 1].focus(); }
-    if(e.key === "Escape"){ hits.hidden = true; q.focus(); }
+    if(e.key === "Escape"){ q.focus(); dismiss(); }
   });
-  document.addEventListener("click", e => { if(!e.target.closest(".search")) hits.hidden = true; });
+  document.addEventListener("click", e => { if(!e.target.closest(".search")) dismiss(); });
   document.addEventListener("keydown", e => {
     if(e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){ e.preventDefault(); q.focus(); q.select(); }
   });

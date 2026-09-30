@@ -1,6 +1,6 @@
 """render_web.py - writes the static site: one HTML page per topic."""
 import html, io, json, os, re, shutil
-import components
+import components, figures_lit
 from parse import inline
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -16,8 +16,12 @@ def build_site(course, episodes, out):
     for old in os.listdir(out):                      # stale pages from a previous
         if old.endswith(".html"):                    # numbering must not survive
             os.remove(os.path.join(out, old))
-    for f in ("site.css", "site.js"):
-        shutil.copy(os.path.join(HERE, "theme", f), os.path.join(out, f))
+    shutil.copy(os.path.join(HERE, "theme", "site.js"), os.path.join(out, "site.js"))
+    import screens
+    with open(os.path.join(HERE, "theme", "site.css"), encoding="utf-8") as f:
+        css = f.read()
+    with open(os.path.join(out, "site.css"), "w", encoding="utf-8") as f:   # the screen mock-ups share their CSS with the video
+        f.write(css + "\n/* ---- software environment mock-ups (engine/screens.py) ---- */\n" + screens.CSS + "\n")
     assets = os.path.normpath(os.path.join(HERE, "..", "assets"))
     if os.path.isdir(assets):
         shutil.copytree(assets, os.path.join(out, "assets"), dirs_exist_ok=True)
@@ -53,6 +57,9 @@ def build_site(course, episodes, out):
         _page(course, home, flat, nav) if flat else "<p>No content.</p>")
     io.open(os.path.join(out, "modules.html"), "w", encoding="utf-8").write(
         _page(course, mods, flat, nav) if flat else "<p>No content.</p>")
+    rd = {"t": _readings_page(course), "meta": {}, "mod": {}, "kind": "readings", "mi": -1, "i": -1, "path": "readings.html"}
+    io.open(os.path.join(out, "readings.html"), "w", encoding="utf-8").write(
+        _page(course, rd, flat, nav) if flat else "<p>No content.</p>")
     io.open(os.path.join(out, "search.json"), "w", encoding="utf-8").write(
         json.dumps(_search_index(flat), ensure_ascii=False))
     open(os.path.join(out, ".nojekyll"), "w").close()     # GitHub Pages: serve as-is
@@ -99,6 +106,29 @@ def _module_num(mod):
     return m.group(1) if m else ""
 
 
+def _readings_html(items, label="Selected readings", intro=""):
+    """course.yml `readings:` entries (cite, title, venue, doi, why, access) as a reading list."""
+    if not items:
+        return ""
+    lis = ""
+    for r in items:
+        doi = str(r.get("doi", "")).strip()
+        url = r.get("url") or (f"https://doi.org/{doi}" if doi else "")
+        link = f'<a href="{html.escape(url)}" target="_blank" rel="noopener">{html.escape(url.split("//")[-1])}</a>' if url else ""
+        access = f'<span class="acc">{html.escape(str(r["access"]))}</span>' if r.get("access") else ""
+        lis += (f'<li><span class="c">{html.escape(str(r.get("cite", "")))}</span> '
+                f'<span class="t">{inline(str(r.get("title", "")))}.</span> <span class="v">{inline(str(r.get("venue", "")))}.</span> {link} {access}'
+                + (f'<p>{inline(str(r["why"]))}</p>' if r.get("why") else "") + "</li>")
+    return (f'<div class="readings"><div class="lbl">{html.escape(label)}</div>'
+            + (f'<p class="intro">{inline(intro)}</p>' if intro else "") + f'<ol>{lis}</ol></div>')
+
+
+def _module_art(mod):
+    num = _module_num(mod)
+    key = f"m{num}" if num else ("intro" if "Introduction" in mod.get("title", "") else "ref")
+    return figures_lit.ART.get(key, "")
+
+
 def _module_page(mod, episodes):
     eps = [(m, ts) for m, ts, md in episodes if md is mod]
     cards = ""
@@ -112,6 +142,9 @@ def _module_page(mod, episodes):
                   f' &middot; {len(ts)} topics</span></a>')
     q = " ".join(str(mod.get("question", "")).split())
     blocks = []
+    art = _module_art(mod)
+    if art:
+        blocks.append({"kind": "_raw", "attrs": {}, "body": f'<div class="mpic">{art}</div>'})
     if q:
         blocks.append({"kind": "_raw", "attrs": {}, "body": f'<p class="lede">{html.escape(q)}</p>'})
     objs = _objectives(mod.get("objectives"), "By the end of this module you will be able to")
@@ -119,7 +152,25 @@ def _module_page(mod, episodes):
         blocks.append({"kind": "_raw", "attrs": {}, "body": objs})
     blocks.append({"kind": "_raw", "attrs": {},
                    "body": f'<span class="lbl sec">Lessons</span><div class="epgrid">{cards}</div>'})
+    rd = _readings_html(mod.get("readings"), "Selected readings",
+                        "Recent, peer-reviewed reviews the module's definitions and diagrams were checked against. "
+                        "Read the ones marked as core; the rest are where to go next. Subscription papers are available through UW Libraries.")
+    if rd:
+        blocks.append({"kind": "_raw", "attrs": {}, "body": rd})
     return {"title": mod["title"], "narration": "", "hero": True, "blocks": blocks}
+
+
+def _readings_page(course):
+    """readings.html - every module's selected readings on one page."""
+    body = ('<p class="lede">The peer-reviewed reviews and surveys behind the course, module by module. '
+            'Each module page carries the same list next to its lessons; citation details and DOIs were verified in September 2026.</p>')
+    for mod in course["modules"]:
+        items = mod.get("readings")
+        if not items:
+            continue
+        body += f'<h3 class="rdhead">{html.escape(mod["title"])}</h3>' + _readings_html(items, "Selected readings")
+    return {"title": "Selected readings", "narration": "", "hero": True,
+            "blocks": [{"kind": "_raw", "attrs": {}, "body": body}]}
 
 
 def _episode_page(meta, topics):
@@ -192,6 +243,7 @@ def _modules_page(course, episodes, flat):
                           f'{html.escape(m["title"])}</a></li>' for m, _ in eps)
         cards += (f'<div class="mcard {kind}">'
                   f'<a class="mhead" href="{first["path"]}">'
+                  f'<span class="mart">{_module_art(mod)}</span>'
                   f'<span class="mnum">{_icon(num or ("0" if kind == "intro" else "ref"))}'
                   f'{("Module " + num) if num else html.escape(short)}</span>'
                   f'<strong>{html.escape(short if num else mod["title"])}</strong>'
@@ -204,7 +256,8 @@ def _modules_page(course, episodes, flat):
              '<div class="card"><strong>Jump in anywhere</strong><span>Open any module below. Inside a module the contents panel on the left lists every lesson and topic, and the arrows at the bottom of each page (or the &larr; &rarr; keys) walk the course in order.</span></div>'
              '<div class="card"><strong>Run the labs</strong><span>Grey code boxes run Python in your browser: press Run step, change a number, run it again. Nothing to install.</span></div>'
              '<div class="card"><strong>Predict before you reveal</strong><span>Try / Predict cards ask you to commit to an answer first. Every option gets feedback; the wrong ones are the useful ones.</span></div>'
-             '<div class="card"><strong>Search, or watch</strong><span>The search box at the top finds any topic, lab or term. Each lesson also has a narrated video made from the same text.</span></div>'
+             '<div class="card"><strong>Search, or watch</strong><span>The search box at the top finds any topic, lab or term. Each lesson also has its own narrated, animated video.</span></div>'
+             '<a class="card link" href="readings.html"><strong>Selected readings &rarr;</strong><span>The peer-reviewed reviews behind each module, with DOIs, on one page.</span></a>'
              '</div>')
     return {"title": "Modules", "narration": "", "hero": True, "blocks": [
         {"kind": "_raw", "attrs": {}, "body": f'<p class="lede modlede">{html.escape(course.get("subtitle", ""))}</p>'},
@@ -216,7 +269,8 @@ def _modules_page(course, episodes, flat):
 
 def _nav(flat):
     """Modules and lessons both collapse. The chevron toggles, the name navigates."""
-    out, open_m, open_e = ['<a class="home" href="modules.html"><span class="mn">&#8962;</span>All modules</a>'], False, False
+    out, open_m, open_e = ['<a class="home" href="modules.html"><span class="mn">&#8962;</span>All modules</a>',
+                           '<a class="home rd" href="readings.html"><span class="mn">&#9782;</span>Selected readings</a>'], False, False
     for p in flat:
         if p["kind"] == "module":
             if open_e: out.append("</div></div></div>"); open_e = False
@@ -251,9 +305,38 @@ def _nav(flat):
 
 # -------------------------------------------------------------------- page
 
+def _scope_svg_markers(body):
+    """Scope reusable figures' arrow markers without changing interactive IDs."""
+    # Process nested pictograms before their containing figure. A flat SVG regex
+    # would give both levels the same marker IDs.
+    stack, replacements = [], []
+    for tag in re.finditer(r'<svg\b[^>]*>|</svg\s*>', body):
+        if not tag[0].startswith('</'):
+            stack.append((tag.start(), []))
+            continue
+        if not stack:
+            continue
+        start, children = stack.pop()
+        svg = body[start:tag.end()]
+        for a, b, child in reversed(children):
+            svg = svg[:a - start] + child + svg[b - start:]
+        for marker in re.findall(r'<marker\b[^>]*\bid="([^"]+)"', svg):
+            if marker.startswith("figure-"):
+                continue  # already scoped inside a nested SVG
+            scoped = f"figure-{start}-{marker}"
+            svg = re.sub(r'(<marker\b[^>]*\bid=")' + re.escape(marker) + r'(")',
+                         lambda m: m[1] + scoped + m[2], svg)
+            svg = svg.replace(f"url(#{marker})", f"url(#{scoped})")
+        (stack[-1][1] if stack else replacements).append((start, tag.end(), svg))
+    for start, end, svg in reversed(replacements):
+        body = body[:start] + svg + body[end:]
+    return body
+
+
 def _page(course, p, flat, nav):
     t, meta, mod = p["t"], p["meta"], p["mod"]
     body = "".join(components.render(b, "web") for b in t["blocks"])
+    body = _scope_svg_markers(body)
 
     # breadcrumb + lesson meta strip
     head = ""
@@ -273,7 +356,7 @@ def _page(course, p, flat, nav):
                 f'<div class="epmeta">{" &middot; ".join(html.escape(str(b)) for b in bits)}</div>')
     elif p["kind"] == "module":
         head = f'<div class="epmeta">Module</div>'
-    elif p["kind"] in ("home", "modules"):
+    elif p["kind"] in ("home", "modules", "readings"):
         head = ""
 
     all_mods = {"kind": "modules", "path": "modules.html", "t": {"title": "All modules"}, "mod": {}}
@@ -281,6 +364,8 @@ def _page(course, p, flat, nav):
         prev, nxt = None, None
     elif p["kind"] == "modules":
         prev, nxt = None, flat[0]
+    elif p["kind"] == "readings":
+        prev, nxt = all_mods, None
     else:
         prev = flat[p["i"] - 1] if p["i"] > 0 else all_mods
         nxt = flat[p["i"] + 1] if p["i"] < len(flat) - 1 else None

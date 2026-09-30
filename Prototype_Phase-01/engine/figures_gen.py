@@ -68,7 +68,7 @@ def control_hierarchy():
              ("Settings & stochastic control", "seed, guidance, steps, negative prompt, resolution", "repeatable runs; still no geometry", "2.4"),
              ("Reference conditioning", "an image, a sketch, a style or a depth map as input", "the output follows a given picture, not just a phrase", "2.4"),
              ("Structural control", "edges, masks, layouts, poses; control networks", "where things go is imposed, not suggested", "2.4"),
-             ("Explicit design constraints", "dimensions, adjacencies, code, physics", "the only level that can be checked", "2.6")]
+             ("Explicit design constraints", "dimensions, adjacencies, code, physics", "checked against a structured model", "2.6")]
     for i, (name, what, gives, ep) in enumerate(rungs):
         y = 44 + i * 50
         x = 60 + i * 44
@@ -81,7 +81,7 @@ def control_hierarchy():
         if i < 4:
             s += _arrow(x + 200, y + 42, x + 244, y + 48)
     s += _t(60, 306, "more control, more work, more that can be verified  →", 10.5, anchor="start", style=f'fill="{ACC}" font-weight="600"')
-    s = _foot(s, 318, "Each rung imposes more and suggests less. A generated image only becomes a checkable design at the last one.")
+    s = _foot(s, 318, "Generation controls guide the image; architectural requirements need explicit checks against a structured model.")
     return s + "</svg>"
 
 

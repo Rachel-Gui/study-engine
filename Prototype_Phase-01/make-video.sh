@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Renders one narrated, animated MP4 per lesson and per module into dist/video/,
-# and a narration script per video into dist/scripts/.
+# Renders one narrated, animated MP4 per lesson (42 videos, 4-8 minutes each)
+# into dist/video/, and a narration script per video into dist/scripts/.
+# Each video follows its storyboard: content/<module>/<lesson>.video.md.
 # First run takes a while. After that, only changed scenes re-render.
+# Add --modules to also join each module into one file, --course for one big file.
 cd "$(dirname "$0")"
 
 echo
@@ -24,9 +26,10 @@ if ! python3 engine/build.py --doctor; then
 fi
 
 echo
-echo "  Step 2 of 2 - rendering every lesson and module video at 4K. This takes a while."
-echo "  (one lesson:  python3 engine/make_videos.py --engine edge --episode 2.8)"
+echo "  Step 2 of 2 - rendering one video per lesson at 4K. This takes a while."
+echo "  (one lesson:           python3 engine/make_videos.py --engine edge --episode 2.8)"
 echo "  (quick 1080p preview:  python3 engine/make_videos.py --engine edge --quality 1080p)"
+echo "  (one file per module:  ./make-video.sh --modules)"
 echo "  -------------------------------------------"
 if ! python3 engine/make_videos.py --engine edge "$@"; then
   echo

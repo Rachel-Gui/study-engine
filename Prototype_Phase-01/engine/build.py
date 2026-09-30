@@ -124,7 +124,19 @@ def main():
 
     course, episodes = load_course()
     flat = render_web.build_site(course, episodes, a.out)
-    narrated = sum(1 for _, ts, _ in episodes for t in ts if t.get("narration"))
+
+    # one storyboard (<lesson>.video.md) per lesson drives that lesson's video
+    import storyboard
+    rels = [rel for mod in course["modules"] for rel in mod["episodes"]]
+    boards = {}
+    for (meta, _, _), rel in zip(episodes, rels):
+        sb = storyboard.path_for(os.path.join(ROOT, "content", rel))
+        if os.path.exists(sb):
+            try:
+                boards[meta["episode"]] = len(storyboard.load(sb)[1])
+            except Exception as e:                       # a broken storyboard must not break the site
+                boards[meta["episode"]] = f"BROKEN storyboard: {e}"
+    n_scenes = sum(v for v in boards.values() if isinstance(v, int))
 
     print("\n  " + "=" * 68)
     print(f"  BUILDING   {ROOT}")
@@ -134,13 +146,17 @@ def main():
         if mod["title"] != seen:
             seen = mod["title"]
             print(f"\n  {mod['title'].upper()}")
-        n = sum(1 for t in topics if t.get("narration"))
+        v = boards.get(meta["episode"])
+        video = (f"{v} video scenes" if isinstance(v, int) else v) if v is not None else "no storyboard (auto video)"
         print(f"      {meta['episode']:>4}  {meta['title'][:52]:<52}"
-              f"{len(topics):>3} topics, {n} narrated")
+              f"{len(topics):>3} topics, {video}")
     print("\n  " + "-" * 68)
-    print(f"  {len(flat)} pages  ·  {len(episodes)} episodes  ·  "
-          f"{narrated} video scenes  ·  {len(flat) - narrated} web-only")
+    print(f"  {len(flat)} pages  ·  {len(episodes)} lessons  ·  "
+          f"{sum(1 for v in boards.values() if isinstance(v, int))} video storyboards  ·  {n_scenes} video scenes")
     print(f"  written to {a.out}")
+    broken = [k for k, v in boards.items() if not isinstance(v, int)]
+    if broken:
+        print(f"\n  !!  Broken storyboard(s): {', '.join(broken)} — fix before rendering video.")
     if len(episodes) < 2:
         print("\n  !!  Only one episode. If you expected the whole course, you are\n"
               "      probably running an old copy of the folder. Check the path at\n"
