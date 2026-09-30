@@ -444,3 +444,5 @@ import figures_py
 ALL.update(figures_py.ALL)
 import figures_gen
 ALL.update(figures_gen.ALL)
+import figures_lit
+ALL.update(figures_lit.ALL)

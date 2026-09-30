@@ -12,7 +12,8 @@ instructor:
   dept:  "Department of Architecture · College of Built Environments · University of Washington"
   email: "nabbasab@uw.edu"
 
-voice: "en-GB-RyanNeural"        # any Microsoft neural voice; `edge-tts --list-voices`
+voice: "en-US-AvaMultilingualNeural"   # narration voice: a natural U.S. female voice. Try others with voice-samples.bat
+voice_rate: "-3%"                      # a touch slower than default; "+0%" is the voice's own pace
 
 # The only place the Pyodide version appears. Bump it here if a lab stops working.
 pyodide_url: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
@@ -37,6 +38,13 @@ modules:
       - coding/1.2-python-1-values-and-decisions.md
       - coding/1.3-python-2-collections-and-loops.md
       - coding/1.4-python-3-functions-classes-libraries.md
+    readings:
+      - cite: "Qiao, Y., Shihab, M. I. H., & Hundhausen, C. (2026)"
+        title: "A systematic literature review of the use of GenAI assistants for code comprehension: implications for computing education research and practice"
+        venue: "ACM Transactions on Computing Education, 26(2), 1–33"
+        doi: "10.1145/3785366"
+        why: "Core. Why the course teaches you to read, check and debug code an assistant wrote, not only to generate it: 31 studies on GenAI and code comprehension, with the evidence on inaccurate explanations, prompting skill and over-reliance."
+        access: "ACM; preprint arXiv:2510.17894"
 
   - title: "Module 2 — Generative AI"
     short: "Generative AI"
@@ -44,12 +52,13 @@ modules:
       How can generative AI help architects explore design possibilities while
       maintaining meaningful control and architectural judgment?
     objectives:
-      - Define generative AI on its own terms and explain what "generate" means as sampling under a condition.
+      - Define generative AI and explain how generative models produce new outputs from learned patterns.
       - Distinguish the major generative model approaches — GANs, VAEs, diffusion, autoregressive/transformer models — and multimodal systems that work across them.
       - Construct a structured architectural prompt and explain why one changed term can affect several visual qualities.
       - Experiment with the control hierarchy — prompt, settings and seed, reference conditioning, structural control, explicit constraints — and compare generations systematically.
       - Distinguish visual plausibility from architectural validity, and say which structured information is needed before simulation or evaluation.
       - Use a language model for text and structured output, and state where human judgment and verification remain necessary.
+      - Say who is responsible for what an AI output becomes, attribute an AI contribution properly, and distinguish an AI-generated output from validated architectural evidence.
     episodes:
       - generative/2.1-generative-possibilities.md
       - generative/2.2-noise-to-design.md
@@ -60,8 +69,34 @@ modules:
       - generative/2.7-guided-design-workflow.md
       - generative/2.8-llms-and-structured-generation.md
       - generative/2.9-run-a-model-locally.md
+      - generative/2.10-critical-ai-in-architecture.md
+    readings:
+      - cite: "Jang, S., Roh, H., & Lee, G. (2025)"
+        title: "Generative AI in architectural design: application, data, and evaluation methods"
+        venue: "Automation in Construction, 174, 106174"
+        doi: "10.1016/j.autcon.2025.106174"
+        why: "Core. A PRISMA review of 161 papers (2014–2024): which models are used, in which design phases (68.94 % schematic), with which data (images dominate) and how outputs are evaluated (mostly comparative and author-judged). Lessons 2.1 and 2.5 are checked against it."
+        access: "subscription (UW Libraries)"
+      - cite: "Fang, C., Zhu, Y., Fang, L., Long, Y., Lin, H., Cong, Y., & Wang, S. J. (2025)"
+        title: "Generative AI-enhanced human-AI collaborative conceptual design: a systematic literature review"
+        venue: "Design Studies, 97, 101300"
+        doi: "10.1016/j.destud.2025.101300"
+        why: "Core. 54 papers on human–AI collaboration in conceptual design: stages, collaboration modes and interaction media, and the GECD framework. Behind the designer-judgment thread of Lessons 2.1, 2.5 and 2.10."
+        access: "subscription (UW Libraries)"
+      - cite: "Liang, C.-J., Le, T.-H., Ham, Y., Mantha, B. R. K., Cheng, M. H., & Lin, J. J. (2024)"
+        title: "Ethics of artificial intelligence and robotics in the architecture, engineering, and construction industry"
+        venue: "Automation in Construction, 162, 105369"
+        doi: "10.1016/j.autcon.2024.105369"
+        why: "Core for Lesson 2.10. Nine ethical issues found in 314 AEC papers and seven research directions; the anchor for bias, responsibility, transparency, trust and liability."
+        access: "subscription; preprint arXiv:2310.05414"
+      - cite: "Zhuang, X., Zhu, P., Yang, A., & Caldas, L. (2025)"
+        title: "Machine learning for generative architectural design: advancements, opportunities, and challenges"
+        venue: "Automation in Construction, 174, 106129"
+        doi: "10.1016/j.autcon.2025.106129"
+        why: "How architectural data are represented for generative models, and where the field stands. Pairs with Jang et al."
+        access: "open access (CC BY 4.0)"
 
-  - title: "Module 3 — AI-Assisted Coding"
+  - title: "Module 3 — AI-Assisted Coding and Vibe Coding"
     short: "AI-Assisted Coding"
     question: >
       When a language model writes the code, what is left for the architect to do —
@@ -70,7 +105,26 @@ modules:
       - vibe-coding/3.1-what-changes-when-ai-writes-code.md
       - vibe-coding/3.2-code-as-design-medium.md
       - vibe-coding/3.3-claude-code-on-your-own-model.md
-      - vibe-coding/3.4-workshop-vibe-code-a-design-tool.md
+      - vibe-coding/3.4-vibe-code-a-design-tool.md
+    readings:
+      - cite: "Qiao, Y., Shihab, M. I. H., & Hundhausen, C. (2026)"
+        title: "A systematic literature review of the use of GenAI assistants for code comprehension: implications for computing education research and practice"
+        venue: "ACM Transactions on Computing Education, 26(2), 1–33"
+        doi: "10.1145/3785366"
+        why: "Core. Why the course teaches you to read, check and debug code an assistant wrote, not only to generate it: 31 studies on GenAI and code comprehension, with the evidence on inaccurate explanations, prompting skill and over-reliance."
+        access: "ACM; preprint arXiv:2510.17894"
+      - cite: "Michels, D. L., Abu Ghazaleh, M., Lazzari, F., Kassem, N., & Klein, J. (2026)"
+        title: "Vibe coding: practice, performance, productivity, and risk — a state-of-the-art review"
+        venue: "arXiv:2608.20446 (preprint, not yet peer reviewed)"
+        doi: "10.48550/arXiv.2608.20446"
+        why: "The risks the course's judgment habits answer: security failures, code-quality decay, skill atrophy, and productivity results that point both ways."
+        access: "open access (arXiv)"
+      - cite: "Ge, Y., Mei, L., Duan, Z., et al. (2025)"
+        title: "A survey of vibe coding with large language models"
+        venue: "arXiv:2510.12399 (preprint, not yet peer reviewed)"
+        doi: "10.48550/arXiv.2510.12399"
+        why: "A formal definition of vibe coding and five development models (planning-driven, test-driven, context-enhanced, and others)."
+        access: "open access (arXiv)"
 
   - title: "Module 4 — Agentic AI"
     short: "Agentic AI"
@@ -82,7 +136,20 @@ modules:
       - agentic/4.2-orchestration.md
       - agentic/4.3-frameworks.md
       - agentic/4.4-setup-negotiators.md
-      - agentic/4.5-negotiators-workshop.md
+      - agentic/4.5-environmental-negotiators.md
+    readings:
+      - cite: "Lee, J., Song, J., Koo, J., Choi, S., Hwang, J., Saif, S. M. H., Li, Y., Li, J., Yoo, J., Lee, G., Seok, M., & Yoon, S. (2025)"
+        title: "Agentic built environments: a review"
+        venue: "Energy and Buildings, 346, 116159"
+        doi: "10.1016/j.enbuild.2025.116159"
+        why: "Core. Defines agent, agentic AI and the agentic built environment; classifies applications (BIM, simulation, management, digital twins, urban), roles on the DIKW hierarchy, and four learning approaches. Lesson 4.1 is checked against it."
+        access: "subscription (UW Libraries)"
+      - cite: "Wang, L., Ma, C., Feng, X., et al. (2024)"
+        title: "A survey on large language model based autonomous agents"
+        venue: "Frontiers of Computer Science, 18(6), 186345"
+        doi: "10.1007/s11704-024-40231-1"
+        why: "The general survey behind the agent anatomy of Lesson 4.1: profile, memory, planning and action."
+        access: "open access (CC BY 4.0)"
 
   - title: "Module 5 — Exploratory Data Analysis"
     short: "Exploratory Data Analysis"
@@ -93,6 +160,55 @@ modules:
       - eda/5.1-looking-before-modelling.md
       - eda/5.2-seeing-the-data.md
       - eda/5.3-putting-numbers-on-it.md
+    readings:
+      - cite: "Zha, D., Bhat, Z. P., Lai, K.-H., Yang, F., Jiang, Z., Zhong, S., & Hu, X. (2025)"
+        title: "Data-centric artificial intelligence: a survey"
+        venue: "ACM Computing Surveys, 57(5), Article 120"
+        doi: "10.1145/3711118"
+        why: "Core. The data-centric turn: why the field's attention moved from model design to the quality and quantity of data, across training-data development, inference data and data maintenance."
+        access: "ACM; preprint arXiv:2303.10158"
+      - cite: "Whang, S. E., Roh, Y., Song, H., & Lee, J.-G. (2023)"
+        title: "Data collection and quality challenges in deep learning: a data-centric AI perspective"
+        venue: "The VLDB Journal, 32(4), 791–813"
+        doi: "10.1007/s00778-022-00775-9"
+        why: "Core. Data collection, validation, cleaning and integration as first-class work — \"without good data, even the best machine learning algorithms cannot perform well.\""
+        access: "subscription; preprint arXiv:2112.06409"
+      - cite: "Sambasivan, N., Kapania, S., Highfill, H., Akrong, D., Paritosh, P., & Aroyo, L. M. (2021)"
+        title: "\"Everyone wants to do the model work, not the data work\": data cascades in high-stakes AI"
+        venue: "CHI '21, Article 39, 1–15"
+        doi: "10.1145/3411764.3445518"
+        why: "Core. Field evidence from 53 practitioners that undervalued data work causes compounding downstream failures — the case for looking before modelling."
+        access: "open access (CC BY-NC-SA 4.0)"
+      - cite: "Emmanuel, T., Maupong, T., Mpoeleng, D., Semong, T., Mphago, B., & Tabona, O. (2021)"
+        title: "A survey on missing data in machine learning"
+        venue: "Journal of Big Data, 8, Article 140"
+        doi: "10.1186/s40537-021-00516-9"
+        why: "Missingness mechanisms (MCAR, MAR, MNAR) and the handling options, from deletion to imputation."
+        access: "open access (CC BY 4.0)"
+      - cite: "Johnson, J. M., & Khoshgoftaar, T. M. (2019)"
+        title: "Survey on deep learning with class imbalance"
+        venue: "Journal of Big Data, 6, Article 27"
+        doi: "10.1186/s40537-019-0192-5"
+        why: "Why a learner leans to the majority class, and the remedies: sampling, cost-sensitive learning, feature learning. Behind the imbalance section of Lesson 6.4."
+        access: "open access (CC BY 4.0)"
+      - cite: "Gebru, T., Morgenstern, J., Vecchione, B., Vaughan, J. W., Wallach, H., Daumé III, H., & Crawford, K. (2021)"
+        title: "Datasheets for datasets"
+        venue: "Communications of the ACM, 64(12), 86–92"
+        doi: "10.1145/3458723"
+        why: "The documentation template — motivation, composition, collection, preprocessing, uses, maintenance — to fill in for any dataset you model."
+        access: "ACM; preprint arXiv:1803.09010"
+      - cite: "Jakubik, J., Vössing, M., Kühl, N., Walk, J., & Satzger, G. (2024)"
+        title: "Data-centric artificial intelligence"
+        venue: "Business & Information Systems Engineering, 66(4), 507–515"
+        doi: "10.1007/s12599-024-00857-8"
+        why: "A nine-page definition of model-centric versus data-centric AI, written for practitioners. The short read."
+        access: "open access (CC BY 4.0)"
+      - cite: "Priestley, M., O'Donnell, F., & Simperl, E. (2023)"
+        title: "A survey of data quality requirements that matter in ML development pipelines"
+        venue: "ACM Journal of Data and Information Quality, 15(2), Article 11"
+        doi: "10.1145/3592616"
+        why: "Which data-quality requirements matter at collection, training and deployment — a bridge from data readiness to documentation."
+        access: "ACM"
 
   - title: "Module 6 — Machine Learning"
     short: "Machine Learning"
@@ -106,6 +222,25 @@ modules:
       - ml/6.4-classification.md
       - ml/6.5-generalization.md
       - ml/6.6-uw-energy-demo.md
+    readings:
+      - cite: "Lystbæk, M. S. (2025)"
+        title: "Machine learning-driven processes in architectural building design"
+        venue: "Automation in Construction, 178, 106379"
+        doi: "10.1016/j.autcon.2025.106379"
+        why: "Core. 230 papers on ML in building design: five domains (building performance, design generation, evaluation, structural, BIM), the ML pipeline, design stages PD–OP and the ML-driven decision curve. Lesson 6.1 is checked against it."
+        access: "open access (CC BY 4.0)"
+      - cite: "Johnson, J. M., & Khoshgoftaar, T. M. (2019)"
+        title: "Survey on deep learning with class imbalance"
+        venue: "Journal of Big Data, 6, Article 27"
+        doi: "10.1186/s40537-019-0192-5"
+        why: "Why a learner leans to the majority class, and the remedies: sampling, cost-sensitive learning, feature learning. Behind the imbalance section of Lesson 6.4."
+        access: "open access (CC BY 4.0)"
+      - cite: "Ghosh, K., Bellinger, C., Corizzo, R., Branco, P., Krawczyk, B., & Japkowicz, N. (2024)"
+        title: "The class imbalance problem in deep learning"
+        venue: "Machine Learning, 113(7), 4845–4901"
+        doi: "10.1007/s10994-022-06268-8"
+        why: "Imbalance does not go away with depth: how it interacts with concept complexity and dataset size."
+        access: "subscription"
 
   - title: "Module 7 — Deep Learning Foundations"
     short: "Deep Learning Foundations"
@@ -117,6 +252,19 @@ modules:
       - deep-learning/7.2-how-networks-learn.md
       - deep-learning/7.3-generalization.md
       - deep-learning/7.4-appliance-energy-demo.md
+    readings:
+      - cite: "Khan, M. I., Waheed, A., Harirchian, E., & Manzoor, B. (2026)"
+        title: "Deep learning in the architecture, engineering, and construction (AEC) industry: methods, challenges, and emerging opportunities"
+        venue: "Buildings, 16(8), 1546"
+        doi: "10.3390/buildings16081546"
+        why: "Core. An umbrella review of CNNs, GNNs and transformers in AEC, with the challenge list — data scarcity, generalisation across projects, standardisation, validation — that Modules 7 and 8 keep returning to."
+        access: "open access (CC BY 4.0)"
+      - cite: "Mathumitha, R., Rathika, P., & Manimala, K. (2024)"
+        title: "Intelligent deep learning techniques for energy consumption forecasting in smart buildings: a review"
+        venue: "Artificial Intelligence Review, 57(2), Article 35"
+        doi: "10.1007/s10462-023-10660-8"
+        why: "Sequence models (RNN, LSTM, GRU, hybrids) for building load forecasting by horizon, with the evaluation metrics and the open problems (peaks, weather, occupants, missing data). Behind Lessons 7.4 and 8.3."
+        access: "open access (CC BY 4.0)"
 
   - title: "Module 8 — Advanced Deep Learning for Architecture"
     short: "Advanced Deep Learning"
@@ -129,6 +277,73 @@ modules:
       - advanced-dl/8.3-sequences-attention.md
       - advanced-dl/8.4-physics-informed.md
       - advanced-dl/8.5-pinn-from-scratch.md
+    readings:
+      - cite: "Ma, Z., Jiang, G., Hu, Y., & Chen, J. (2025)"
+        title: "A review of physics-informed machine learning for building energy modeling"
+        venue: "Applied Energy, 381, 125169"
+        doi: "10.1016/j.apenergy.2024.125169"
+        why: "Core. The four ways physics enters a model — inputs, loss functions, architecture, ensembles — with each route's benefits and costs. Lessons 8.4 and 8.5 follow this classification."
+        access: "subscription; accepted manuscript at par.nsf.gov"
+      - cite: "Khan, M. I., Waheed, A., Harirchian, E., & Manzoor, B. (2026)"
+        title: "Deep learning in the architecture, engineering, and construction (AEC) industry: methods, challenges, and emerging opportunities"
+        venue: "Buildings, 16(8), 1546"
+        doi: "10.3390/buildings16081546"
+        why: "Core. An umbrella review of CNNs, GNNs and transformers in AEC, with the challenge list — data scarcity, generalisation across projects, standardisation, validation — that Modules 7 and 8 keep returning to."
+        access: "open access (CC BY 4.0)"
+      - cite: "Pizarro, P. N., Hitschfeld, N., Sipiran, I., & Saavedra, J. M. (2022)"
+        title: "Automatic floor plan analysis and recognition"
+        venue: "Automation in Construction, 140, 104348"
+        doi: "10.1016/j.autcon.2022.104348"
+        why: "CNNs on raster plans: wall, door and room recognition, and why models trained on one plan style generalise poorly."
+        access: "subscription (UW Libraries)"
+      - cite: "Li, L., Huang, Z., Wang, J., Du, B., & Dai, L. (2026)"
+        title: "Automated construction monitoring based on computer vision: a comprehensive review"
+        venue: "Developments in the Built Environment, 25, 100832"
+        doi: "10.1016/j.dibe.2025.100832"
+        why: "Computer vision on site: safety, equipment, productivity, structural health — and the dataset-generalisability problem."
+        access: "open access"
+      - cite: "Biljecki, F., & Ito, K. (2021)"
+        title: "Street view imagery in urban analytics and GIS: a review"
+        venue: "Landscape and Urban Planning, 215, 104217"
+        doi: "10.1016/j.landurbplan.2021.104217"
+        why: "The standard review for street-view imagery: what facades and streets can and cannot be classified from photographs."
+        access: "open access (CC BY 4.0)"
+      - cite: "Jia, Y., Wang, J., Shou, W., Hosseini, M. R., & Bai, Y. (2023)"
+        title: "Graph neural networks for construction applications"
+        venue: "Automation in Construction, 154, 104984"
+        doi: "10.1016/j.autcon.2023.104984"
+        why: "Graphs from BIM and point clouds, and 34 GNN applications in construction. Behind Lesson 8.2."
+        access: "subscription; green OA copy on Figshare"
+      - cite: "Wettewa, S., Hou, L., & Zhang, G. (2024)"
+        title: "Graph neural networks for building and civil infrastructure operation and maintenance enhancement"
+        venue: "Advanced Engineering Informatics, 62, 102868"
+        doi: "10.1016/j.aei.2024.102868"
+        why: "111 studies of GNNs on building and infrastructure graphs for operations — energy, faults, structural health."
+        access: "open access (CC BY 4.0)"
+      - cite: "Zhao, Y., Li, H., Zhou, H., Attar, H. R., Pfaff, T., & Li, N. (2024)"
+        title: "A review of graph neural network applications in mechanics-related domains"
+        venue: "Artificial Intelligence Review, 57, Article 315"
+        doi: "10.1007/s10462-024-10931-y"
+        why: "Mesh-based GNN surrogates for solids and fluids, from the group behind MeshGraphNets. Behind the mesh-surrogate example of Lessons 8.2 and 8.4."
+        access: "open access (CC BY 4.0)"
+      - cite: "Zhao, J., Chu, F., Xie, L., Che, Y., Wu, Y., & Burke, A. F. (2026)"
+        title: "A survey of transformer networks for time series forecasting"
+        venue: "Computer Science Review, 60, 100883"
+        doi: "10.1016/j.cosrev.2025.100883"
+        why: "Why attention over recurrence for long sequences — and the costs: compute, data hunger, distribution shift, reproducibility. Behind Lesson 8.3."
+        access: "open access (CC BY 4.0)"
+      - cite: "Eren, Y., & Küçükdemiral, İ. (2024)"
+        title: "A comprehensive review on deep learning approaches for short-term load forecasting"
+        venue: "Renewable and Sustainable Energy Reviews, 189, 114031"
+        doi: "10.1016/j.rser.2023.114031"
+        why: "Short-horizon load forecasting for demand response, with uncertainty-aware and online methods."
+        access: "subscription (UW Libraries)"
+      - cite: "Mathumitha, R., Rathika, P., & Manimala, K. (2024)"
+        title: "Intelligent deep learning techniques for energy consumption forecasting in smart buildings: a review"
+        venue: "Artificial Intelligence Review, 57(2), Article 35"
+        doi: "10.1007/s10462-023-10660-8"
+        why: "Sequence models (RNN, LSTM, GRU, hybrids) for building load forecasting by horizon, with the evaluation metrics and the open problems (peaks, weather, occupants, missing data). Behind Lessons 7.4 and 8.3."
+        access: "open access (CC BY 4.0)"
 
   - title: "Reference"
     short: "Reference"

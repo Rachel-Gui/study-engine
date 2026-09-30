@@ -14,8 +14,9 @@ To add a component: write web() and frame(), then register it in REGISTRY.
 Nothing else in the engine needs to change.
 """
 import html, json, re
-import figures, widgets
+import figures, figures_lit, screens, widgets
 import generative, tracer
+import yaml
 from parse import inline, plain, rows
 
 # --------------------------------------------------------------------- prose
@@ -177,7 +178,7 @@ def pylab_web(b):
             f'<textarea class="src" spellcheck="false" rows="{min(editor_rows, sum(1 + len(l) // 92 for l in code.split(chr(10))) + 1)}">'
             f'{html.escape(code)}</textarea>'
             f'<div class="act"><button class="run" {"disabled" if i > 1 else ""}>Run step</button>'
-            f'<button class="rst">Reset</button></div>'
+            f'<button class="rst">Reset code</button></div>'
             f'<div class="out" hidden></div></div>')
     return (f'<div class="pylab" data-packages=\'{json.dumps(pkgs)}\' data-pip=\'{json.dumps(pip)}\'>'
             f'<div class="bar"><span>Browser Python</span>'
@@ -587,6 +588,87 @@ def trace_frame(b):
             f'<div class="f-cards">{rows}</div>')
 
 
+# --------------------------------------------------------------------- screen
+#   :::screen{kind=terminal}   body = YAML spec (see engine/screens.py)
+
+
+def _screen_spec(b):
+    try:
+        spec = yaml.safe_load(b["body"]) or {}
+    except Exception as e:  # noqa: BLE001
+        return {"kind": "terminal", "lines": [f"screen block: invalid YAML ({e})"]}
+    if not isinstance(spec, dict):
+        spec = {}
+    spec.setdefault("kind", b["attrs"].get("kind", "terminal"))
+    if b["attrs"].get("title"):
+        spec.setdefault("title", b["attrs"]["title"])
+    return spec
+
+
+def screen_web(b):
+    spec = _screen_spec(b)
+    mock, _ = screens.mock(spec, animate=False)
+    cap = b["attrs"].get("caption", "")
+    c = f'<figcaption>{inline(cap)}</figcaption>' if cap else ""
+    return f'<figure class="fig screen">{mock}{c}</figure>'
+
+
+def screen_frame(b):
+    mock, _ = screens.mock(_screen_spec(b), animate=False)
+    return f'<div class="f-fig f-screen">{mock}</div>'
+
+
+# -------------------------------------------------------------------- gallery
+#   assets/path.png | Title | caption        (image rows)
+#   art:m2 | Title | caption                 (module pictogram)
+#   fig:eda_loop | Title | caption           (course figure)
+
+
+def _gallery_pic(src, alt=""):
+    src = src.strip()
+    if src.startswith("art:"):
+        return figures_lit.ART.get(src[4:].strip(), "")
+    if src.startswith("fig:"):
+        fn = figures.ALL.get(src[4:].strip())
+        return _legible(fn()) if fn else ""
+    return f'<img src="{html.escape(src)}" alt="{html.escape(alt or src.rsplit("/", 1)[-1])}" loading="lazy">'
+
+
+def gallery_web(b):
+    items = rows(b["body"], 3)
+    n = int(b["attrs"].get("cols", 0) or (4 if len(items) >= 4 else max(2, len(items))))
+    cap = b["attrs"].get("caption", "")
+    tiles = "".join(f'<figure class="tile"><div class="pic">{_gallery_pic(src, plain(t) or plain(c))}</div>'
+                    f'<figcaption>{("<b>" + inline(t) + "</b>") if t else ""}{("<span>" + inline(c) + "</span>") if c else ""}</figcaption></figure>'
+                    for src, t, c in items)
+    return (f'<div class="gallery" style="--n:{n}">{tiles}</div>'
+            + (f'<p class="gallery-cap">{inline(cap)}</p>' if cap else ""))
+
+
+def gallery_frame(b):
+    items = rows(b["body"], 3)
+    return ('<div class="f-gallery">' + "".join(
+        f'<figure><div class="pic">{_gallery_pic(src, plain(t))}</div><figcaption>{html.escape(plain(t))}</figcaption></figure>'
+        for src, t, c in items[:4]) + "</div>")
+
+
+# ------------------------------------------------------------------- readings
+#   Authors (year) | Title. Venue, volume, article. | https://doi.org/... | why read it
+
+
+def readings_web(b):
+    lbl = b["attrs"].get("label", "Selected readings")
+    return (f'<div class="readings"><div class="lbl">{html.escape(lbl)}</div><ol>' + "".join(
+        f'<li><span class="c">{inline(a)}</span> <span class="t">{inline(t)}</span>'
+        + (f' <a href="{html.escape(u)}" target="_blank" rel="noopener">{html.escape(u.split("//")[-1])}</a>' if u else "")
+        + (f'<p>{inline(w)}</p>' if w else "") + "</li>"
+        for a, t, u, w in rows(b["body"], 4)) + "</ol></div>")
+
+
+readings_frame = lambda b: ('<div class="f-refs">' + " &nbsp;·&nbsp; ".join(
+    html.escape(plain(a)) for a, _, _, _ in rows(b["body"], 4)) + "</div>")
+
+
 # -------------------------------------------------------------------- registry
 
 REGISTRY = {
@@ -616,6 +698,9 @@ REGISTRY = {
     "technical":     (technical_web, technical_frame),
     "boundary":      (boundary_web, boundary_frame),
     "trace":         (trace_web, trace_frame),
+    "screen":        (screen_web, screen_frame),
+    "gallery":       (gallery_web, gallery_frame),
+    "readings":      (readings_web, readings_frame),
 }
 
 

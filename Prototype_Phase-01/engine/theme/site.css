@@ -122,7 +122,7 @@ article pre.code code{background:none;padding:0}
 .keyidea p:last-child{margin:0}
 
 .fig{margin:28px 0}
-.fig svg{width:100%;height:auto;display:block}
+.fig>svg{width:100%;height:auto;display:block}
 figcaption{font-size:12.5px;color:var(--ink3);margin-top:10px}
 .slide{margin:26px 0;border:1px solid var(--rule)}
 .slide .lbl{font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
@@ -1022,3 +1022,43 @@ header .search input:focus~kbd{display:none}
   #hits{width:calc(100vw - 40px);right:auto;left:0}
   body.home .land-hero{padding:0 24px}
 }
+
+/* ---- v4: screens, galleries, selected readings ---- */
+.fig.screen{margin:28px 0}
+.fig.screen .mk{max-width:760px;margin:0 auto;font-size:14px}
+.fig.screen figcaption{margin-top:12px}
+.gallery{display:grid;grid-template-columns:repeat(var(--n,4),1fr);gap:14px;margin:26px 0 8px}
+.gallery .tile{margin:0;border:1px solid var(--rule);background:var(--paper);overflow:hidden;border-radius:6px}
+.gallery .tile .pic{aspect-ratio:1/1;background:var(--gold-wash);display:grid;place-items:center;overflow:hidden;border-bottom:1px solid var(--rule)}
+.gallery .tile .pic img{width:100%;height:100%;object-fit:cover;display:block}
+.gallery .tile .pic svg{width:70%;height:auto}
+.gallery .tile figcaption{padding:9px 11px 11px;font-size:13px;line-height:1.35;text-align:left}
+.gallery .tile figcaption b{display:block;font-weight:600;font-size:13.5px;margin-bottom:2px}
+.gallery .tile figcaption span{color:var(--ink2)}
+.gallery-cap{font-size:13.5px;color:var(--ink2);margin:0 0 26px;line-height:1.5}
+@media (max-width:720px){.gallery{grid-template-columns:repeat(2,1fr)}}
+.readings{border:1px solid var(--rule);border-left:4px solid var(--accent);padding:18px 22px 16px;margin:30px 0;background:var(--paper)}
+.readings .lbl{font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.readings ol{margin:0;padding-left:20px}
+.readings li{margin:0 0 12px;font-size:14.5px;line-height:1.5}
+.readings li .c{font-weight:600}
+.readings li a{font-size:12.5px;color:var(--accent);word-break:break-all}
+.readings li p{margin:3px 0 0;font-size:13.5px;color:var(--ink2)}
+.f-screen .mk{font-size:14px}
+.f-gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.f-gallery figure{margin:0}
+.f-gallery .pic img,.f-gallery .pic svg{width:100%;height:auto;display:block}
+.readings .intro{font-size:13.5px;color:var(--ink2);margin:0 0 14px;line-height:1.5}
+.readings li .v{color:var(--ink2)}
+.readings li .acc{display:inline-block;font:500 10.5px var(--mono);letter-spacing:.04em;color:var(--ink3);border:1px solid var(--rule);border-radius:3px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.rdhead{font-size:17px;font-weight:600;margin:34px 0 0;letter-spacing:-.01em}
+.rdhead+.readings{margin-top:12px}
+.mpic{width:150px;height:112px;margin:-6px 0 14px}
+.mpic svg{width:100%;height:100%}
+.mart{display:block;width:86px;height:64px;margin:0 0 10px}
+.mart svg{width:100%;height:100%}
+.mcard.intro .mart,.mcard.ref .mart{width:64px;height:48px}
+.cards.howto .card.link{text-decoration:none;color:inherit;border-color:var(--accent)}
+.cards.howto .card.link:hover{background:var(--gold-wash)}
+nav .home.rd{margin-top:-6px}
+body.readings .page .readings{margin-top:14px}

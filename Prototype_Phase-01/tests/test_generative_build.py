@@ -33,8 +33,8 @@ class GenerativeBuild(unittest.TestCase):
     def setUpClass(cls):
         cls.course=yaml.safe_load((ROOT/'course.yml').read_text());GLOSSARY.update(cls.course['glossary'])
         cls.modules=[m for m in cls.course['modules'] if m['title']=='Module 2 — Generative AI']
-        # the seven studio lessons (2.1-2.7); 2.8 and 2.9 were added after Narjes's review
-        cls.studio=[e for e in cls.modules[0]['episodes'] if e.split('/')[-1][:3] in ('2.1','2.2','2.3','2.4','2.5','2.6','2.7')]
+        # the seven studio lessons (2.1-2.7); 2.8, 2.9 and 2.10 were added after Narjes's review
+        cls.studio=[e for e in cls.modules[0]['episodes'] if e.split('/')[-1].split('-')[0] in ('2.1','2.2','2.3','2.4','2.5','2.6','2.7')]
     def test_navigation_and_all_episodes(self):
         self.assertEqual(len(self.modules),1)
         self.assertEqual(self.course['modules'][2],self.modules[0])
