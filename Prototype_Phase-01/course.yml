@@ -98,6 +98,8 @@ modules:
 
   - title: "Module 3 — AI-Assisted Coding and Vibe Coding"
     short: "AI-Assisted Coding"
+    status: "In progress"
+    locked: true
     question: >
       When a language model writes the code, what is left for the architect to do —
       and why is that the part that matters?
@@ -128,6 +130,8 @@ modules:
 
   - title: "Module 4 — Agentic AI"
     short: "Agentic AI"
+    status: "In progress"
+    locked: true
     question: >
       What is an AI agent, concretely, and how do several of them get orchestrated
       into a system that surfaces real design tradeoffs?
@@ -153,6 +157,8 @@ modules:
 
   - title: "Module 5 — Exploratory Data Analysis"
     short: "Exploratory Data Analysis"
+    status: "In progress"
+    locked: true
     question: >
       What does a dataset look like before any model touches it, and what can looking
       establish on its own?
@@ -212,6 +218,8 @@ modules:
 
   - title: "Module 6 — Machine Learning"
     short: "Machine Learning"
+    status: "In progress"
+    locked: true
     question: >
       How can an architectural question be turned into features, a target, and a
       model that is evaluated on data it has never seen?
@@ -244,6 +252,8 @@ modules:
 
   - title: "Module 7 — Deep Learning Foundations"
     short: "Deep Learning Foundations"
+    status: "In progress"
+    locked: true
     question: >
       How does a network of simple units learn a relationship no formula captures,
       and how do you know whether it learned or memorised?
@@ -268,6 +278,8 @@ modules:
 
   - title: "Module 8 — Advanced Deep Learning for Architecture"
     short: "Advanced Deep Learning"
+    status: "In progress"
+    locked: true
     question: >
       How can different deep-learning architectures process images, graphs,
       sequences, coordinates, and physical systems?

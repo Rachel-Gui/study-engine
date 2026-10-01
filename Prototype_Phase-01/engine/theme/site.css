@@ -69,6 +69,11 @@ nav a.tp{display:block;font-size:13px;line-height:1.42;color:var(--ink2);
 nav a.mod:hover,nav a.ep:hover,nav a.tp:hover{background:#eeeeec;color:var(--ink)}
 nav a.tp.on{border-left-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
 nav a.mod.on,nav a.ep.on{border-left-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+nav .status-badge{display:inline-block;margin-left:7px;padding:2px 5px;font-size:7.5px;letter-spacing:.1em;vertical-align:1px}
+nav span.ep{flex:1;display:block;font-size:12.5px;font-weight:500;padding:7px 8px 7px 26px;line-height:1.4}
+nav .locked{color:var(--ink4);cursor:not-allowed}
+nav span.ep.locked::after{content:"Locked";float:right;margin-right:8px;font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+nav span.tp.locked{display:block;padding:6px 26px 6px 40px;font-size:13px;line-height:1.42}
 
 /* ---------------------------------------------------------------- stage */
 section{flex:1;min-width:0;overflow-y:auto;padding:40px 56px 90px;scrollbar-width:thin}
@@ -521,6 +526,22 @@ article.hero .lede{font-size:19px;line-height:1.5;color:var(--ink);font-weight:4
 .epcard .num{font:500 11px var(--mono);color:var(--accent);letter-spacing:.06em}
 .epcard strong{font-size:15px;line-height:1.35;font-weight:600}
 .epcard .meta{font-size:11px;color:var(--ink3);letter-spacing:.02em;margin-top:6px}
+.status-badge{display:inline-flex;width:max-content;align-items:center;padding:4px 8px;border:1px solid var(--accent);
+  background:var(--accent-soft);color:var(--accent);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.epcard.locked{background:var(--wash);color:var(--ink3);cursor:not-allowed}
+.epcard.locked::before{background:var(--ink4);transform:scaleY(1)}
+.epcard.locked:hover{transform:none;box-shadow:none;border-color:var(--rule)}
+.epcard .lock-label{margin-top:auto;padding-top:8px;font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+.lock-panel{display:flex;gap:20px;align-items:flex-start;margin:24px 0 30px;padding:22px 24px;border:1px solid var(--accent);
+  border-left:4px solid var(--accent);background:var(--accent-soft)}
+.lock-panel .lock-mark{position:relative;flex:0 0 30px;width:30px;height:25px;margin-top:11px;border:2px solid var(--accent);border-radius:3px}
+.lock-panel .lock-mark::before{content:"";position:absolute;left:6px;top:-12px;width:14px;height:13px;border:2px solid var(--accent);
+  border-bottom:0;border-radius:9px 9px 0 0}
+.lock-panel .status-badge{margin-bottom:10px}
+.lock-panel strong{display:block;font-size:18px;margin-bottom:5px}
+.lock-panel p{margin:0;max-width:62ch}
+.lock-panel.direct{margin-top:8px}
+.lock-panel.direct .btn{margin-top:14px;background:var(--paper)}
 ol.toclist{list-style:none;padding:0;margin:12px 0 30px;counter-reset:t}
 ol.toclist li{counter-increment:t;padding:0;border-bottom:1px solid var(--rule);display:flex;align-items:center}
 ol.toclist li::before{content:counter(t,decimal-leading-zero);font:500 11px var(--mono);
@@ -938,6 +959,10 @@ body.home article > h2{position:absolute;left:-9999px}   /* the hero carries the
   text-transform:uppercase;color:var(--accent)}
 .go i{font-style:normal;transition:transform .2s var(--ease)}
 .mcard:hover .go i{transform:translateX(5px)}
+.mcard.locked::before{transform:scaleX(1)}
+.mcard.locked .status-badge{position:absolute;right:22px;top:20px;z-index:2}
+.mcard.locked .mhead{padding-top:54px}
+.mcard.locked .go{color:var(--accent)}
 .mless{border-top:1px solid var(--rule);background:var(--wash)}
 .mless summary{list-style:none;cursor:pointer;padding:11px 22px;font-size:11px;font-weight:700;letter-spacing:.16em;
   text-transform:uppercase;color:var(--ink3);display:flex;align-items:center;gap:9px;transition:color .15s}
@@ -952,6 +977,9 @@ body.home article > h2{position:absolute;left:-9999px}   /* the hero carries the
   text-decoration:none;border-radius:3px;transition:background .15s,color .15s}
 .mless li a span{font:500 11.5px var(--mono);color:var(--accent);flex:0 0 30px}
 .mless li a:hover{background:var(--accent-soft);color:var(--accent)}
+.mless li .locked-lesson{display:flex;gap:10px;align-items:baseline;padding:7px 8px;font-size:14px;line-height:1.4;color:var(--ink3)}
+.mless li .locked-lesson>span{font:500 11.5px var(--mono);color:var(--ink4);flex:0 0 30px}
+.mless li .locked-lesson>b{margin-left:auto;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink4)}
 .howto{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
 .land-who{display:flex;flex-direction:column;gap:3px;margin:34px 0 10px;padding-top:22px;border-top:1px solid var(--rule);
   font-size:14px;color:var(--ink2)}

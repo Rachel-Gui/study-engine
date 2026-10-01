@@ -70,8 +70,12 @@ def _search_index(flat):
     """One entry per page: what the search box looks through."""
     idx = []
     for p in flat:
+        if p["kind"] != "module" and _locked(p["mod"]):
+            continue
         if p["kind"] == "module":
             text = " ".join(str(p["mod"].get("question", "")).split())
+            if _locked(p["mod"]):
+                text += " In progress. Lessons temporarily locked while this module is being finalized."
             idx.append({"t": p["mod"]["title"], "e": "", "l": "", "m": p["mod"].get("short") or p["mod"]["title"],
                         "p": p["path"], "x": text, "k": "module"})
             continue
@@ -106,6 +110,15 @@ def _module_num(mod):
     return m.group(1) if m else ""
 
 
+def _locked(mod):
+    return bool(mod.get("locked"))
+
+
+def _status_badge(mod):
+    status = str(mod.get("status", "")).strip()
+    return f'<span class="status-badge">{html.escape(status)}</span>' if status else ""
+
+
 def _readings_html(items, label="Selected readings", intro=""):
     """course.yml `readings:` entries (cite, title, venue, doi, why, access) as a reading list."""
     if not items:
@@ -135,24 +148,36 @@ def _module_page(mod, episodes):
     for m, ts in eps:
         bits = [x for x in (m.get("duration") and f'{m["duration"]} min',
                             m.get("level"), m.get("kind")) if x]
-        cards += (f'<a class="epcard" href="{slug(m["episode"])}-index.html">'
+        tag = "div" if _locked(mod) else "a"
+        href = "" if _locked(mod) else f' href="{slug(m["episode"])}-index.html"'
+        locked_class = " locked" if _locked(mod) else ""
+        cards += (f'<{tag} class="epcard{locked_class}"{href}>'
                   f'<span class="num">{html.escape(m["episode"])}</span>'
                   f'<strong>{html.escape(m["title"])}</strong>'
-                  f'<span class="meta">{" &middot; ".join(html.escape(str(b)) for b in bits)}'
-                  f' &middot; {len(ts)} topics</span></a>')
+                  + (f'<span class="meta">Planned lesson</span>' if _locked(mod) else
+                     f'<span class="meta">{" &middot; ".join(html.escape(str(b)) for b in bits)}'
+                     f' &middot; {len(ts)} topics</span>')
+                  + ('<span class="lock-label">Locked</span>' if _locked(mod) else '')
+                  + f'</{tag}>')
     q = " ".join(str(mod.get("question", "")).split())
     blocks = []
     art = _module_art(mod)
     if art:
         blocks.append({"kind": "_raw", "attrs": {}, "body": f'<div class="mpic">{art}</div>'})
-    if q:
+    if q and not _locked(mod):
         blocks.append({"kind": "_raw", "attrs": {}, "body": f'<p class="lede">{html.escape(q)}</p>'})
-    objs = _objectives(mod.get("objectives"), "By the end of this module you will be able to")
+    if _locked(mod):
+        blocks.append({"kind": "_raw", "attrs": {}, "body":
+                       '<div class="lock-panel"><div class="lock-mark" aria-hidden="true"></div>'
+                       f'<div>{_status_badge(mod)}<strong>This module is being finalized.</strong>'
+                       '<p>Students can see the planned lesson titles, but the lesson pages are temporarily locked. '
+                       'Individual lessons will be released according to the instructor\'s course schedule.</p></div></div>'})
+    objs = "" if _locked(mod) else _objectives(mod.get("objectives"), "By the end of this module you will be able to")
     if objs:
         blocks.append({"kind": "_raw", "attrs": {}, "body": objs})
     blocks.append({"kind": "_raw", "attrs": {},
                    "body": f'<span class="lbl sec">Lessons</span><div class="epgrid">{cards}</div>'})
-    rd = _readings_html(mod.get("readings"), "Selected readings",
+    rd = "" if _locked(mod) else _readings_html(mod.get("readings"), "Selected readings",
                         "Selected papers and reviews; preprints are labelled. Start with the ones marked core; "
                         "the rest are where to go next. Subscription papers are available through UW Libraries.")
     if rd:
@@ -165,6 +190,8 @@ def _readings_page(course):
     body = ('<p class="lede">Selected papers, reviews and surveys, module by module. Preprints are labelled. '
             'Each module page carries the same list next to its lessons; citation details and DOIs were verified in September 2026.</p>')
     for mod in course["modules"]:
+        if _locked(mod):
+            continue
         items = mod.get("readings")
         if not items:
             continue
@@ -239,18 +266,22 @@ def _modules_page(course, episodes, flat):
         q = " ".join(str(mod.get("question", "")).split())
         short = mod.get("short") or mod["title"]
         kind = "intro" if not num and "Introduction" in mod["title"] else ("ref" if not num else "mod")
-        lessons = "".join(f'<li><a href="{slug(m["episode"])}-index.html"><span>{html.escape(m["episode"])}</span>'
-                          f'{html.escape(m["title"])}</a></li>' for m, _ in eps)
-        cards += (f'<div class="mcard {kind}">'
+        if _locked(mod):
+            lessons = "".join(f'<li><span class="locked-lesson"><span>{html.escape(m["episode"])}</span>'
+                              f'{html.escape(m["title"])}<b>Locked</b></span></li>' for m, _ in eps)
+        else:
+            lessons = "".join(f'<li><a href="{slug(m["episode"])}-index.html"><span>{html.escape(m["episode"])}</span>'
+                              f'{html.escape(m["title"])}</a></li>' for m, _ in eps)
+        cards += (f'<div class="mcard {kind}{" locked" if _locked(mod) else ""}">'
                   f'<a class="mhead" href="{first["path"]}">'
                   f'<span class="mart">{_module_art(mod)}</span>'
                   f'<span class="mnum">{_icon(num or ("0" if kind == "intro" else "ref"))}'
-                  f'{("Module " + num) if num else html.escape(short)}</span>'
+                  f'{("Module " + num) if num else html.escape(short)}</span>{_status_badge(mod)}'
                   f'<strong>{html.escape(short if num else mod["title"])}</strong>'
-                  + (f'<span class="mq">{html.escape(q)}</span>' if q else "")
+                  + (f'<span class="mq">{html.escape(q)}</span>' if q and not _locked(mod) else "")
                   + f'<span class="mmeta">{len(eps)} lesson{"s" if len(eps) != 1 else ""}'
                   + (f' &middot; ~{mins} min' if mins else "") + '</span>'
-                  f'<span class="go">Open<i>&rarr;</i></span></a>'
+                  f'<span class="go">{"View status" if _locked(mod) else "Open"}<i>&rarr;</i></span></a>'
                   f'<details class="mless"><summary>Lessons</summary><ul>{lessons}</ul></details></div>')
     howto = ('<span class="lbl sec">How to use the Study Engine</span><div class="cards howto">'
              '<div class="card"><strong>Jump in anywhere</strong><span>Open any module below. Inside a module the contents panel on the left lists every lesson and topic, and the arrows at the bottom of each page (or the &larr; &rarr; keys) walk the course in order.</span></div>'
@@ -278,6 +309,7 @@ def _nav(flat):
             num = _module_num(p["mod"])
             label = (f'<span class="mn">{num}</span>{html.escape(p["mod"].get("short") or p["mod"]["title"])}'
                      if num else html.escape(p["mod"].get("short") or p["mod"]["title"]))
+            label += _status_badge(p["mod"])
             out.append(f'<div class="m" data-m="{p["mi"]}">'
                        f'<div class="mh"><a class="mod" data-i="{p["i"]}" data-m="{p["mi"]}" '
                        f'href="{p["path"]}" title="{html.escape(p["mod"]["title"])}">{label}</a>'
@@ -287,17 +319,21 @@ def _nav(flat):
         elif p["kind"] == "episode":
             if open_e: out.append("</div></div></div>"); open_e = False
             ep = html.escape(p["meta"]["episode"])
-            out.append(f'<div class="e" data-ep="{ep}" data-m="{p["mi"]}">'
-                       f'<div class="eh"><a class="ep" data-i="{p["i"]}" data-ep="{ep}" '
-                       f'data-m="{p["mi"]}" href="{p["path"]}">'
-                       f'<span class="n">{ep}</span>{html.escape(p["meta"]["title"])}</a>'
-                       f'<button class="tg" aria-label="Expand lesson"></button></div>'
+            ep_tag = "span" if _locked(p["mod"]) else "a"
+            ep_href = "" if _locked(p["mod"]) else f' href="{p["path"]}"'
+            lock_class = " locked" if _locked(p["mod"]) else ""
+            out.append(f'<div class="e{lock_class}" data-ep="{ep}" data-m="{p["mi"]}">'
+                       f'<div class="eh"><{ep_tag} class="ep{lock_class}" data-i="{p["i"]}" data-ep="{ep}" '
+                       f'data-m="{p["mi"]}"{ep_href}>'
+                       f'<span class="n">{ep}</span>{html.escape(p["meta"]["title"])}</{ep_tag}>'
+                       + ('' if _locked(p["mod"]) else '<button class="tg" aria-label="Expand lesson"></button>') + '</div>'
                        f'<div class="tl"><div class="in">')
             open_e = True
         else:
-            out.append(f'<a class="tp" data-i="{p["i"]}" '
-                       f'data-ep="{html.escape(p["meta"]["episode"])}" data-m="{p["mi"]}" '
-                       f'href="{p["path"]}">{html.escape(p["t"]["title"])}</a>')
+            if not _locked(p["mod"]):
+                out.append(f'<a class="tp" data-i="{p["i"]}" '
+                           f'data-ep="{html.escape(p["meta"]["episode"])}" data-m="{p["mi"]}" '
+                           f'href="{p["path"]}">{html.escape(p["t"]["title"])}</a>')
     if open_e: out.append("</div></div></div>")
     if open_m: out.append("</div></div></div>")
     return "".join(out)
@@ -335,7 +371,16 @@ def _scope_svg_markers(body):
 
 def _page(course, p, flat, nav):
     t, meta, mod = p["t"], p["meta"], p["mod"]
-    body = "".join(components.render(b, "web") for b in t["blocks"])
+    is_locked_content = p["kind"] in ("episode", "topic") and _locked(mod)
+    if is_locked_content:
+        body = ('<div class="lock-panel direct"><div class="lock-mark" aria-hidden="true"></div><div>'
+                f'{_status_badge(mod)}<strong>This lesson is temporarily locked.</strong>'
+                '<p>This content is still being finalized and will be released according to the instructor\'s course schedule. '
+                'Return to the module page to view its status and planned lessons.</p>'
+                f'<a class="btn" href="{slug(mod["title"])}.html">Back to Module {_module_num(mod)}</a>'
+                '</div></div>')
+    else:
+        body = "".join(components.render(b, "web") for b in t["blocks"])
     body = _scope_svg_markers(body)
 
     # breadcrumb + lesson meta strip
@@ -367,8 +412,14 @@ def _page(course, p, flat, nav):
     elif p["kind"] == "readings":
         prev, nxt = all_mods, None
     else:
-        prev = flat[p["i"] - 1] if p["i"] > 0 else all_mods
-        nxt = flat[p["i"] + 1] if p["i"] < len(flat) - 1 else None
+        available = [q for q in flat if q["kind"] == "module" or not _locked(q["mod"])]
+        if is_locked_content:
+            prev = next((q for q in flat if q["kind"] == "module" and q["mod"] is mod), all_mods)
+            nxt = None
+        else:
+            pos = available.index(p)
+            prev = available[pos - 1] if pos > 0 else all_mods
+            nxt = available[pos + 1] if pos < len(available) - 1 else None
     ins = course["instructor"]
     hero = " hero" if t.get("hero") else ""
 
