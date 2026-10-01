@@ -509,7 +509,93 @@ def role_learn():
     s += _t(108, 70, "high-load example", 10.5, anchor="start", style=f'fill="{INK2}"')
     return _full(s + "</svg>")
 
+def setup_ecosystem():
+    """The two places students run Python and the role of each local tool."""
+    s = HEAD.format(w=880, h=390)
+    s += _t(440, 30, "Two ways to run the same Python", 15, weight=600)
+    s += _box(42, 58, 504, 252, fill="#fbfbfa", rx=10)
+    s += _t(64, 84, "YOUR LAPTOP", 10, anchor="start", weight=700,
+            style=f'fill="{ACC}" letter-spacing="1.5"')
+    local = [(66, "VS Code", ["edit .py files", "see your project"]),
+             (230, "Terminal", ["run commands", "shows the folder"]),
+             (394, "Python", ["runs the code", "uses libraries"])]
+    for x, title, notes in local:
+        s += _box(x, 112, 128, 86, fill="#fff", rx=8)
+        s += _t(x + 64, 140, title, 13, weight=600)
+        s += _lines(x + 64, 162, notes, 10, style='opacity=".68"', lh=14)
+    s += _arrow(196, 155, 226, 155, purple=True)
+    s += _arrow(360, 155, 390, 155, purple=True)
+    s += _box(148, 226, 292, 52, fill=GOLD, stroke=ACC, rx=8)
+    s += _t(294, 249, "Libraries: numpy · pandas · matplotlib · scikit-learn", 10.5, weight=600)
+    s += _t(294, 267, "installed once; imported by your Python program", 9.5, style='opacity=".7"')
+    s += _arrow(458, 199, 422, 224, purple=True)
+    s += _box(578, 58, 260, 252, fill="#fff", rx=10, stroke=ACC, lw=1.8)
+    s += _t(600, 84, "IN YOUR BROWSER", 10, anchor="start", weight=700,
+            style=f'fill="{ACC}" letter-spacing="1.5"')
+    s += _box(612, 112, 192, 86, fill=GOLD, stroke=ACC, rx=8)
+    s += _t(708, 140, "Google Colab", 13, weight=600)
+    s += _lines(708, 162, ["edit and run notebook cells", "Python runs in Google's cloud"], 10, style='opacity=".72"', lh=14)
+    s += _box(612, 226, 192, 52, fill="#fbfbfa", rx=8)
+    s += _t(708, 249, "Nothing to install", 11.5, weight=600)
+    s += _t(708, 267, "notebooks and a free GPU", 9.5, style='opacity=".7"')
+    s += _arrow(708, 201, 708, 222, purple=True)
+    s += _t(440, 334, "Same language · same course files · different place of execution", 12, weight=600)
+    return _foot(s, 350, "Original course diagram. VS Code edits; the terminal launches; Python executes; Colab combines those roles in the browser.") + "</svg>"
+
+
+def learning_types_map():
+    """Learning types organized by the signal available during learning."""
+    s = HEAD.format(w=880, h=430)
+    s += _t(440, 30, "Four kinds of learning: what signal does the model receive?", 15, weight=600)
+    s += _box(325, 54, 230, 54, fill=GOLD, stroke=ACC, rx=8)
+    s += _t(440, 78, "What accompanies each example?", 12.5, weight=600)
+    s += _t(440, 96, "The answer determines the learning setup", 9.8, style='opacity=".68"')
+    cols = [(38, "SUPERVISED", "A correct answer", "features + target", "Predict heating load", "regression · classification"),
+            (252, "UNSUPERVISED", "No answer", "features only", "Group similar buildings", "clustering · representation"),
+            (466, "SEMI-SUPERVISED", "A few answers", "few labels + many examples", "Label facade photos", "structure, then labels"),
+            (680, "REINFORCEMENT", "Consequences", "action + reward over time", "Control HVAC", "policy · reward · feedback")]
+    for i, (x, head, signal, data, example, method) in enumerate(cols):
+        cx = x + 81
+        s += f'<path d="M440 108 C440 136 {cx} 126 {cx} 158" stroke="{ACC if i == 0 else "#777"}" marker-end="url(#{"ap" if i == 0 else "ao"})"/>'
+        s += _box(x, 164, 162, 188, fill=GOLD if i == 0 else "#fbfbfa", stroke=ACC if i == 0 else "#111", rx=8, lw=1.8 if i == 0 else 1.2)
+        s += _t(cx, 190, head, 9.5, weight=700, style=f'fill="{ACC}" letter-spacing="1"')
+        s += _t(cx, 222, signal, 12.5, weight=600)
+        s += _t(cx, 244, data, 9.3, style='opacity=".67"')
+        s += f'<line x1="{x + 18}" y1="262" x2="{x + 144}" y2="262" opacity=".2"/>'
+        s += _t(cx, 287, example, 10.5, weight=600)
+        s += _t(cx, 308, "architecture example", 9, style='opacity=".55"')
+        s += _t(cx, 335, method, 9.2, style=f'fill="{ACC}"')
+    return _foot(s, 380, "Original course diagram. Standard learning categories, paired with architectural applications used in this course.") + "</svg>"
+
+
+def ml_workflow_map():
+    """An eight-step workflow grouped into decision, data, model, and evidence."""
+    s = HEAD.format(w=880, h=440)
+    s += _t(440, 30, "A machine-learning result is a chain of decisions", 15, weight=600)
+    groups = [(40, 188, "1 · FRAME", [("Question", "decision + unit"), ("Success", "useful answer")]),
+              (246, 188, "2 · DATA", [("Audit", "coverage + labels"), ("Preprocess", "fit on train only"), ("Split", "building · site · time")]),
+              (452, 188, "3 · MODEL", [("Baseline", "simplest first"), ("Tune", "validation only")]),
+              (658, 182, "4 · EVIDENCE", [("Evaluate", "test once"), ("Monitor", "range + drift")])]
+    for gi, (x, w, head, rows) in enumerate(groups):
+        s += _box(x, 58, w, 282, fill=GOLD if gi == 3 else "#fbfbfa", stroke=ACC if gi == 3 else "#111", rx=10, lw=1.8 if gi == 3 else 1.2)
+        s += _t(x + 18, 86, head, 10, anchor="start", weight=700, style=f'fill="{ACC}" letter-spacing="1.3"')
+        rh = 66 if len(rows) == 3 else 88
+        for ri, (title, note) in enumerate(rows):
+            yy = 108 + ri * rh
+            s += _box(x + 16, yy, w - 32, rh - 12, fill="#fff", rx=7)
+            s += _t(x + 30, yy + 23, title, 12, anchor="start", weight=600)
+            s += _t(x + 30, yy + 42, note, 9.5, anchor="start", style='opacity=".68"')
+        if gi < 3:
+            s += _arrow(x + w + 3, 199, x + w + 15, 199, purple=True)
+    s += _t(440, 365, "Leakage or a weak split breaks every step to its right", 12, weight=600)
+    s += f'<path d="M270 380 H765" stroke="{ACC}" stroke-width="2" marker-end="url(#ap)"/>'
+    s += _t(440, 402, "The model is one stage. The defensible claim is the product.", 11, style='opacity=".72"')
+    return _foot(s, 414, "Original course diagram after the workflow categories synthesized in Lystbæk (2025) and the course's evaluation lessons.") + "</svg>"
+
+
 ALL = {"course_map": course_map, "genai_review_map": genai_review_map, "human_ai_collab": human_ai_collab,
        "agentic_framework": agentic_framework, "ethics_map": ethics_map, "data_centric": data_centric,
        "ml_design_stages": ml_design_stages, "piml_taxonomy": piml_taxonomy, "code_comprehension_loop": code_comprehension_loop,
-       "ai_hierarchy": ai_hierarchy, "role_agent": role_agent, "role_learn": role_learn}
+       "ai_hierarchy": ai_hierarchy, "role_agent": role_agent, "role_learn": role_learn,
+       "setup_ecosystem": setup_ecosystem, "learning_types_map": learning_types_map,
+       "ml_workflow_map": ml_workflow_map}
