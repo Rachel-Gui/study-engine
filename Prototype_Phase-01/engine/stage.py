@@ -167,6 +167,7 @@ pre.out .lbl{display:block;font:700 10.5px Montserrat,sans-serif;letter-spacing:
 .tile .pic{background:#fbfbfa;border-bottom:1px solid #ececec;display:grid;place-items:center;aspect-ratio:4/3;overflow:hidden}
 .gal.square .tile .pic{aspect-ratio:1/1}
 .tile .pic svg{width:78%;height:auto}
+.tile .pic svg.full{width:100%}
 .tile .pic img{width:100%;height:100%;object-fit:cover;display:block}
 .tile .cap{padding:10px 12px 12px}
 .tile .cap b{display:block;font-size:14.5px;font-weight:600;line-height:1.25}

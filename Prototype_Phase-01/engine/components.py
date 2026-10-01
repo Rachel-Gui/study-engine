@@ -537,13 +537,15 @@ def boundary_frame(b):
 
 
 # ------------------------------------------------------------------------ todo
-#   :::todo  - a visible "this section still needs work" marker. Delete the
-#   block when the section is done; it is meant to be impossible to miss.
+#   :::todo  - an author's note: "this section still needs work". It never
+#   appears on the student-facing site; the build lists every one instead.
+
+TODOS = []
 
 
 def todo_web(b):
-    return (f'<div class="todo"><span class="lbl">Needs work</span>'
-            f'{prose_web(b)}</div>')
+    TODOS.append(plain(b["body"])[:90])
+    return ""
 
 
 todo_frame = lambda b: ""

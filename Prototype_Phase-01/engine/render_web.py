@@ -153,8 +153,8 @@ def _module_page(mod, episodes):
     blocks.append({"kind": "_raw", "attrs": {},
                    "body": f'<span class="lbl sec">Lessons</span><div class="epgrid">{cards}</div>'})
     rd = _readings_html(mod.get("readings"), "Selected readings",
-                        "Recent, peer-reviewed reviews the module's definitions and diagrams were checked against. "
-                        "Read the ones marked as core; the rest are where to go next. Subscription papers are available through UW Libraries.")
+                        "Selected papers and reviews; preprints are labelled. Start with the ones marked core; "
+                        "the rest are where to go next. Subscription papers are available through UW Libraries.")
     if rd:
         blocks.append({"kind": "_raw", "attrs": {}, "body": rd})
     return {"title": mod["title"], "narration": "", "hero": True, "blocks": blocks}
@@ -162,7 +162,7 @@ def _module_page(mod, episodes):
 
 def _readings_page(course):
     """readings.html - every module's selected readings on one page."""
-    body = ('<p class="lede">The peer-reviewed reviews and surveys behind the course, module by module. '
+    body = ('<p class="lede">Selected papers, reviews and surveys, module by module. Preprints are labelled. '
             'Each module page carries the same list next to its lessons; citation details and DOIs were verified in September 2026.</p>')
     for mod in course["modules"]:
         items = mod.get("readings")
@@ -257,7 +257,7 @@ def _modules_page(course, episodes, flat):
              '<div class="card"><strong>Run the labs</strong><span>Grey code boxes run Python in your browser: press Run step, change a number, run it again. Nothing to install.</span></div>'
              '<div class="card"><strong>Predict before you reveal</strong><span>Try / Predict cards ask you to commit to an answer first. Every option gets feedback; the wrong ones are the useful ones.</span></div>'
              '<div class="card"><strong>Search, or watch</strong><span>The search box at the top finds any topic, lab or term. Each lesson also has its own narrated, animated video.</span></div>'
-             '<a class="card link" href="readings.html"><strong>Selected readings &rarr;</strong><span>The peer-reviewed reviews behind each module, with DOIs, on one page.</span></a>'
+             '<a class="card link" href="readings.html"><strong>Selected readings &rarr;</strong><span>Papers and reviews for each module, with DOIs and labelled preprints, on one page.</span></a>'
              '</div>')
     return {"title": "Modules", "narration": "", "hero": True, "blocks": [
         {"kind": "_raw", "attrs": {}, "body": f'<p class="lede modlede">{html.escape(course.get("subtitle", ""))}</p>'},
