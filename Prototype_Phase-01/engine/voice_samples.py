@@ -33,11 +33,11 @@ SHORTLIST = [
     ("en-AU-NatashaNeural", "Australian · female"),
 ]
 
-SAMPLE = ("Welcome to AI for Architecture. Architecture now has three kinds of AI at its disposal, and they do "
-          "different things. Generative AI proposes: images, text, code, geometry. Agentic AI acts: it plans, "
-          "calls tools and works through a task with checks along the way. Machine learning and deep learning "
-          "predict: they learn from measured data how a building will perform. A plausible output is not evidence. "
-          "An image is not a building, a fluent answer is not a fact, and a high score on training data is not a result.")
+SAMPLE = ("Welcome to AI for Architecture. AI is not one method. In architecture, many contemporary AI workflows "
+          "can be understood through three broad roles. Generative AI creates or proposes new content, such as images, "
+          "text, code, or design representations. Agentic AI goes beyond a single response: agents can plan, use tools, "
+          "take actions, and respond to feedback. Machine learning and deep learning learn patterns from data to support "
+          "tasks such as prediction, classification, analysis, and representation.")
 
 
 def list_voices():

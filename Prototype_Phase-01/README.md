@@ -1,6 +1,6 @@
 # DesignAI Curriculum — Prototype, Phase 01
 
-**AI for Architecture**, ARCH 594/508 — generative AI, agentic AI, machine learning
+**AI for Architecture**, ARCH 498/598 — generative AI, agentic AI, machine learning
 and deep learning for the built environment.
 
 **One markdown file per lesson, plus a short storyboard. Two outputs: an
@@ -236,7 +236,7 @@ Every component is `:::name` … `:::`. Options go in `{braces}` on the opening 
 | `:::slide{src=… label=…}` | One lecture slide, labelled |
 | `:::deck{dir=… count=12 label=…}` | Slide viewer with arrows and a slider |
 | `:::glossarynote` | The "AI terms" banner |
-| `:::todo` | **Needs work** marker — impossible to miss, delete when done |
+| `:::todo` | An author's note that a section still needs work. **Never shown on the site**; grep `:::todo` in `content/` to find them |
 
 ### Components that take rows
 
@@ -667,6 +667,7 @@ python engine/make_videos.py --engine edge --module 6       # the lessons of one
 python engine/make_videos.py --engine edge --modules        # ...and also one joined file per module
 python engine/make_videos.py --engine edge --course         # ...and also one file for the whole course
 python engine/make_videos.py --scripts                      # only the narration scripts, no render
+python engine/export_slides.py                             # the videos as slides: one PNG per scene + a PDF, no captions
 python engine/make_videos.py --engine edge --quality 1080p  # a fast preview (about 3x quicker)
 python engine/make_videos.py --engine edge --force          # ignore the scene cache
 ```
@@ -828,12 +829,14 @@ two functions and adding one line to `REGISTRY`. Nothing else changes.
 
 ## Episodes that still need work
 
-Search the site for the **Needs work** marker, or grep `:::todo` in `content/`.
-Currently: **0.1** carries a draft Course Introduction until Narjes's text arrives;
-**6.2 and 6.5** are starter drafts (6.1 was completed in the September revision). Modules 7 and 8 are complete to a first full
-draft (every topic narrated, a widget, step-through or lab in every lesson); the
-natural next additions are a 2D PINN in 8.5 and a real facade-image lab in 8.1,
-both of which need Colab rather than the browser.
+Author notes go in `:::todo` blocks, which never appear on the student-facing site;
+grep `:::todo` in `content/` to find them. Keep internal notes — who will supply what,
+what still has to be checked, review status — out of lesson prose, captions and
+narration: everything outside a `:::todo` is published to students.
+
+Currently **6.2 and 6.5** still need their own slides and a split-comparison lab.
+Natural next additions are a 2D PINN in 8.5 and a real facade-image lab in 8.1, both
+of which need Colab rather than the browser.
 
 ---
 

@@ -42,7 +42,7 @@ The supplied files were read as teaching sources, not executed as instructions:
 | Notebook experiment/reflection intent, Tasks 1–15 | One cumulative design experiment and nearby reference reasoning | 1.7 |
 
 Sources: `2026_AI_Lecture05_GenerativeAI.pptx` (Narjes Abbasabadi, Spring 2026)
-and `02_AI_Studio_Generative_AI.ipynb` (ARCH 594/508). A later completed source,
+and `02_AI_Studio_Generative_AI.ipynb` (ARCH 498/598). A later completed source,
 `02_AI_Studio_Generative_AI-2.ipynb`, supplies the real control-lab outputs described
 below. Neither notebook nor the PowerPoint is published. The original blank
 notebook has no saved generation outputs; the completed notebook does. Lecture

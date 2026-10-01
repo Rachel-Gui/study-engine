@@ -78,7 +78,7 @@ MODULES = [  # number, key, title, one line
     ("1", "m1", "Coding Foundations", "Python from zero"),
     ("2", "m2", "Generative AI", "generate, control, critique"),
     ("3", "m3", "AI-Assisted Coding", "vibe coding, with judgment"),
-    ("4", "m4", "Agentic AI", "agents that negotiate"),
+    ("4", "m4", "Agentic AI", "plan, use tools, act"),
     ("5", "m5", "Exploratory Data Analysis", "look before you model"),
     ("6", "m6", "Machine Learning", "features, targets, evaluation"),
     ("7", "m7", "Deep Learning Foundations", "neurons, learning, limits"),
@@ -108,7 +108,7 @@ def course_map():
         s += _t(x + 14, y + 146, sub, 10.5, anchor="start", style='opacity=".68"')
     y = 26 + 2 * (th + gy) - 8
     s += f'<path d="M30 {y}v10h{4 * tw + 3 * gx}v-10" stroke="{ACC}"/>'
-    s += _t(30 + (4 * tw + 3 * gx) / 2, y + 30, "Modules 1–4: making · Modules 5–8: learning from data · every module checked against the accuracy boundaries (Reference)", 11.5, weight=500)
+    s += _t(30 + (4 * tw + 3 * gx) / 2, y + 30, "Modules 1–4: building and using contemporary AI workflows · Modules 5–8: understanding data-driven AI models", 11.5, weight=500)
     return s + "</svg>"
 
 
@@ -422,6 +422,94 @@ def code_comprehension_loop():
     return _foot(s, 368, "Original diagram after Qiao, Shihab & Hundhausen (2026), ACM Transactions on Computing Education 26(2); figures are the review's.") + "</svg>"
 
 
+
+# ------------------------------------------------------- AI, ML, DL: the nesting
+def ai_hierarchy():
+    """AI contains ML, ML contains DL; generative and agentic systems mostly sit on DL
+    but are not branches at the same level: they overlap it."""
+    s = HEAD.format(w=880, h=480)
+    # AI
+    s += _box(20, 16, 840, 392, fill="#fff", rx=14, lw=1.6)
+    s += _t(44, 44, "ARTIFICIAL INTELLIGENCE", 12, anchor="start", weight=700, style='letter-spacing="1.6"')
+    s += _t(44, 64, "systems that perform tasks associated with human intelligence: reasoning, planning, perception, language, decisions", 11, anchor="start", style=f'fill="{INK2}"')
+    # ML
+    s += _box(44, 80, 768, 302, fill="#f7f6f2", rx=12, lw=1.4)
+    s += _t(68, 106, "MACHINE LEARNING", 12, anchor="start", weight=700, style='letter-spacing="1.6"')
+    s += _t(68, 125, "learns patterns from data instead of being explicitly programmed", 11, anchor="start", style=f'fill="{INK2}"')
+    # DL
+    s += _box(68, 140, 548, 212, fill=GOLD, rx=10, lw=1.4)
+    s += _t(92, 166, "DEEP LEARNING", 12, anchor="start", weight=700, style='letter-spacing="1.6"')
+    s += _lines(92, 185, ["multi-layer neural networks that learn", "representations from large amounts of data:",
+                          "CNNs, GNNs, transformers, diffusion models"], 11, anchor="start", style=f'fill="{INK2}"', lh=15)
+    s += _t(92, 336, "Modules 7–8", 10, anchor="start", weight=600, style=f'fill="{ACC}"')
+    # generative and agentic: overlap DL, not contained by it, not beside it
+    s += _box(418, 154, 330, 88, fill="#fff", stroke=ACC, rx=9, lw=1.8)
+    s += _t(434, 178, "Generative AI", 14, anchor="start", weight=700)
+    s += _lines(434, 197, ["creates text, images, code, geometry and", "other design representations"], 10.8, anchor="start", style=f'fill="{INK2}"', lh=14)
+    s += _t(434, 233, "mostly deep models: diffusion, LLMs · Module 2", 9.8, anchor="start", weight=600, style=f'fill="{ACC}"')
+    s += _box(418, 254, 424, 88, fill="#fff", stroke=ACC, rx=9, lw=1.8)
+    s += _t(434, 278, "Agentic AI", 14, anchor="start", weight=700)
+    s += _lines(434, 297, ["pursues goals: plans, uses tools, acts, responds to feedback,", "with human oversight where needed"], 10.8, anchor="start", style=f'fill="{INK2}"', lh=14)
+    s += _t(434, 333, "an LLM plus tools, memory and control code · Module 4", 9.8, anchor="start", weight=600, style=f'fill="{ACC}"')
+    # what lies outside each inner set
+    s += _t(68, 372, "also machine learning, not deep: linear regression, decision trees, clustering · Modules 5–6", 10, anchor="start", style=f'fill="{INK2}"')
+    s += _t(44, 399, "also AI, not learned: rules, search, symbolic planning", 10, anchor="start", style=f'fill="{INK2}"')
+    s += _t(440, 434, "Overlapping areas, not parallel branches: many generative and agentic systems are built on deep-learning models.", 12, weight=600)
+    return _foot(s, 448, "Original diagram. Nesting after standard usage, e.g. LeCun, Bengio & Hinton (2015), Nature 521; agentic AI after Lee et al. (2025).") + "</svg>"
+
+
+# ------------------------------------------ small role pictures for the intro
+def _full(svg):
+    return svg.replace("<svg ", '<svg class="full" ', 1)
+
+
+def role_agent():
+    """An agent working on a design goal: plan, call a tool, act, read the feedback."""
+    s = HEAD.format(w=400, h=300)
+    s += _box(110, 14, 180, 38, fill=GOLD, stroke=ACC, rx=8, lw=1.6)
+    s += _t(200, 30, "GOAL", 10, weight=700, style=f'fill="{ACC}" letter-spacing="1.4"')
+    s += _t(200, 45, "daylight on every desk", 12.5, weight=600)
+    nodes = [(200, 96, "plan"), (318, 170, "use a tool"), (200, 244, "act"), (82, 170, "feedback")]
+    for x, y, t in nodes:
+        s += _box(x - 58, y - 18, 116, 36, fill="#fff", rx=18, lw=1.5)
+        s += _t(x, y + 5, t, 14, weight=600)
+    s += _arrow(200, 52, 200, 76, purple=True)
+    s += f'<path d="M246 108 Q300 120 312 150" marker-end="url(#ap)" stroke="{ACC}"/>'
+    s += f'<path d="M312 190 Q300 222 250 238" marker-end="url(#ap)" stroke="{ACC}"/>'
+    s += f'<path d="M150 238 Q100 222 88 190" marker-end="url(#ap)" stroke="{ACC}"/>'
+    s += f'<path d="M88 150 Q100 120 154 108" marker-end="url(#ap)" stroke="{ACC}"/>'
+    s += _t(318, 206, "daylight simulation", 10.5, style=f'fill="{INK2}"')
+    s += _t(200, 280, "revise the facade", 10.5, style=f'fill="{INK2}"')
+    # the designer, overseeing
+    s += '<circle cx="200" cy="158" r="9" fill="#fff"/>'
+    s += '<path d="M184 188 Q200 168 216 188" fill="#fff"/>'
+    s += _t(200, 206, "designer", 10.5, weight=600)
+    s += _t(200, 220, "approves", 10.5, style=f'fill="{INK2}"')
+    return _full(s + "</svg>")
+
+
+def role_learn():
+    """Schematic prediction plot: illustrative random points, not model results."""
+    s = HEAD.format(w=400, h=300)
+    x0, y0, x1, y1 = 66, 250, 372, 26
+    s += f'<line x1="{x0}" y1="{y0}" x2="{x1}" y2="{y0}"/><line x1="{x0}" y1="{y0}" x2="{x0}" y2="{y1}"/>'
+    s += f'<line x1="{x0}" y1="{y0}" x2="{x1}" y2="{y1}" stroke="#9a9a9a" stroke-dasharray="5 4"/>'
+    import random
+    rnd = random.Random(7)
+    for i in range(46):
+        v = rnd.uniform(0.06, 0.94)
+        e = rnd.gauss(0, 0.045)
+        cx = x0 + v * (x1 - x0); cy = y0 - min(max(v + e, 0.02), 0.98) * (y0 - y1)
+        s += f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="4.2" fill="{ACC if v > 0.62 else "#fff"}" stroke="{ACC}" stroke-width="1.3"/>'
+    s += _t((x0 + x1) / 2, 280, "heating load (illustrative)", 12, weight=500)
+    s += f'<text x="26" y="{(y0 + y1) / 2}" font-size="12" font-weight="500" text-anchor="middle" font-family="Montserrat, sans-serif" fill="#111" stroke="none" transform="rotate(-90 26 {(y0 + y1) / 2})">predicted</text>'
+    s += _box(82, 34, 150, 44, fill="#fff", rx=6, lw=1.2)
+    s += _t(92, 52, "Schematic example", 11, anchor="start", weight=600)
+    s += f'<circle cx="98" cy="66" r="4" fill="{ACC}" stroke="{ACC}"/>'
+    s += _t(108, 70, "high-load example", 10.5, anchor="start", style=f'fill="{INK2}"')
+    return _full(s + "</svg>")
+
 ALL = {"course_map": course_map, "genai_review_map": genai_review_map, "human_ai_collab": human_ai_collab,
        "agentic_framework": agentic_framework, "ethics_map": ethics_map, "data_centric": data_centric,
-       "ml_design_stages": ml_design_stages, "piml_taxonomy": piml_taxonomy, "code_comprehension_loop": code_comprehension_loop}
+       "ml_design_stages": ml_design_stages, "piml_taxonomy": piml_taxonomy, "code_comprehension_loop": code_comprehension_loop,
+       "ai_hierarchy": ai_hierarchy, "role_agent": role_agent, "role_learn": role_learn}

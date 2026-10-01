@@ -15,7 +15,7 @@ The spec is a small dict (YAML in the markdown):
 
     kind: terminal | editor | notebook | browser | installer
     title: window title text
-    prompt: "C:\\Users\\you\\arch594>"          terminal prompt (default per OS)
+    prompt: "C:\\Users\\you\\arch598>"          terminal prompt (default per OS)
     lines: ["$ python --version", "Python 3.13.2"]   "$ " = a command that is typed
     files / file / code / terminal                   editor
     cells: [{code: ..., output: ...}]                notebook
@@ -158,7 +158,7 @@ def _window(kind, title, body, beats, callout=None, callout_top=False):
 
 def terminal(spec, animate=False):
     b = _Beats(animate)
-    prompt = spec.get("prompt") or "C:\\Users\\you\\Documents\\arch594>"
+    prompt = spec.get("prompt") or "C:\\Users\\you\\Documents\\arch598>"
     rows = []
     for ln in spec.get("lines") or []:
         ln = str(ln)
@@ -180,7 +180,7 @@ def terminal(spec, animate=False):
 
 def editor(spec, animate=False):
     b = _Beats(animate)
-    files = spec.get("files") or ["arch594/", "  hello.py"]
+    files = spec.get("files") or ["arch598/", "  hello.py"]
     cur = spec.get("file") or "hello.py"
     side = '<div class="mk-side"><div class="mk-h">EXPLORER</div>' + "".join(
         f'<div class="mk-f{" on" if str(f).strip() == cur else ""}">{_e(f)}</div>' for f in files) + "</div>"
@@ -194,7 +194,7 @@ def editor(spec, animate=False):
         ln = str(ln)
         if ln.startswith("$ "):
             cmd = ln[2:]
-            term_rows.append(f'<div><span class="mk-ps">{_e(spec.get("prompt") or "arch594 $")}</span> '
+            term_rows.append(f'<div><span class="mk-ps">{_e(spec.get("prompt") or "arch598 $")}</span> '
                              + (f'<span{b.next("type", 0, min(1.4, 0.3 + 0.04 * len(cmd)), text=cmd)}></span>' if animate else f'<span>{_e(cmd)}</span>') + '</div>')
         else:
             term_rows.append(f'<div class="mk-out"{b.next("fade", 0.1, 0.3)}>{_e(ln)}</div>')
