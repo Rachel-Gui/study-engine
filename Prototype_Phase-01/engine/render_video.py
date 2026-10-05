@@ -215,7 +215,8 @@ def _caption_chunks(sw):
         cur.append(w)
         n = len(" ".join(cur))
         left = len(sw) - idx - 1
-        if len(chunks) < k - 1 and left >= 3:
+        spelled = re.fullmatch(r"[A-Z]", w) and idx + 1 < len(sw) and re.fullmatch(r"[A-Z][,;:.!?]?", sw[idx + 1])
+        if len(chunks) < k - 1 and left >= 3 and not spelled:      # never split a spelled acronym
             if n >= target or (n >= target * 0.66 and re.search(r"[,;:—]$", w)):
                 chunks.append(cur); cur = []
     if cur:
@@ -226,6 +227,24 @@ def _caption_chunks(sw):
     return chunks
 
 
+# The narration spells acronyms out so the voice says them letter by letter ("W W R").
+# The captions show them the way they are written. Display only: timing still counts
+# the spoken words.
+CAPTION_SHOW = {
+    "A P I N N": "A PINN", "P I N N": "PINN", "A P I": "API", "A I": "AI", "M C P": "MCP", "C A D": "CAD",
+    "W W R": "WWR", "S D K": "SDK", "L S T M": "LSTM", "R N N": "RNN", "G N N": "GNN", "C N N": "CNN",
+    "G A N": "GAN", "V A E": "VAE", "E D A": "EDA", "U R L": "URL", "M A E": "MAE", "R M S E": "RMSE",
+    "C F D": "CFD", "B I M": "BIM", "I N R": "INR", "D O I": "DOI", "U C I": "UCI", "O D E": "ODE",
+    "G P T": "GPT", "C S V": "CSV", "J S O N": "JSON", "H V A C": "HVAC", "R A M": "RAM", "G P U": "GPU",
+    "C P U": "CPU", "P D F": "PDF", "U I": "UI", "V S Code": "VS Code", "C D": "cd", "L S": "ls",
+}
+_SHOW = re.compile(r"(?<![A-Za-z])(" + "|".join(re.escape(k) for k in sorted(CAPTION_SHOW, key=len, reverse=True)) + r")(?![A-Za-z])")
+
+
+def caption_text(s):
+    return _SHOW.sub(lambda m: CAPTION_SHOW[m.group(1)], s)
+
+
 def caption_cues(narration, times, end):
     words = speakable(narration).split()
     cues, i = [], 0
@@ -234,7 +253,7 @@ def caption_cues(narration, times, end):
         for ch in chunks:
             start = times[min(i, len(times) - 1)] if times else 0
             i += len(ch)
-            cues.append([start, None, " ".join(ch)])
+            cues.append([start, None, caption_text(" ".join(ch))])
     for k, c in enumerate(cues):
         c[1] = cues[k + 1][0] - 0.05 if k + 1 < len(cues) else end
     return [tuple(c) for c in cues]

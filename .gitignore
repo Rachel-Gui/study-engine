@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local backend import archive; merged sources live in Prototype_Phase-01.
+/Backend_10032026/
+.DS_Store
+Thumbs.db

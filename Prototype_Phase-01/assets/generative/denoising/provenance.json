@@ -1,0 +1,104 @@
+{
+  "what": "Decoded latents part-way through one Stable Diffusion generation (Lesson 2.2).",
+  "model": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+  "revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+  "weights_variant": "fp16 weights, run in float32",
+  "pipeline": "StableDiffusionPipeline",
+  "scheduler": "PNDMScheduler",
+  "scheduler_config": {
+    "num_train_timesteps": 1000,
+    "beta_start": 0.00085,
+    "beta_end": 0.012,
+    "beta_schedule": "scaled_linear",
+    "trained_betas": null,
+    "skip_prk_steps": true,
+    "set_alpha_to_one": false,
+    "prediction_type": "epsilon",
+    "timestep_spacing": "leading",
+    "steps_offset": 1,
+    "clip_sample": false
+  },
+  "prompt": "A community library with exposed timber structure, large glass facade, located on a sloped urban site in Seattle, soft overcast morning light, contemporary Scandinavian style, architectural photography, 8K",
+  "negative_prompt": null,
+  "seed": 100,
+  "generator_device": "cpu",
+  "steps": 30,
+  "guidance_scale": 7.5,
+  "width": 512,
+  "height": 512,
+  "device": "cpu",
+  "torch": "2.14.1+cpu",
+  "diffusers": "0.40.0",
+  "transformers": "5.18.0",
+  "python": "3.11.15",
+  "load_seconds": 13.1,
+  "generation_seconds": 340.7,
+  "note": "Each image decodes the latent the model holds after that many of the 30 denoising steps; step 0 is the starting noise. CPU and GPU generators draw different numbers for the same seed, so the final image is not the course notebook's seed-100 image.",
+  "files": [
+    {
+      "step": 0,
+      "timestep": null,
+      "file": "step-00.png",
+      "sha256": "c5bd8dd1bf902171d3527d408d98f5165b0292c21e6306412b3c8f92d6a9d5ab"
+    },
+    {
+      "step": 1,
+      "timestep": 958,
+      "file": "step-01.png",
+      "sha256": "c45d69dee4f213986cf2a97002400dcfd546a334192cf17574c5bca7c74a008c"
+    },
+    {
+      "step": 2,
+      "timestep": 925,
+      "file": "step-02.png",
+      "sha256": "628848aa433ee99922f9682adee87d48a302d1419fe6c0582b5af67e134e4a86"
+    },
+    {
+      "step": 3,
+      "timestep": 925,
+      "file": "step-03.png",
+      "sha256": "5beb8531e6b28127e5a9537f509819a6d1b893cb1bdc727abfc40af6576d0b69"
+    },
+    {
+      "step": 5,
+      "timestep": 859,
+      "file": "step-05.png",
+      "sha256": "71d34a9891840f8d11db96a7e7befeac5daf553ae9bd14aea93c81ac6d1f3fe3"
+    },
+    {
+      "step": 8,
+      "timestep": 760,
+      "file": "step-08.png",
+      "sha256": "72198c9a4118a1117f7c472386acb57ffa3f6ae747c6158b729c2819a297f0f1"
+    },
+    {
+      "step": 12,
+      "timestep": 628,
+      "file": "step-12.png",
+      "sha256": "a81763a5a086dfe87b99786e511fd4d187e43151d33ff08949db1954009d332c"
+    },
+    {
+      "step": 18,
+      "timestep": 430,
+      "file": "step-18.png",
+      "sha256": "2dd187ff9185a71005a03489a39dfaccae3a0f194b55d643c7605e60b9288c47"
+    },
+    {
+      "step": 24,
+      "timestep": 232,
+      "file": "step-24.png",
+      "sha256": "c5138295dbde5e48026e9fdff8a761ef9dc53ba207fa57394904bbb7bf52f466"
+    },
+    {
+      "step": 30,
+      "timestep": 34,
+      "file": "step-30.png",
+      "sha256": "525243ab1ed2730c61132a114afd1e68e0fc6f0ed5231745656157f564bad22f"
+    },
+    {
+      "step": "final (pipeline output)",
+      "file": "final.png",
+      "sha256": "ea5271c2312741933853aa26d3aff692c043dcc4a98b863f6e6b0c13e9aec384"
+    }
+  ]
+}

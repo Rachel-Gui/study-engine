@@ -35,13 +35,39 @@ quiz, a pointer back to the labs on the site. Change one scene, re-render one sc
 
 That's everything you need to write and read content.
 
-## Every time
+## Every time: three double-click scripts
 
-**Windows:** double-click **`run.bat`**  ·  **Mac/Linux:** run **`./run.sh`**
+| What it does | Windows | Mac |
+|---|---|---|
+| Build the website and open it in the browser | **`WEBSITE.bat`** | **`WEBSITE.command`** |
+| Render the narrated lesson videos in 4K, then put them on the website | **`VIDEOS-4K.bat`** | **`VIDEOS-4K.command`** |
+| Export every video scene as a 4K PNG slide, plus one PDF per lesson | **`SLIDES-4K.bat`** | **`SLIDES-4K.command`** |
+
+Each one checks what it needs before it starts (the Python packages, the Chromium
+that draws the frames, ffmpeg) and installs what it safely can; anything it cannot
+install, it names, with the command that fixes it. It also checks that every picture
+the lessons use is in the folder. When the course arrived as several zips (part1,
+part2, part3) that were unzipped into separate folders, it finds the other parts, next
+to this folder or in Downloads, zipped or unzipped, and copies the pictures in;
+`engine/build.py` lists any picture that is still missing. The experiment images in
+`assets/generative/` are evidence, with every file's exact bytes in a `provenance.json`:
+a copy that no longer matches its record is put back from the original download. With no arguments, `VIDEOS-4K` and
+`SLIDES-4K` do the course introduction and Modules 1 and 2. From a terminal they also
+take `all`, a module or lessons: `python tools/videos_4k.py 2.8 2.9`,
+`python tools/slides_4k.py all`, and `1080p` for a faster preview render.
+
+**The order, for a review:** `VIDEOS-4K` first (it takes hours at 4K and resumes if it
+stops), then `WEBSITE` (the videos appear on the site), `SLIDES-4K` whenever you need
+the stills, and `publish-site` last.
+
+> **Mac, the first time:** if macOS will not open a script, right-click it → *Open* →
+> *Open*. If it says you do not have permission (the file lost its executable bit,
+> for example after a trip through Windows), run this once in Terminal, in this
+> folder: `chmod +x *.command *.sh`.
 
 > ### Am I in the right folder?
-> `run.bat` prints the folder path and a list of every lesson it built, then a line
-> like `302 pages · 43 lessons · 43 video storyboards · 515 video scenes`. **If it
+> `WEBSITE` prints the folder path and a list of every lesson it built, then a line
+> like `304 pages · 43 lessons · 43 video storyboards · 544 video scenes`. **If it
 > says 1 lesson, you are running an old copy.** Delete stale folders rather than
 > keeping them around.
 
@@ -56,8 +82,13 @@ header (press `/` to focus it) that searches every topic, lab and lesson from a
 static index the build writes to `site/search.json`. The footer has only the
 Previous / Next arrows.
 
-It builds the site and opens `http://localhost:8000`. Leave the window open; press
-`Ctrl+C` when you're done. Or type it yourself:
+Every lesson with a rendered video plays it at the top of its first page, and
+**▶ Lesson videos** at the top of the contents panel opens `videos.html`, all of
+them in course order. Each lesson's breadcrumb links to its video, and the modules
+page marks the lessons that have one.
+
+`WEBSITE` builds the site and opens `http://localhost:8000`. Leave the window open;
+press `Ctrl+C` when you're done. Or type it yourself:
 
 ```
 python engine/build.py --serve
@@ -87,6 +118,34 @@ route is a **public repository of your own that holds only the built site**:
    **Commit to main**, **Push origin**.
 6. About a minute later the site is live at `https://<your-username>.github.io/ai-for-architecture/`
    (the exact URL is on the Settings → Pages screen). Repeat step 5 to update it.
+
+**Is the published site the current version?** Ask the checker. It builds this
+folder and compares the text of every page with the live site, page by page:
+
+```
+python tools/check_published.py https://<your-username>.github.io/ai-for-architecture/ --module 2
+```
+
+It prints `same`, `DIFFERENT` (with the first changed line) or `MISSING` for each
+page and a one-line verdict. Leave out `--module` to check every page; `--module 0.1`
+checks one lesson.
+
+### Locked modules
+
+A module with `locked: true` in `course.yml` (Modules 3–8 for now, each with
+`status: "In progress"`) still appears on the modules page with its status badge,
+but its lessons show *This lesson is temporarily locked*, run no labs, and are left
+out of search. To unlock a module, delete its `locked:` line and publish.
+
+To check locked lessons yourself without publishing them, build an instructor preview:
+
+```
+python engine/build.py --preview --serve
+```
+
+Every module opens. **Never publish a preview build** — `publish-site.bat` always
+runs a normal build, so this only matters if you copy `site/` by hand. The tests run
+against a preview build (see §6).
 
 The build writes a `.nojekyll` file into `site/`, which tells GitHub Pages to serve the
 files exactly as built. The labs (Pyodide from a CDN), the fonts and the search box all
@@ -204,6 +263,10 @@ topic. The videos do **not** read the page aloud: every lesson has its own story
 The narration blocks are the fallback — a lesson *without* a storyboard gets a plain
 automatic video built from its narrated topics — and they still feed the `--scripts`
 narration scripts.
+
+The burned-in captions show a spelled acronym the way it is written: the voice says
+"A I", "W W R", "V S Code", the caption reads AI, WWR, VS Code. The list is `CAPTION_SHOW`
+in `engine/render_video.py`; add a pair there when a new acronym appears.
 
 ## Components
 
@@ -329,6 +392,42 @@ python3 --version
 ````
 
 A student picks a tab once and the site remembers it on every page.
+
+### Real screenshots
+
+Where students must recognise a real program — an installer, VS Code, Colab — show
+the real thing. Save the image under `assets/` (keep the original around 2,400 px
+wide so it stays sharp) and put it on its own line, Markdown-style, with the caption
+in the brackets and, when it is needed, a credit in quotes (the model and settings of a
+run, say):
+
+```markdown
+![The python.org download page on Windows.](assets/setup/real/pyorg-win.png)
+```
+
+This works anywhere prose does, including inside `:::os` panes. As its own block:
+
+```markdown
+:::screenshot{src="assets/setup/real/vscode-hello.png" caption="hello.py running in VS Code."}
+:::
+```
+
+Every screenshot opens full size in a new tab when it is clicked. To show a crop on
+the page but open the whole window on a click, give both files:
+`:::screenshot{src=assets/generative/real/vs-28-cite-page.png full=assets/generative/real/vs-28-cite.png …}`.
+The Module 1 and 2 VS Code captures follow that pattern: `vs-<lesson>-<name>.png` is the
+whole window, `-page.png` the editor and terminal.
+A tall capture can be drawn smaller with `width=66%` (or a width in px); the click still
+opens it full size.
+
+A screenshot can also be a video scene, with numbered highlight boxes that appear as
+the narration reaches them (`type=shot`, section 4): `crop:` picks the region, in
+percent of the image, and each mark's `box:` is in percent of that crop.
+
+Keep dates out of captions and credits: students do not need to know when a picture
+was taken. When an installer or a website changes, retake the screenshot under the same
+file name. The drawn `:::screen` mock-ups below remain the right tool when a step has to
+animate line by line.
 
 ### Step-through recordings
 
@@ -577,6 +676,7 @@ The scene types, and what each one takes:
 | `gallery` | a grid of pictures that pop in one by one — images, module pictograms or figures | `heading`, `items:` of `{image` or `art` or `figure, title, text, tag}`, `cols`, `aspect: square`, `note` |
 | `image` | one picture large, with a heading, caption and up to three points beside it | `src` (under `assets/`), `heading`, `caption`, `credit`, `points` |
 | `screen` | a drawn mock-up of a real screen, animated line by line — see `:::screen` in §3 | `kind` terminal · editor · notebook · browser · installer, the kind's YAML fields, plus `heading`, `text`, `points` for the panel beside it (leave them out for a full-width screen) |
+| `shot` | a **real screenshot**, optionally cropped, with labelled boxes that appear one by one | `src` (under `assets/`), `heading`, `caption`, `crop: [x, y, w, h]` (percent of the image), `marks:` of `{box: [x, y, w, h], label, at: below · above · right · left}` (box in percent of the crop), `legend: true` (numbered badges beside the boxes and the labels listed beside the picture — use it when labels would cover the screenshot; a badge sits left of its box, `at: right · above · below · corner` moves it when boxes are stacked close), `points` |
 | `recap` | what to remember, ticked off | `items` |
 | `next` | the next lesson, on a cover card | `text`, `sub` |
 
@@ -584,8 +684,8 @@ Rules that keep the videos good: one idea per scene; ten to fourteen scenes; 650
 1,200 narration words (the script tool prints the estimate); write for someone who
 has never met the topic — say what a word means the first time it appears; the
 `quiz` narration reads the options aloud and ends with *Pause and pick*; every number
-on screen is a number from the lesson page or its dataset; the `site` scene tells
-the student exactly which lab to run. YAML gotchas: quote a value that contains `: `
+on screen is a number from the lesson page or its dataset; the `site` scene (or a `shot` of the lab) tells
+the student exactly which lab to run; a `shot` of a real run says only what that run printed. YAML gotchas: quote a value that contains `: `
 or that starts with a quote or a `*`; keep `#` out of unquoted values.
 
 A lesson **without** a storyboard still gets a video — a plain automatic one built
@@ -654,10 +754,11 @@ On Windows, download those two `.ttf` files in a browser, select both, right-cli
 
 ## Render
 
-**Windows:** double-click **`make-video.bat`**  ·  **Mac/Linux:** run **`./make-video.sh`**
+**Windows:** double-click **`VIDEOS-4K.bat`**  ·  **Mac:** **`VIDEOS-4K.command`**
 
-It checks what's installed, tells you exactly what's missing and how to install it,
-and then renders one video per lesson at 4K. Or do it by hand:
+It checks what's installed, installs what it can, tells you exactly what's missing
+and how to install it, renders the course introduction and Modules 1 and 2 at 4K, and
+then rebuilds the site so the videos are on it. Or do it by hand:
 
 ```
 python engine/build.py --doctor                             # what's installed?
@@ -683,6 +784,30 @@ dist/scripts/6-3-regression-predicting-continuous-outcomes.md   the narration sc
 
 `python engine/build.py --video` still works — it builds the site and then runs
 `make_videos.py` for every lesson.
+
+### The videos Narjes asked for, in one go
+
+`VIDEOS-4K` with no arguments renders exactly those: 0.1, Module 1 and Module 2,
+narrated, at 4K, then rebuilds the site. The MP4s for the shared review folder are in
+`dist/video/`. Narration needs the internet (the voice is Microsoft's online service).
+`python tools/videos_4k.py 1080p` is the same at 1080p, about three times quicker.
+
+### Videos inside the lesson pages
+
+`course.yml` decides which lessons show their video on the site:
+
+```yaml
+videos:
+  embed: all              # every unlocked lesson that has a rendered video
+# embed: ["0.1", "1.2"]   # or only these lessons
+```
+
+On every build, each lesson's MP4 is taken from `dist/video/`, re-encoded once to a
+web-sized 1080p copy (with a poster image) in `site/video/`, played at the top of the
+lesson's first page, and listed on the **Lesson videos** page (`videos.html`), which
+the contents panel, the landing page, the modules page and every lesson's breadcrumb
+link to. A lesson with no rendered video yet is skipped, and the build names it; a
+locked lesson never gets one. Needs ffmpeg on the machine that builds (WEBSITE checks).
 
 Render 1080p first and watch two or three lessons before starting the 4K run. The
 4K render of the whole course is hours, not minutes, and every scene it finishes is
@@ -760,6 +885,12 @@ python engine/make_videos.py --engine edge    the videos alone (see above for --
 python engine/make_videos.py --scripts        the narration scripts alone
 python engine/make_videos.py --engine edge --quality 1080p   faster preview
 python engine/make_videos.py --engine edge --force           ignore the scene cache
+python engine/export_slides.py --all --quality 4k            every video as 4K slides (PNG + PDF)
+python engine/build.py --preview --serve                     instructor preview, locked modules open
+python tools/check_published.py <site url> --module 2        is the live site current?
+WEBSITE.bat / .command                                       build the site and open it
+VIDEOS-4K.bat / .command                                     0.1 + Modules 1-2 narrated in 4K, then rebuild the site
+SLIDES-4K.bat / .command                                     0.1 + Modules 1-2 as 4K PNG slides + one PDF per lesson
 ```
 
 ---
@@ -813,9 +944,12 @@ engine/                       the pipeline — nobody edits this
   theme/site.css  site.js       theme: black, white, greys, Spirit Purple, Husky Gold
 tests/                        checks for the studio component, quizzes, printing and the build
                                 (python -m pytest tests · NODE_PATH=<jsdom> node --test tests/*.cjs tests/*.mjs)
-run.bat  run.sh               build and open the site
+WEBSITE.bat  WEBSITE.command       build the site and open it (tools/website.py)
+VIDEOS-4K.bat  VIDEOS-4K.command   render the narrated 4K videos, then rebuild the site (tools/videos_4k.py)
+SLIDES-4K.bat  SLIDES-4K.command   export the videos as 4K PNG slides and PDFs (tools/slides_4k.py)
+tools/                        the three scripts above, their shared checks (_env.py), check_published.py,
+                                and denoising_steps.py (the real Stable Diffusion run in Lesson 2.2)
 publish-site.bat  publish-site.sh   build, then copy site/ into your public website repo (README section 1)
-make-video.bat  make-video.sh  check prerequisites, then render one video per lesson (--modules / --course to join)
 voice-samples.bat  voice-samples.sh   hear the narration voices, pick one, paste its name into course.yml
 ```
 
@@ -844,7 +978,9 @@ of which need Colab rather than the browser.
 
 | What you see | What it means |
 |---|---|
-| `'python' is not recognized` | Python isn't on PATH. Reinstall with "Add Python to PATH", or use `py` on Windows. |
+| `'python' is not recognized` | Python isn't on PATH. Open a **new** terminal; with the Python install manager run `py install --refresh` and answer *y* to the PATH question, or use `py` on Windows. With the standalone installer, reinstall with *Add python.exe to PATH* ticked. |
+| `No video rendered yet for: …` after a build | Those lessons have no MP4 in `dist/video/` yet. Render them (`VIDEOS-4K`), then run `WEBSITE` again. |
+| A lesson says *temporarily locked* | Its module has `locked: true` in `course.yml`. Remove the line to open it, or check it with `build.py --preview` (never publish that build). |
 | `No module named yaml` | Run `pip install pyyaml`. |
 | `The engine is incomplete` | Files were downloaded individually and the folders were lost. Clone the repo or unzip the archive — don't move files by hand. |
 | `course.yml lists a file that is not there` | A path in `course.yml` doesn't match `content/`. The error prints where the file actually is. |
@@ -853,19 +989,33 @@ of which need Colab rather than the browser.
 | The page loads but has no styling | Same cause. Use `--serve`. |
 | `NO SPEECH` warning after `--video` | edge-tts wasn't available. `pip install edge-tts`, then re-render with `--engine edge`. |
 | Everything looks stale | Delete `site/` and rebuild. It's generated; nothing in it is precious. |
-| Only one episode shows up | You're running an old copy of the folder. Check the path `run.bat` prints. |
-| No video anywhere | The site build never makes one. Run `make-video.bat`, or `python engine/make_videos.py --engine edge`. Videos land in `dist/video/`, not in `site/`. |
+| Only one episode shows up | You're running an old copy of the folder. Check the path `WEBSITE` prints. |
+| No video anywhere | The site build never makes one. Run `VIDEOS-4K`, or `python engine/make_videos.py --engine edge`. Videos land in `dist/video/`; the next build copies a web version into `site/video/`. |
+| A `.command` file will not open on a Mac | Right-click → *Open* the first time. If it reports no permission, run `chmod +x *.command *.sh` in this folder once. |
 | Videos have no captions | Your ffmpeg was built without libass. The winget / Homebrew / apt builds have it; a minimal static build may not. |
 | A scene's text is cut off in the video | The storyboard scene has too much in it. Keep `code` to 12 lines × 80 columns, lists to six items, cards to four, and split the scene in two. |
 | `storyboard … scene N` error | That scene's YAML is invalid — usually a value with `: ` in it, or one that starts with a quote or `*`. Quote the whole value. The message names the scene. |
 | A lesson's video is plain and short | It has no `<lesson>.video.md`, so it got the automatic fallback. The render log lists these under *no storyboard*. Write the storyboard (section 4). |
 | `WinError 2 · cannot find the file specified` | ffmpeg isn't on PATH. Install it, then **open a new terminal**. |
-| `NOT READY` from make-video | Something in the checklist is missing. It names each one and how to fix it. Nothing was rendered. |
-| Render stops partway with a TTS error | Microsoft's free voice service throttles long runs. Every scene before it is cached — wait a minute and run `make-video` again; it resumes where it stopped. |
+| `NOT READY` from a render | Something in the checklist is missing. It names each one and how to fix it. Nothing was rendered. |
+| Render stops partway with a TTS error | Microsoft's free voice service throttles long runs. Every scene before it is cached; `VIDEOS-4K` waits a minute and resumes by itself, up to four times. After that, run it again later. |
 | The voice sounds mechanical, or you want another | Run `voice-samples.bat` / `./voice-samples.sh`, listen, paste the chosen `voice:` line into `course.yml`, and re-render. Every scene re-records (the voice is in the scene id), so decide before the 4K run. |
 | A gallery tile is empty | The `src` path is wrong — it is relative to the site root, so `assets/generative/…`, no leading slash — or the `art:` / `fig:` key doesn't exist. `--doctor` doesn't check this; the page does. |
 | A `:::screen` shows nothing | Its body isn't valid YAML. Quote Windows paths (`"C:\\Users\\you>"`) and any value with `: ` in it. The build prints the lesson and the error. |
 | A paper is missing from `readings.html` | `readings.html` is built from `course.yml`, not from the lessons. Add the paper under the module's `readings:` key there too. |
+
+**Tests.** Before publishing a change to the engine, run them against a preview build
+(locked lessons have no labs to test, so a normal build would fail the lab tests):
+
+```
+python engine/build.py --preview
+python -m pytest -q tests
+node --test tests/*.cjs tests/*.mjs        # needs: npm install jsdom
+python engine/build.py                     # back to the normal build before publishing
+```
+
+`tests/test_locks.py` builds the normal site separately and checks locked lessons
+stay locked.
 
 ---
 

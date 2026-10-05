@@ -1,5 +1,5 @@
 """render_web.py - writes the static site: one HTML page per topic."""
-import html, io, json, os, re, shutil
+import subprocess, html, io, json, os, re, shutil
 import components, figures_lit
 from parse import inline
 
@@ -26,15 +26,17 @@ def build_site(course, episodes, out):
     if os.path.isdir(assets):
         shutil.copytree(assets, os.path.join(out, "assets"), dirs_exist_ok=True)
 
+    videos = _publish_videos(course, episodes, out)
+
     # Each module and each episode opens with a generated landing page.
     flat, seen_mod, mi = [], None, -1
     for meta, topics, mod in episodes:
         if mod["title"] != seen_mod:
             seen_mod = mod["title"]; mi += 1
-            flat.append({"t": _module_page(mod, episodes), "meta": meta, "mod": mod,
+            flat.append({"t": _module_page(mod, episodes, videos), "meta": meta, "mod": mod,
                          "kind": "module", "mi": mi,
                          "path": f"{slug(mod['title'])}.html"})
-        flat.append({"t": _episode_page(meta, topics), "meta": meta, "mod": mod,
+        flat.append({"t": _episode_page(meta, topics, videos.get(meta["episode"])), "meta": meta, "mod": mod,
                      "kind": "episode", "mi": mi,
                      "path": f"{slug(meta['episode'])}-index.html"})
         for k, t in enumerate(topics, 1):
@@ -44,14 +46,17 @@ def build_site(course, episodes, out):
     for i, p in enumerate(flat):
         p["i"] = i
 
-    nav = _nav(flat)
+    for p in flat:                                   # topic pages link to their lesson's video
+        if p["kind"] == "topic":
+            p["video"] = videos.get(str(p["meta"]["episode"]))
+    nav = _nav(flat, bool(videos))
     for p in flat:
         io.open(os.path.join(out, p["path"]), "w", encoding="utf-8").write(
             _page(course, p, flat, nav))
 
-    home = {"t": _home_page(course, flat), "meta": {}, "mod": {},
+    home = {"t": _home_page(course, flat, bool(videos)), "meta": {}, "mod": {},
             "kind": "home", "mi": -1, "i": -1, "path": "index.html"}
-    mods = {"t": _modules_page(course, episodes, flat), "meta": {}, "mod": {},
+    mods = {"t": _modules_page(course, episodes, flat, videos), "meta": {}, "mod": {},
             "kind": "modules", "mi": -1, "i": -1, "path": "modules.html"}
     io.open(os.path.join(out, "index.html"), "w", encoding="utf-8").write(
         _page(course, home, flat, nav) if flat else "<p>No content.</p>")
@@ -60,6 +65,10 @@ def build_site(course, episodes, out):
     rd = {"t": _readings_page(course), "meta": {}, "mod": {}, "kind": "readings", "mi": -1, "i": -1, "path": "readings.html"}
     io.open(os.path.join(out, "readings.html"), "w", encoding="utf-8").write(
         _page(course, rd, flat, nav) if flat else "<p>No content.</p>")
+    vp = {"t": _videos_page(course, episodes, videos), "meta": {}, "mod": {}, "kind": "videos", "mi": -1, "i": -1,
+          "path": "videos.html"}
+    io.open(os.path.join(out, "videos.html"), "w", encoding="utf-8").write(
+        _page(course, vp, flat, nav) if flat else "<p>No content.</p>")
     io.open(os.path.join(out, "search.json"), "w", encoding="utf-8").write(
         json.dumps(_search_index(flat), ensure_ascii=False))
     open(os.path.join(out, ".nojekyll"), "w").close()     # GitHub Pages: serve as-is
@@ -142,7 +151,7 @@ def _module_art(mod):
     return figures_lit.ART.get(key, "")
 
 
-def _module_page(mod, episodes):
+def _module_page(mod, episodes, videos=None):
     eps = [(m, ts) for m, ts, md in episodes if md is mod]
     cards = ""
     for m, ts in eps:
@@ -171,10 +180,13 @@ def _module_page(mod, episodes):
                        '<div class="lock-panel"><div class="lock-mark" aria-hidden="true"></div>'
                        f'<div>{_status_badge(mod)}<strong>This module is being finalized.</strong>'
                        '<p>Students can see the planned lesson titles, but the lesson pages are temporarily locked. '
-                       'Individual lessons will be released according to the instructor\'s course schedule.</p></div></div>'})
+                       'Individual lessons will be unlocked as the instructor progresses through the course.</p></div></div>'})
     objs = "" if _locked(mod) else _objectives(mod.get("objectives"), "By the end of this module you will be able to")
     if objs:
         blocks.append({"kind": "_raw", "attrs": {}, "body": objs})
+    strip = _module_videos(mod, episodes, videos or {})
+    if strip:
+        blocks.append({"kind": "_raw", "attrs": {}, "body": strip})
     blocks.append({"kind": "_raw", "attrs": {},
                    "body": f'<span class="lbl sec">Lessons</span><div class="epgrid">{cards}</div>'})
     rd = "" if _locked(mod) else _readings_html(mod.get("readings"), "Selected readings",
@@ -200,12 +212,146 @@ def _readings_page(course):
             "blocks": [{"kind": "_raw", "attrs": {}, "body": body}]}
 
 
-def _episode_page(meta, topics):
+def _video_slug(meta):
+    """The file name make_videos.py gives this lesson's video (without .mp4)."""
+    return re.sub(r"[^a-z0-9]+", "-", f'{meta["episode"]}-{meta.get("title", "")}'.lower()).strip("-")[:70] or "video"
+
+
+def _publish_videos(course, episodes, out):
+    """Copy the lesson videos into site/video/ as a 1080p web copy with a poster frame.
+
+    course.yml decides which:   videos: embed: all            every unlocked lesson that has a video
+                                videos: embed: ["0.1", "1.2"]  only these
+    A video is looked for in dist/video/ (where make_videos.py writes it). Returns
+    {episode: info} for the lessons that have one."""
+    cfg = (course.get("videos") or {}).get("embed")
+    if not cfg:
+        return {}
+    everything = (isinstance(cfg, str) and cfg.strip().lower() == "all") or \
+                 (isinstance(cfg, list) and any(str(e).strip().lower() == "all" for e in cfg))
+    want = {str(e).strip() for e in cfg} if isinstance(cfg, list) else set()
+    src_dir = os.path.normpath(os.path.join(HERE, "..", "dist", "video"))
+    dst_dir = os.path.join(out, "video")
+    ffmpeg = shutil.which("ffmpeg")
+    found, missing = {}, []
+    for meta, _, mod in episodes:
+        ep = str(meta["episode"])
+        if (not everything and ep not in want) or _locked(mod):
+            continue
+        name = _video_slug(meta)
+        src = os.path.join(src_dir, name + ".mp4")
+        if not os.path.exists(src):
+            missing.append(ep if everything else f"{ep} (dist/video/{name}.mp4)")
+            continue
+        os.makedirs(dst_dir, exist_ok=True)
+        dst, poster = os.path.join(dst_dir, name + ".mp4"), os.path.join(dst_dir, name + ".jpg")
+        if not os.path.exists(dst) or os.path.getmtime(dst) < os.path.getmtime(src):
+            print(f"  preparing the web copy of video {ep} ...", flush=True)
+            done = False
+            if ffmpeg:          # a 1080p, streamable copy keeps the site small enough for GitHub Pages
+                r = subprocess.run([ffmpeg, "-y", "-v", "error", "-i", src, "-vf", "scale=-2:'min(1080,ih)'",
+                                    "-c:v", "libx264", "-preset", "faster", "-crf", "22", "-pix_fmt", "yuv420p",
+                                    "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", dst],
+                                   capture_output=True, text=True)
+                done = r.returncode == 0
+            if not done:
+                shutil.copy2(src, dst)
+            if ffmpeg:
+                subprocess.run([ffmpeg, "-y", "-v", "error", "-ss", "8", "-i", dst, "-frames:v", "1",
+                                "-vf", "scale=1280:-2", poster], capture_output=True)
+        dur = ""
+        if shutil.which("ffprobe"):
+            r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", dst],
+                               capture_output=True, text=True)
+            try:
+                sec = float(r.stdout.strip()); dur = f"{int(sec // 60)}:{int(sec % 60):02d}"
+            except ValueError:
+                pass
+        found[ep] = {"src": f"video/{name}.mp4", "poster": f"video/{name}.jpg" if os.path.exists(poster) else "",
+                     "dur": dur, "episode": ep, "title": meta.get("title", ""), "module": mod["title"],
+                     "lesson": f"{slug(ep)}-index.html"}
+    if missing:
+        if everything:
+            print("\n  No video rendered yet for: " + ", ".join(missing) +
+                  "\n  (VIDEOS-4K renders them; run WEBSITE again afterwards to put them on the site.)")
+        else:
+            print("\n  VIDEOS NOT EMBEDDED - listed in course.yml but not rendered yet:\n    "
+                  + "\n    ".join(missing) + "\n    Render them (VIDEOS-4K), then run WEBSITE again.")
+    if found:
+        print(f"\n  {len(found)} lesson video(s) on the site: " + ", ".join(found))
+    return found
+
+
+def _video_html(v, title):
+    poster = f' poster="{html.escape(v["poster"])}"' if v.get("poster") else ""
+    dur = f' &middot; {html.escape(v["dur"])}' if v.get("dur") else ""
+    return (f'<figure class="lesson-video" id="video">'
+            f'<figcaption><span class="lbl">&#9654; Lesson video</span>{html.escape(title)}{dur}'
+            f'<a class="allv" href="videos.html#v-{slug(v["episode"])}">All lesson videos &rarr;</a></figcaption>'
+            f'<div class="vwrap"><video controls preload="metadata" playsinline{poster}>'
+            f'<source src="{html.escape(v["src"])}" type="video/mp4">'
+            f'Your browser cannot play this video. <a href="{html.escape(v["src"])}">Download it</a>.</video>'
+            f'<button class="vplay" type="button" aria-label="Play the lesson video"></button></div></figure>')
+
+
+def _video_card(v, lesson_link=True):
+    poster = f' poster="{html.escape(v["poster"])}"' if v.get("poster") else ""
+    dur = f'<span class="dur">{html.escape(v["dur"])}</span>' if v.get("dur") else ""
+    link = (f'<a class="open" href="{v["lesson"]}">Open the lesson &rarr;</a>' if lesson_link else "")
+    return (f'<figure class="vcard" id="v-{slug(v["episode"])}"><div class="vframe vwrap">'
+            f'<video controls preload="none" playsinline{poster}><source src="{html.escape(v["src"])}" type="video/mp4">'
+            f'<a href="{html.escape(v["src"])}">Download the video</a></video>'
+            f'<button class="vplay" type="button" aria-label="Play the video"></button></div>'
+            f'<figcaption><span class="n">{html.escape(v["episode"])}</span>'
+            f'<span class="t">{html.escape(v["title"])}</span>{dur}{link}</figcaption></figure>')
+
+
+def _videos_page(course, episodes, videos):
+    """videos.html - every lesson video, module by module, each one playable in place."""
+    body, seen = "", []
+    for meta, _, mod in episodes:
+        if id(mod) in seen:
+            continue
+        seen.append(id(mod))
+        vs = [videos[str(m["episode"])] for m, _, md in episodes if md is mod and str(m["episode"]) in videos]
+        if not vs:
+            continue
+        mins = sum(int(v["dur"].split(":")[0]) * 60 + int(v["dur"].split(":")[1]) for v in vs if v.get("dur")) // 60
+        body += (f'<div class="vmod"><h3 class="rdhead">{html.escape(mod["title"])}'
+                 f'<span class="vmeta">{len(vs)} video{"s" if len(vs) != 1 else ""}'
+                 + (f' &middot; {mins} min' if mins else "") + '</span></h3>'
+                 f'<div class="vid-grid">{"".join(_video_card(v) for v in vs)}</div></div>')
+    if not body:
+        body = ('<p class="lede">The lesson videos appear here once they have been rendered. '
+                'Each lesson page will show its video at the top as well.</p>')
+    lede = ('<p class="lede">Every lesson has a narrated, animated video that walks through it. Watch one here, '
+            'or open its lesson: the same video plays at the top of the lesson, next to the labs it points to.</p>')
+    return {"title": "Lesson videos", "narration": "", "hero": True,
+            "blocks": [{"kind": "_raw", "attrs": {}, "body": lede + body}]}
+
+
+def _module_videos(mod, episodes, videos):
+    """A strip of the module's lesson videos for its landing page."""
+    vs = [videos[str(m["episode"])] for m, _, md in episodes if md is mod and str(m["episode"]) in videos]
+    if not vs or _locked(mod):
+        return ""
+    tiles = "".join(
+        f'<a class="vtile" href="videos.html#v-{slug(v["episode"])}">'
+        + (f'<img src="{html.escape(v["poster"])}" alt="" loading="lazy">' if v.get("poster") else '<span class="noposter"></span>')
+        + f'<span class="play" aria-hidden="true"></span><span class="cap"><b>{html.escape(v["episode"])}</b>'
+          f'{html.escape(v["title"])}' + (f'<i>{html.escape(v["dur"])}</i>' if v.get("dur") else "") + '</span></a>'
+        for v in vs)
+    return f'<span class="lbl sec">Lesson videos</span><div class="vstrip">{tiles}</div>'
+
+
+def _episode_page(meta, topics, video=None):
     items = "".join(
         f'<li><a href="{slug(meta["episode"])}-{slug(t["title"])}.html">{html.escape(t["title"])}</a>'
         + ('<span class="v">narrated</span>' if t.get("narration") else "") + "</li>"
         for t in topics)
     blocks = []
+    if video:
+        blocks.append({"kind": "_raw", "attrs": {}, "body": _video_html(video, meta.get("title", ""))})
     objs = _objectives(meta.get("objectives"), "In this lesson you will")
     if objs:
         blocks.append({"kind": "_raw", "attrs": {}, "body": objs})
@@ -235,13 +381,15 @@ def _icon(key):
             f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{_ICONS.get(key, _ICONS["ref"])}</svg>')
 
 
-def _home_page(course, flat):
-    """The landing page: the course, one button. Nothing else."""
+def _home_page(course, flat, has_videos=False):
+    """The landing page: the course, one button (and the videos, once there are any)."""
     ins = course["instructor"]
     hero = (f'<div class="land-hero"><span class="eyebrow">{html.escape(course["code"])}</span>'
             f'<span class="land-title">{html.escape(course["title"])}</span>'
             f'<p class="tag">{html.escape(course.get("subtitle", ""))}</p>'
             f'<div class="land-cta"><a class="btn primary" href="modules.html">Start the course</a>'
+            + ('<a class="btn ghost vids" href="videos.html"><span class="pl" aria-hidden="true"></span>Watch the lesson videos</a>'
+               if has_videos else '') +
             f'<a class="btn ghost" id="resume" href="{flat[0]["path"]}" hidden>'
             f'Continue <span id="resume-t"></span></a></div>'
             f'<div class="land-who"><span class="lbl">Course instructor</span>'
@@ -251,7 +399,7 @@ def _home_page(course, flat):
             "blocks": [{"kind": "_raw", "attrs": {}, "body": hero}]}
 
 
-def _modules_page(course, episodes, flat):
+def _modules_page(course, episodes, flat, videos=None):
     """Every module as a block, so a student can jump straight in."""
     mods, seen = [], []
     for meta, topics, mod in episodes:
@@ -271,7 +419,9 @@ def _modules_page(course, episodes, flat):
                               f'{html.escape(m["title"])}<b>Locked</b></span></li>' for m, _ in eps)
         else:
             lessons = "".join(f'<li><a href="{slug(m["episode"])}-index.html"><span>{html.escape(m["episode"])}</span>'
-                              f'{html.escape(m["title"])}</a></li>' for m, _ in eps)
+                              f'{html.escape(m["title"])}'
+                              + ('<i class="hasvid" title="Has a lesson video">video</i>' if str(m["episode"]) in (videos or {}) else '')
+                              + '</a></li>' for m, _ in eps)
         cards += (f'<div class="mcard {kind}{" locked" if _locked(mod) else ""}">'
                   f'<a class="mhead" href="{first["path"]}">'
                   f'<span class="mart">{_module_art(mod)}</span>'
@@ -289,7 +439,9 @@ def _modules_page(course, episodes, flat):
              '<div class="card"><strong>Predict before you reveal</strong><span>Try / Predict cards ask you to commit to an answer first. Every option gets feedback; the wrong ones are the useful ones.</span></div>'
              '<div class="card"><strong>Search, or watch</strong><span>The search box at the top finds any topic, lab or term. Each lesson also has its own narrated, animated video.</span></div>'
              '<a class="card link" href="readings.html"><strong>Selected readings &rarr;</strong><span>Papers and reviews for each module, with DOIs and labelled preprints, on one page.</span></a>'
-             '</div>')
+             + ('<a class="card link" href="videos.html"><strong>Lesson videos &rarr;</strong><span>Every narrated lesson video, module by module, playable on one page.</span></a>'
+                if videos else '')
+             + '</div>')
     return {"title": "Modules", "narration": "", "hero": True, "blocks": [
         {"kind": "_raw", "attrs": {}, "body": f'<p class="lede modlede">{html.escape(course.get("subtitle", ""))}</p>'},
         {"kind": "_raw", "attrs": {}, "body": f'<div class="mgrid">{cards}</div>'},
@@ -298,10 +450,13 @@ def _modules_page(course, episodes, flat):
 
 # ---------------------------------------------------------------- contents
 
-def _nav(flat):
+def _nav(flat, has_videos=False):
     """Modules and lessons both collapse. The chevron toggles, the name navigates."""
-    out, open_m, open_e = ['<a class="home" href="modules.html"><span class="mn">&#8962;</span>All modules</a>',
-                           '<a class="home rd" href="readings.html"><span class="mn">&#9782;</span>Selected readings</a>'], False, False
+    first = ['<a class="home" href="modules.html"><span class="mn">&#8962;</span>All modules</a>',
+             '<a class="home rd" href="readings.html"><span class="mn">&#9782;</span>Selected readings</a>']
+    if has_videos:
+        first.append('<a class="home rd vd" href="videos.html"><span class="mn">&#9654;</span>Lesson videos</a>')
+    out, open_m, open_e = first, False, False
     for p in flat:
         if p["kind"] == "module":
             if open_e: out.append("</div></div></div>"); open_e = False
@@ -375,7 +530,7 @@ def _page(course, p, flat, nav):
     if is_locked_content:
         body = ('<div class="lock-panel direct"><div class="lock-mark" aria-hidden="true"></div><div>'
                 f'{_status_badge(mod)}<strong>This lesson is temporarily locked.</strong>'
-                '<p>This content is still being finalized and will be released according to the instructor\'s course schedule. '
+                '<p>This content is still being finalized and will be unlocked as the instructor progresses through the course. '
                 'Return to the module page to view its status and planned lessons.</p>'
                 f'<a class="btn" href="{slug(mod["title"])}.html">Back to Module {_module_num(mod)}</a>'
                 '</div></div>')
@@ -386,10 +541,13 @@ def _page(course, p, flat, nav):
     # breadcrumb + lesson meta strip
     head = ""
     if p["kind"] == "topic":
+        vlink = (f'<a class="vlink" href="{slug(meta["episode"])}-index.html#video"><span class="pl" aria-hidden="true"></span>'
+                 f'Lesson video' + (f' &middot; {html.escape(p["video"]["dur"])}' if p["video"].get("dur") else "") + '</a>'
+                 if p.get("video") else "")
         head = (f'<div class="crumb"><a href="{slug(mod["title"])}.html">'
                 f'{html.escape(mod["title"])}</a><span>&middot;</span>'
                 f'<a href="{slug(meta["episode"])}-index.html">{html.escape(meta["episode"])} '
-                f'&mdash; {html.escape(meta["title"])}</a>'
+                f'&mdash; {html.escape(meta["title"])}</a>{vlink}'
                 f'<span class="k"><span class="seg">'
                 + "".join(f'<i class="{"done" if j < p["k"] else ""}{" cur" if j == p["k"] else ""}"></i>' for j in range(1, p["nk"] + 1))
                 + f'</span>{p["k"]} of {p["nk"]}</span></div>')
@@ -401,7 +559,7 @@ def _page(course, p, flat, nav):
                 f'<div class="epmeta">{" &middot; ".join(html.escape(str(b)) for b in bits)}</div>')
     elif p["kind"] == "module":
         head = f'<div class="epmeta">Module</div>'
-    elif p["kind"] in ("home", "modules", "readings"):
+    elif p["kind"] in ("home", "modules", "readings", "videos"):
         head = ""
 
     all_mods = {"kind": "modules", "path": "modules.html", "t": {"title": "All modules"}, "mod": {}}
@@ -409,7 +567,7 @@ def _page(course, p, flat, nav):
         prev, nxt = None, None
     elif p["kind"] == "modules":
         prev, nxt = None, flat[0]
-    elif p["kind"] == "readings":
+    elif p["kind"] in ("readings", "videos"):
         prev, nxt = all_mods, None
     else:
         available = [q for q in flat if q["kind"] == "module" or not _locked(q["mod"])]

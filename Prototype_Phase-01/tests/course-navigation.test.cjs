@@ -21,7 +21,7 @@ test('module directory and search index point to the newly numbered course pages
     assert.equal(d.querySelectorAll('.mless li a').length,43);
     for(const a of d.querySelectorAll('.mcard a'))assert(fs.existsSync(path.join(site,a.getAttribute('href'))));
     const index=JSON.parse(fs.readFileSync(path.join(site,'search.json'),'utf8'));
-    assert.equal(index.length,302);assert.equal(new Set(index.map(e=>e.p)).size,302);
+    assert.equal(index.length,304);assert.equal(new Set(index.map(e=>e.p)).size,304);
     for(const entry of index)assert(fs.existsSync(path.join(site,entry.p)),entry.p);
     assert(index.some(e=>e.e==='6.6'&&e.t==='Guided regression workflow'));
     assert(index.some(e=>e.e==='2.8'&&e.k==='lesson'));

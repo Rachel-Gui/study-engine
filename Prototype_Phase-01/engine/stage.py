@@ -49,7 +49,7 @@ h2.hd::after{content:"";display:block;width:48px;height:3px;background:__ACCENT_
 
 /* idea */
 .idea{display:flex;flex-direction:column;justify-content:center;height:100%;padding-left:12px;border-left:4px solid __GOLD__}
-.idea h1.big{font-size:46px;max-width:26ch}
+.idea h1.big{font-size:46px;max-width:none}
 .idea .ico{width:64px;height:64px;color:__ACCENT__;margin-bottom:24px}
 
 /* list & recap */
@@ -180,9 +180,32 @@ pre.out .lbl{display:block;font:700 10.5px Montserrat,sans-serif;letter-spacing:
 .gal.n2 .tile .cap b{font-size:18px}.gal.n2 .tile .cap span{font-size:14px}
 .gal.n3 .tile .cap b{font-size:16px}.gal.n3 .tile .cap span{font-size:13px}
 .galnote{font-size:15px;line-height:1.45;color:#3a3a3a;margin-top:14px;max-width:70ch}
+/* square photographs keep their whole frame: size the grid so the tiles fit the frame height */
+.gal.square.rows2 .tile .pic{aspect-ratio:1/1}
+.gal.square.rows2{max-width:740px}
+.gal.square.n2{max-width:760px}
+.gal.square.n2 .tile .cap{padding:10px 14px 12px}
 
 /* image: one real picture with its caption */
 .img{display:grid;grid-template-columns:1.25fr .75fr;gap:34px;align-items:center;height:100%}
+.shot{display:flex;gap:30px;align-items:center;justify-content:center}
+.shot.side{justify-content:flex-start}
+.shot .col{display:flex;flex-direction:column;align-items:center;gap:10px}
+.shotv{position:relative;border-radius:8px;box-shadow:0 14px 40px rgba(0,0,0,.18)}
+.shotv .clip{position:absolute;inset:0;overflow:hidden;border-radius:8px;border:1px solid #d6d6d6;background:#fff}
+.shot .scap{font-size:14.5px;line-height:1.45;color:#4a4a4a;max-width:900px;text-align:center}
+.shot .list{flex:1;min-width:0}
+.shot.under{flex-direction:column;gap:12px}
+.shot.under .list{flex:none;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 30px;max-width:1136px}
+.shot.under .leg{margin-bottom:0;font-size:16px;align-items:center}
+.shot.under .leg .mnum{margin-top:0}
+.shot .list .li{font-size:17px}
+.mark{position:absolute;border:2px solid __ACCENT__;border-radius:6px;box-shadow:0 0 0 3px rgba(75,46,131,.16),0 0 20px rgba(75,46,131,.32)}
+.mark .mnum{position:absolute;left:-36px;top:50%;transform:translateY(-50%)}
+.mnum{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:__ACCENT__;color:#fff;font:700 14px Montserrat,sans-serif;box-shadow:0 3px 10px rgba(0,0,0,.25);flex:0 0 28px}
+.shot .leg{display:flex;gap:12px;align-items:flex-start;font-size:17px;line-height:1.4;margin-bottom:16px;color:#222}
+.shot .leg .mnum{margin-top:-2px}
+.mark .mlab{position:absolute;white-space:nowrap;background:__ACCENT__;color:#fff;font:600 14px Montserrat,sans-serif;padding:6px 11px;border-radius:5px;box-shadow:0 4px 14px rgba(0,0,0,.2)}
 .img .pic{border:1px solid #dcdcdc;border-radius:8px;overflow:hidden;background:#fbfbfa;max-height:470px;justify-self:center;max-width:100%}
 .img .pic img{width:auto;max-width:100%;height:auto;max-height:468px;display:block}
 .img .txt h2.hd{margin-bottom:16px}
@@ -206,9 +229,9 @@ body.cover{background:__ACCENT__;color:#fff}
 body.cover .topbar{background:__GOLD__}
 body.cover .eyebrow{color:__GOLD__}
 body.cover .band{display:none}
-body.cover .stage{top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;left:96px;right:96px}
+body.cover .stage{top:40px;bottom:112px;display:flex;flex-direction:column;justify-content:center;left:96px;right:96px}
 body.cover .kick{font-size:13px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:__GOLD__;margin-bottom:22px}
-body.cover h1.big{font-size:56px;color:#fff;max-width:20ch}
+body.cover h1.big{font-size:56px;color:#fff;max-width:none}
 body.cover .rule{width:64px;height:3px;background:__GOLD__;margin:26px 0 0;transform-origin:left}
 body.cover .objs{margin-top:30px;max-width:66ch}
 body.cover .objs .lbl{font-size:11px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:__GOLD__;margin-bottom:12px}
@@ -225,7 +248,27 @@ window.STAGE = (function(){
   const ease = p => p <= 0 ? 0 : p >= 1 ? 1 : 1 - Math.pow(1 - p, 3);
   const lin = p => p <= 0 ? 0 : p >= 1 ? 1 : p;
   let els = [], times = [];
+  function fit(){
+    // safety net: content taller than the stage (a long gallery, a long title) is scaled
+    // down about the stage centre instead of running into the eyebrow or the captions
+    const st = document.querySelector('.stage'); if (!st) return 1;
+    st.style.transform = '';
+    let top = Infinity, bot = -Infinity;
+    [...st.children].forEach(c => {
+      const cs = getComputedStyle(c);
+      if (cs.position === 'absolute' || cs.position === 'fixed' || !c.offsetHeight) return;
+      top = Math.min(top, c.offsetTop - (parseFloat(cs.marginTop) || 0));
+      bot = Math.max(bot, c.offsetTop + c.offsetHeight + (parseFloat(cs.marginBottom) || 0));
+    });
+    const need = bot - top, have = st.clientHeight;
+    if (!(need > have + 2)) return 1;
+    const k = Math.max(0.7, have / need);
+    st.style.transformOrigin = '50% 50%';
+    st.style.transform = 'scale(' + k.toFixed(4) + ')';
+    return k;
+  }
   function prepare(){
+    const scale = fit();
     // diagrams: every drawable element becomes an animated element, grouped in document order
     document.querySelectorAll('svg[data-diagram]').forEach(svg => {
       const base = +svg.dataset.beatBase || 0, groups = +svg.dataset.groups || 8;
@@ -259,7 +302,7 @@ window.STAGE = (function(){
     const count = els.length ? Math.max(...els.map(x => x.beat)) + 1 : 0;
     const spans = {};
     els.forEach(x => { spans[x.beat] = Math.max(spans[x.beat] || 0, x.delay + x.dur); });
-    return { count, spans };
+    return { count, spans, scale };
   }
   function apply(x, t){
     const e = x.el, s = e.style, t0 = times[x.beat];
@@ -303,17 +346,32 @@ def _e(s):
     return html.escape(str(s if s is not None else ""))
 
 
+_KEEP = ("VS Code", "Google Colab", "Claude Code", "GitHub Desktop", "GitHub Pages", "Stable Diffusion")
+
+
 def _lines_of(text, max_chars=30):
-    """Split a headline into 1-3 balanced lines (explicit ' / ' wins)."""
+    """Split a headline into 1-3 balanced lines (explicit ' / ' wins). The product names
+    in _KEEP (VS Code, Google Colab, ...) are never split across lines."""
     text = str(text or "").strip()
-    if " / " in text:
-        return [p.strip() for p in text.split(" / ") if p.strip()]
-    words = text.split()
+    if " / " in text:                     # the author's breaks; a part too long for one line is split again
+        return [l for p in text.split(" / ") if p.strip()
+                for l in (_lines_of(p.strip(), max_chars) if len(p.strip()) > max_chars + 8 else [p.strip()])]
+    glued = text
+    for name in _KEEP:
+        glued = glued.replace(name, name.replace(" ", "\u00a0"))
+    words = [w.replace("\u00a0", " ") for w in glued.split(" ")]
     if len(text) <= max_chars or len(words) < 4:
         return [text]
     n = 2 if len(text) <= max_chars * 2 else 3
     per = math.ceil(len(words) / n)
     return [" ".join(words[i:i + per]) for i in range(0, len(words), per)]
+
+
+def _fit_px(lines, base, width):
+    """Largest font size (<= base) at which the longest headline line fits `width` px.
+    Montserrat semibold runs about 0.5 em per character; 0.56 leaves a margin."""
+    longest = max([len(l) for l in lines] or [1])
+    return max(28, min(base, int(width / (0.56 * longest))))
 
 
 def _item(text):
@@ -367,9 +425,10 @@ def _svg_of(fig_id):
 
 def s_title(sc, ctx):
     objs = [o for o in (ctx.get("objectives") or []) if str(o).strip()]
+    tl = _lines_of(ctx["title"], 26)
     b = [f'<div class="kick" data-beat="0" data-anim="rise">Lesson {_e(ctx["episode"])} · {_e(ctx["module"])}</div>',
-         '<h1 class="big">' + "".join(f'<span class="l" data-beat="0" data-delay="{0.12 + i * 0.12:.2f}" data-anim="rise" data-dur="0.6">{_e(l)}</span>'
-                                       for i, l in enumerate(_lines_of(ctx["title"], 26))) + '</h1>',
+         f'<h1 class="big" style="font-size:{_fit_px(tl, 56, 1040)}px">' + "".join(f'<span class="l" data-beat="0" data-delay="{0.12 + i * 0.12:.2f}" data-anim="rise" data-dur="0.6">{_e(l)}</span>'
+                                       for i, l in enumerate(tl)) + '</h1>',
          f'<div class="rule" data-beat="0" data-delay="0.55" data-anim="growx" data-dur="0.5"></div>']
     beat = 1
     if objs:
@@ -383,9 +442,10 @@ def s_title(sc, ctx):
 
 
 def s_next(sc, ctx):
+    tl = _lines_of(sc.get("text", ""), 26)
     b = [f'<div class="kick" data-beat="0" data-anim="rise">{_e(sc.get("kick", "Next lesson"))}</div>',
-         '<h1 class="big">' + "".join(f'<span class="l" data-beat="0" data-delay="{0.12 + i * 0.12:.2f}" data-anim="rise" data-dur="0.6">{_e(l)}</span>'
-                                       for i, l in enumerate(_lines_of(sc.get("text", ""), 26))) + '</h1>',
+         f'<h1 class="big" style="font-size:{_fit_px(tl, 56, 1040)}px">' + "".join(f'<span class="l" data-beat="0" data-delay="{0.12 + i * 0.12:.2f}" data-anim="rise" data-dur="0.6">{_e(l)}</span>'
+                                       for i, l in enumerate(tl)) + '</h1>',
          '<div class="rule" data-beat="0" data-delay="0.5" data-anim="growx" data-dur="0.5"></div>']
     if sc.get("sub"):
         b.append(f'<p class="sub" data-beat="1" data-anim="rise">{_e(sc["sub"])}</p>')
@@ -415,7 +475,7 @@ def s_idea(sc, ctx):
     if sc.get("icon") in _ICONS:
         b.append(f'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" '
                  f'stroke-linejoin="round" data-beat="0" data-anim="pop" data-dur="0.5">{_ICONS[sc["icon"]]}</svg>')
-    b.append('<h1 class="big">' + "".join(f'<span class="l" data-beat="{i}" data-anim="rise" data-dur="0.6">{_e(l)}</span>'
+    b.append(f'<h1 class="big" style="font-size:{_fit_px(lines, 46, 1060)}px">' + "".join(f'<span class="l" data-beat="{i}" data-anim="rise" data-dur="0.6">{_e(l)}</span>'
                                           for i, l in enumerate(lines)) + '</h1>')
     beat = len(lines)
     if sc.get("sub"):
@@ -659,12 +719,18 @@ def s_site(sc, ctx):
     return "".join(b), "", 4
 
 
+_MISSING = set()
+
+
 def _data_uri(path):
     """A course asset (relative to the project root) as a data: URI, so the stage page is self-contained."""
     if not path:
         return ""
     full = path if os.path.isabs(path) else os.path.join(ROOT, path)
     if not os.path.exists(full):
+        if path not in _MISSING:                     # say so once: a blank picture is easy to miss
+            _MISSING.add(path)
+            print(f"  !!  picture not found, left blank: {path}", flush=True)
         return ""
     mime = mimetypes.guess_type(full)[0] or "application/octet-stream"
     with open(full, "rb") as f:
@@ -719,6 +785,69 @@ def s_image(sc, ctx):
     return "".join(b), "", 2 + len(pts)
 
 
+
+def s_shot(sc, ctx):
+    """A real screenshot, optionally cropped to the region that matters, with highlight
+    boxes that pop in one by one (beats) as the narration reaches them.
+      src: assets/...png   crop: [x, y, w, h] in % of the image   heading, caption
+      marks: [{box: [x, y, w, h] in % of the (cropped) view, label: "...", at: left|right|below|above}]
+             with legend: true the number badge sits left of the box; at: right|above|below|corner moves it
+      points: up to three lines in a side column (optional)"""
+    path = os.path.join(ROOT, str(sc.get("src", "")))
+    uri = _data_uri(str(sc.get("src", "")))
+    try:
+        from PIL import Image
+        W, H = Image.open(path).size
+    except Exception:
+        W, H = 16, 9
+    cx, cy, cw, ch = [float(v) for v in (sc.get("crop") or [0, 0, 100, 100])]
+    aspect = (W * cw) / (H * ch)
+    pts = sc.get("points") or []
+    legend = bool(sc.get("legend"))
+    under = legend and not pts and aspect > 2.4          # a wide, short shot: full width, legend beneath
+    side = (bool(pts) or legend) and not under
+    if under:
+        max_w, max_h = 1136, (330 if sc.get("caption") else 360)
+    else:
+        max_w, max_h = (790 if side else 1136), (452 if sc.get("caption") else 482)
+    vw = min(max_w, max_h * aspect); vh = vw / aspect
+    img = (f'<img src="{uri}" alt="" style="position:absolute;width:{10000 / cw:.3f}%;'
+           f'left:{-cx * 100 / cw:.3f}%;top:{-cy * 100 / ch:.3f}%;max-width:none">')
+    marks = []
+    for j, m in enumerate(sc.get("marks") or []):
+        x, y, w, h = [float(v) for v in m.get("box", [0, 0, 0, 0])]
+        lab = m.get("label", "")
+        at = m.get("at", "below")
+        pos = {"below": f"left:0;top:calc(100% + 8px)", "above": f"left:0;bottom:calc(100% + 8px)",
+               "right": f"left:calc(100% + 10px);top:50%;transform:translateY(-50%)",
+               "left": f"right:calc(100% + 10px);top:50%;transform:translateY(-50%)"}.get(at, "")
+        badge = {"right": "left:auto;right:-36px", "corner": "left:-15px;top:-15px;transform:none",
+                 "above": "left:-6px;top:-34px;transform:none", "below": "left:-6px;top:calc(100% + 6px);transform:none"
+                 }.get(m.get("at", "left"), "") if legend else ""
+        bstyle = f' style="{badge}"' if badge else ""
+        inner = (f'<span class="mnum"{bstyle}>{j + 1}</span>' if legend else
+                 (f'<span class="mlab" style="{pos}">{_e(lab)}</span>' if lab else ""))
+        marks.append(f'<div class="mark" data-beat="{1 + j}" data-anim="pop" data-dur="0.5" '
+                     f'style="left:{x}%;top:{y}%;width:{w}%;height:{h}%">{inner}</div>')
+    beat = 1 + len(marks)
+    view = (f'<div class="shotv" data-beat="0" data-anim="fade" data-dur="0.6" '
+            f'style="width:{vw:.0f}px;height:{vh:.0f}px"><div class="clip">{img}</div>{"".join(marks)}</div>')
+    b = [_heading(sc.get("heading"), 0), f'<div class="shot{" side" if side else ""}{" under" if under else ""}"><div class="col">{view}']
+    if sc.get("caption"):
+        b.append(f'<p class="scap" data-beat="0" data-delay="0.3" data-anim="fade">{_e(sc["caption"])}</p>')
+    b.append('</div>')
+    if side or under:
+        items = ""
+        if legend:
+            items += "".join(f'<div class="leg" data-beat="{1 + j}" data-anim="rise" data-dur="0.5">'
+                             f'<span class="mnum">{j + 1}</span><span>{_e(m.get("label", ""))}</span></div>'
+                             for j, m in enumerate(sc.get("marks") or []))
+        items += "".join(_li(pt, beat + k) for k, pt in enumerate(pts))
+        b.append(f'<div class="list">{items}</div>')
+        beat += len(pts)
+    b.append('</div>')
+    return "".join(b), "", beat
+
 def s_screen(sc, ctx):
     """A software environment mock-up (terminal, editor, notebook, browser, installer) that plays its steps."""
     spec = {k: v for k, v in sc.items() if k not in ("type", "narration", "heading", "text", "points", "wide")}
@@ -742,14 +871,18 @@ def s_screen(sc, ctx):
 
 SCENES = {"title": s_title, "next": s_next, "idea": s_idea, "list": s_list, "recap": s_recap, "cards": s_cards,
           "steps": s_steps, "compare": s_compare, "number": s_number, "code": s_code, "chart": s_chart,
-          "diagram": s_diagram, "quiz": s_quiz, "site": s_site, "gallery": s_gallery, "image": s_image, "screen": s_screen}
+          "diagram": s_diagram, "quiz": s_quiz, "site": s_site, "gallery": s_gallery, "image": s_image, "screen": s_screen, "shot": s_shot}
 
 
 def scene_html(sc, ctx):
     """The stage page for one scene. ctx: episode, title, module, objectives, course, instructor."""
     fn = SCENES.get(sc.get("type", "idea"), s_idea)
     body, cls, _ = fn(sc, ctx)
+    foot = ""
+    m = re.search(r'<div class="who"[^>]*>.*?</div>', body, re.S)
+    if m:                                   # the cover's footer line sits outside the stage
+        body, foot = body[:m.start()] + body[m.end():], m.group(0)
     eyebrow = "" if cls == "cover" else (f'<div class="eyebrow">Lesson <b>{_e(ctx["episode"])}</b> &nbsp;·&nbsp; {_e(ctx["title"])}</div>')
     return (f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}</style></head>'
-            f'<body class="{cls}"><div class="topbar"></div>{eyebrow}<div class="stage">{body}</div>'
+            f'<body class="{cls}"><div class="topbar"></div>{eyebrow}<div class="stage">{body}</div>{foot}'
             f'<div class="band"></div><script>{STAGE_JS}</script></body></html>')

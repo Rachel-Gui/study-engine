@@ -1,7 +1,7 @@
 """figures_py.py - diagrams for the Python-from-zero and EDA chapters.
 Same conventions as figures.py: black line art, Montserrat, Spirit Purple for
 one emphasis element, a viewBox so it scales on the site and in 4K frames."""
-import math
+import math, re
 
 ACC = "#4b2e83"
 GOLD = "#e8e3d3"
@@ -23,6 +23,8 @@ MONO = 'font-family="IBM Plex Mono, Menlo, monospace"'
 
 def _t(x, y, s, size=13, anchor="middle", weight=400, style=""):
     base = _S.replace(' fill="#111"', "") if "fill=" in style else _S   # first attribute wins in SVG
+    if "font-family=" in style:                                              # so a MONO style must replace, not follow
+        base = re.sub(r'font-family="[^"]*"\s*', "", base)
     return (f'<text x="{x}" y="{y}" font-size="{size}" text-anchor="{anchor}" '
             f'font-weight="{weight}" {base} stroke="none" {style}>{s}</text>')
 
@@ -200,29 +202,29 @@ def for_loop():
     s = HEAD.format(w=880, h=320)
     s += _m(60, 48, "for room in rooms:", 13, anchor="start")
     s += _m(60, 68, "    print(room)", 13, anchor="start")
-    # flow
-    s += _box(340, 60, 190, 44, lw=1.6)
-    s += _t(435, 87, "any items left?", 13, weight=600)
-    s += _arrow(435, 106, 435, 146)
-    s += _t(452, 128, "yes", 11, anchor="start", style=f'fill="{ACC}"')
-    s += _box(340, 150, 190, 44, fill=GOLD, stroke=ACC, lw=1.2)
-    s += _t(435, 170, "room = the next item", 12, weight=500)
-    s += _t(435, 186, "run the indented block", 10.5, style='opacity=".65"')
-    s += f'<path d="M340,172 L300,172 L300,82 L336,82" marker-end="url(#ao)"/>'
-    s += _t(292, 130, "back", 10.5, anchor="end", style='opacity=".6"')
-    s += _arrow(534, 82, 640, 82)
-    s += _t(590, 72, "no", 11, style=f'fill="{ACC}"')
-    s += _box(646, 60, 170, 44)
-    s += _t(731, 87, "carry on after the loop", 12)
+    # flow - kept clear of the room boxes on the left so the loop-back line runs in open space
+    s += _box(400, 60, 190, 44, lw=1.6)
+    s += _t(495, 87, "any items left?", 13, weight=600)
+    s += _arrow(495, 106, 495, 146)
+    s += _t(512, 128, "yes", 11, anchor="start", style=f'fill="{ACC}"')
+    s += _box(400, 150, 190, 44, fill=GOLD, stroke=ACC, lw=1.2)
+    s += _t(495, 170, "room = the next item", 12, weight=500)
+    s += _t(495, 186, "run the indented block", 10.5, style='opacity=".65"')
+    s += f'<path d="M400,172 L366,172 L366,82 L396,82" marker-end="url(#ao)"/>'
+    s += _t(373, 131, "back", 10.5, anchor="start", style='opacity=".6"')
+    s += _arrow(594, 82, 680, 82)
+    s += _t(637, 72, "no", 11, style=f'fill="{ACC}"')
+    s += _box(686, 60, 170, 44)
+    s += _t(771, 87, "carry on after the loop", 12)
     # the sequence
     for i, r in enumerate(["kitchen", "living", "hall"]):
         s += _box(60 + i * 90, 110, 82, 28, lw=1)
         s += _m(101 + i * 90, 129, r, 11)
     s += _t(60, 164, "rooms — the loop visits each one, in order,", 10.5, anchor="start", style='opacity=".65"')
     s += _t(60, 180, "and the name room points at the current one", 10.5, anchor="start", style='opacity=".65"')
-    s += _t(60, 220, "1st pass: room = \"kitchen\"", 11, anchor="start", style=MONO)
-    s += _t(60, 238, "2nd pass: room = \"living\"", 11, anchor="start", style=MONO)
-    s += _t(60, 256, "3rd pass: room = \"hall\"  → items left? no", 11, anchor="start", style=MONO)
+    s += _m(60, 220, '1st pass: room = "kitchen"', 11, anchor="start")
+    s += _m(60, 238, '2nd pass: room = "living"', 11, anchor="start")
+    s += _m(60, 256, '3rd pass: room = "hall"  → items left? no', 11, anchor="start")
     s = _foot(s, 280, "A for loop runs the indented block once per item. You never write the counting yourself.")
     return s + "</svg>"
 
@@ -233,18 +235,18 @@ def while_loop():
     s += _m(60, 48, "floors = 0", 13, anchor="start")
     s += _m(60, 68, "while floors < 3:", 13, anchor="start")
     s += _m(60, 88, "    floors = floors + 1", 13, anchor="start")
-    s += _box(340, 60, 190, 44, lw=1.6)
-    s += _t(435, 87, "is floors < 3 true?", 13, weight=600)
-    s += _arrow(435, 106, 435, 146)
-    s += _t(452, 128, "yes", 11, anchor="start", style=f'fill="{ACC}"')
-    s += _box(340, 150, 190, 44, fill=GOLD, stroke=ACC, lw=1.2)
-    s += _t(435, 176, "run the indented block", 12, weight=500)
-    s += f'<path d="M340,172 L300,172 L300,82 L336,82" marker-end="url(#ao)"/>'
-    s += _t(292, 130, "check again", 10.5, anchor="end", style='opacity=".6"')
-    s += _arrow(534, 82, 640, 82)
-    s += _t(590, 72, "no", 11, style=f'fill="{ACC}"')
-    s += _box(646, 60, 170, 44)
-    s += _t(731, 87, "carry on after the loop", 12)
+    s += _box(390, 60, 190, 44, lw=1.6)                      # clear of the trace lines on the left
+    s += _t(485, 87, "is floors < 3 true?", 13, weight=600)
+    s += _arrow(485, 106, 485, 146)
+    s += _t(502, 128, "yes", 11, anchor="start", style=f'fill="{ACC}"')
+    s += _box(390, 150, 190, 44, fill=GOLD, stroke=ACC, lw=1.2)
+    s += _t(485, 176, "run the indented block", 12, weight=500)
+    s += f'<path d="M390,172 L350,172 L350,82 L386,82" marker-end="url(#ao)"/>'
+    s += _t(342, 130, "check again", 10.5, anchor="end", style='opacity=".6"')
+    s += _arrow(584, 82, 690, 82)
+    s += _t(640, 72, "no", 11, style=f'fill="{ACC}"')
+    s += _box(696, 60, 170, 44)
+    s += _t(781, 87, "carry on after the loop", 12)
     for i, (f, chk) in enumerate([("0", "0 < 3  true"), ("1", "1 < 3  true"), ("2", "2 < 3  true"), ("3", "3 < 3  FALSE → stop")]):
         s += _t(60, 130 + i * 20, f"floors = {f}   check: {chk}", 11, anchor="start", style=MONO)
     s += _t(60, 226, "The block must change something the condition looks at.", 11, anchor="start", weight=500)
@@ -316,8 +318,9 @@ def class_blueprint():
 # ------------------------------------------------------------------ imports
 def imports():
     s = HEAD.format(w=880, h=320)
-    s += _box(60, 80, 200, 150, lw=1.8)
-    s += _t(160, 70, "your program", 12.5, weight=600)
+    # IBM Plex Mono advances 0.6 em: 27 characters at 11.5 px need 186 px, so the box is 230 wide
+    s += _box(60, 80, 230, 150, lw=1.8)
+    s += _t(175, 70, "your program", 12.5, weight=600)
     s += _m(76, 110, "import math", 11.5, anchor="start")
     s += _m(76, 130, "import numpy as np", 11.5, anchor="start")
     s += _m(76, 150, "from statistics import mean", 11.5, anchor="start")
@@ -328,14 +331,14 @@ def imports():
              ("random", "choice, shuffle", "built in"), ("numpy", "arrays, fast maths", "installed"),
              ("pandas", "tables", "installed"), ("matplotlib", "plots", "installed")]
     for i, (n, what, kind) in enumerate(tools):
-        x = 330 + (i % 3) * 180; y = 80 + (i // 3) * 80
+        x = 350 + (i % 3) * 175; y = 80 + (i // 3) * 80
         s += _box(x, y, 160, 58, lw=1.2, fill="#fbfbfa")
         s += _m(x + 80, y + 22, n, 12.5, style='font-weight="600"')
         s += _t(x + 80, y + 38, what, 10.5, style='opacity=".65"')
         s += _t(x + 80, y + 52, kind, 9.5, style=f'fill="{ACC}"')
-    s += _arrow(264, 130, 322, 110, dash="4 3")
-    s += _arrow(264, 160, 322, 190, dash="4 3")
-    s += _t(590, 250, "\"built in\" ships with Python. \"installed\" came from pip install (Setup 1).", 10.5, style='opacity=".65"')
+    s += _arrow(296, 130, 342, 110, dash="4 3")
+    s += _arrow(296, 160, 342, 190, dash="4 3")
+    s += _t(605, 250, "\"built in\" ships with Python. \"installed\" came from pip install (Setup 1).", 10.5, style='opacity=".65"')
     s = _foot(s, 276, "A library is a toolbox someone else wrote. import brings it in; the dot reaches inside it.")
     return s + "</svg>"
 

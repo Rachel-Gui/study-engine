@@ -32,7 +32,8 @@ function markCurrent(i){
       href: here.getAttribute("href"), ep: here.dataset.ep, title: here.textContent })); } catch(e){}
   }
   if(i < 0){
-    const home = document.body.classList.contains("readings") ? "readings.html" : "modules.html";
+    const home = document.body.classList.contains("readings") ? "readings.html"
+               : document.body.classList.contains("videos") ? "videos.html" : "modules.html";
     document.querySelector(`nav a.home[href="${home}"]`)?.classList.add("on");
     let last = null; try { last = JSON.parse(localStorage.getItem(LAST) || "null"); } catch(e){}
     const r = document.getElementById("resume"), rt = document.getElementById("resume-t");
@@ -501,3 +502,13 @@ document.querySelectorAll(".trace").forEach(box => {
   });
   q.form?.addEventListener("submit", e => e.preventDefault());
 })();
+
+/* ------------------------------------------------------------ lesson videos
+   The big play button starts the video; it hides while the video plays. */
+document.querySelectorAll(".vwrap").forEach(w => {
+  const v = w.querySelector("video"), b = w.querySelector(".vplay");
+  if(!v || !b) return;
+  b.addEventListener("click", () => { const p = v.play(); if(p && p.catch) p.catch(() => {}); });
+  v.addEventListener("play", () => w.classList.add("playing"));
+  v.addEventListener("ended", () => w.classList.remove("playing"));
+});

@@ -26,10 +26,22 @@ BULLET = re.compile(r"^\s*[-*]\s+(.*)$")
 NUMBER = re.compile(r"^\s*\d+[.)]\s+(.*)$")
 
 
+IMAGE = re.compile(r'^\s*!\[(.*?)\]\((\S+?)(?:\s+"(.*?)")?\)\s*$')
+
+
+def _image_html(line):
+    m = IMAGE.match(line)
+    cap, src, credit = m.group(1), m.group(2), m.group(3) or ""
+    return (f'<figure class="fig shot"><a class="zoom" href="{html.escape(src)}" target="_blank" rel="noopener" title="Open full size">'
+            f'<img src="{html.escape(src)}" alt="{html.escape(plain(cap) or "screenshot")}" loading="lazy"></a>'
+            + (f'<figcaption>{inline(cap)}' + (f'<span class="credit">{inline(credit)}</span>' if credit else "")
+               + '</figcaption>' if cap or credit else "") + '</figure>')
+
+
 def _chunks(body):
     """Group lines into ('p'|'ul'|'ol'|'code', [lines]) runs. A ``` fence opens a
     code run that keeps its line breaks and indentation exactly."""
-    out, fence = [], False
+    out, fence, blank = [], False, False
     for line in body.split("\n"):
         if line.strip().startswith("```"):
             if fence:
@@ -40,6 +52,11 @@ def _chunks(body):
         if fence:
             out[-1][1].append(line); continue
         if not line.strip():
+            blank = True
+            continue
+        after_blank, blank = blank, False
+        if IMAGE.match(line):                             # ![caption](src "credit") on its own line
+            out.append(("img", [line.strip()]))
             continue
         if line.lstrip().startswith("|"):                 # markdown table row
             if out and out[-1][0] == "table":
@@ -56,8 +73,8 @@ def _chunks(body):
         kind, text = ("ul", b.group(1)) if b else ("ol", n.group(1)) if n else ("p", line)
         if out and out[-1][0] == kind and kind != "p":
             out[-1][1].append(text)
-        elif out and out[-1][0] == "p" and kind == "p":
-            out[-1][1].append(text)                # wrap continuation lines
+        elif out and out[-1][0] == "p" and kind == "p" and not after_blank:
+            out[-1][1].append(text)                # wrap continuation lines; a blank line starts a new paragraph
         else:
             out.append((kind, [text]))
     return out
@@ -85,6 +102,8 @@ def prose_web(b):
             html_out += _table(lines)
         elif kind == "code":
             html_out += f'<pre class="code"><code>{html.escape(chr(10).join(lines))}</code></pre>'
+        elif kind == "img":
+            html_out += _image_html(lines[0])
         elif kind == "p":
             html_out += f"<p>{inline(' '.join(lines))}</p>"
         else:
@@ -100,6 +119,8 @@ def prose_frame(b):
             out += _table(lines, esc=lambda x: html.escape(plain(x)))
         elif kind == "code":
             out += f'<pre class="f-code">{html.escape(chr(10).join(lines)[:900])}</pre>'
+        elif kind == "img":
+            out += f'<div class="f-fig"><img src="{html.escape(IMAGE.match(lines[0]).group(2))}"></div>'
         elif kind == "p":
             out += f'<p class="f-prose">{html.escape(plain(" ".join(lines)))}</p>'
         else:
@@ -376,6 +397,28 @@ def slide_frame(b):
     return f'<div class="f-fig"><img src="{b["attrs"].get("src", "")}"></div>'
 
 
+# ---------------------------------------------------------------- screenshot
+#   :::screenshot{src=assets/setup/real/vscode-hello.png caption="..." credit="..."}
+#   A real screenshot of software, with a caption and where/when it was taken.
+
+
+def screenshot_web(b):
+    a = b["attrs"]
+    cap, credit = a.get("caption", ""), a.get("credit", "")
+    full = a.get("full") or a.get("src", "")            # click a screenshot to open it full size
+    w = a.get("width", "")                                # optional, e.g. width=70%: a tall page shot drawn smaller
+    style = f' style="max-width:{html.escape(w)}"' if re.fullmatch(r"\d{1,3}(\.\d+)?(%|px)", w or "") else ""
+    return (f'<figure class="fig shot"><a class="zoom" href="{html.escape(full)}" target="_blank" rel="noopener" '
+            f'title="Open full size"{style}><img src="{html.escape(a.get("src", ""))}" '
+            f'alt="{html.escape(plain(cap) or "screenshot")}" loading="lazy"></a>'
+            + (f'<figcaption>{inline(cap)}' + (f'<span class="credit">{inline(credit)}</span>' if credit else "")
+               + '</figcaption>' if cap or credit else "") + '</figure>')
+
+
+def screenshot_frame(b):
+    return f'<div class="f-fig"><img src="{html.escape(b["attrs"].get("src", ""))}"></div>'
+
+
 # --------------------------------------------------------------------- widget
 #   :::widget{id=neuron-lab}
 
@@ -636,11 +679,19 @@ def _gallery_pic(src, alt=""):
     return f'<img src="{html.escape(src)}" alt="{html.escape(alt or src.rsplit("/", 1)[-1])}" loading="lazy">'
 
 
+def _zoomable(src, inner):
+    """Real pictures in a gallery open full size on click; drawn art and figures do not."""
+    src = src.strip()
+    if src.startswith(("art:", "fig:")):
+        return inner
+    return f'<a class="zoom" href="{html.escape(src)}" target="_blank" rel="noopener" title="Open full size">{inner}</a>'
+
+
 def gallery_web(b):
     items = rows(b["body"], 3)
     n = int(b["attrs"].get("cols", 0) or (4 if len(items) >= 4 else max(2, len(items))))
     cap = b["attrs"].get("caption", "")
-    tiles = "".join(f'<figure class="tile"><div class="pic">{_gallery_pic(src, plain(t) or plain(c))}</div>'
+    tiles = "".join(f'<figure class="tile"><div class="pic">{_zoomable(src, _gallery_pic(src, plain(t) or plain(c)))}</div>'
                     f'<figcaption>{("<b>" + inline(t) + "</b>") if t else ""}{("<span>" + inline(c) + "</span>") if c else ""}</figcaption></figure>'
                     for src, t, c in items)
     return (f'<div class="gallery" style="--n:{n}">{tiles}</div>'
@@ -700,6 +751,7 @@ REGISTRY = {
     "technical":     (technical_web, technical_frame),
     "boundary":      (boundary_web, boundary_frame),
     "trace":         (trace_web, trace_frame),
+    "screenshot": (screenshot_web, screenshot_frame),
     "screen":        (screen_web, screen_frame),
     "gallery":       (gallery_web, gallery_frame),
     "readings":      (readings_web, readings_frame),

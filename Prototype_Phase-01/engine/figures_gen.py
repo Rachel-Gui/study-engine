@@ -150,5 +150,85 @@ def vibe_loop():
     return s + "</svg>"
 
 
+# ------------------------------------------------------------ prompt anatomy
+def prompt_anatomy():
+    """The exact prompt of the Lesson 2.3 material experiment, taken apart."""
+    s = HEAD.format(w=880, h=330)
+    CH = 6.9                                               # IBM Plex Mono advance at 11.5 px
+
+    def chip(x, y, text, label, var=False):
+        w = len(text) * CH + 24
+        s_ = _box(x, y, w, 32, rx=16, fill=(GOLD if var else "#fff"), stroke=(ACC if var else "#111"), lw=(1.6 if var else 1.1))
+        s_ += _m(x + 12, y + 21, text, 11.5, anchor="start", style=(f'fill="{ACC}"' if var else ""))
+        s_ += _t(x + 12, y + 50, label, 9.5, anchor="start", style=(f'fill="{ACC}" font-weight="600"' if var else 'opacity=".6"'))
+        return s_, x + w
+
+    s += _t(60, 40, "the exact prompt of the material experiment (Lesson 2.3), taken apart", 11, anchor="start", weight=600)
+    x = 60
+    for text, label in [("A small pavilion", "building type"), ("in a public garden", "setting"),
+                        ("open structure, elegant proportions", "design intent")]:
+        part, end = chip(x, 60, text, label); s += part; x = end + 18
+    x = 60
+    for text, label in [("surrounded by trees", "context"), ("soft afternoon light", "light, atmosphere"),
+                        ("architectural photography", "representation")]:
+        part, end = chip(x, 136, text, label); s += part; x = end + 18
+    part, end = chip(60, 212, "primary material is {material}", "the one variable", var=True); s += part
+    s += _arrow(end + 6, 228, end + 30, 228, purple=True)
+    x = end + 36
+    for m in ["timber", "concrete", "steel and glass", "rammed earth"]:
+        w = len(m) * CH + 18
+        s += _box(x, 214, w, 28, rx=14, fill="#fff", stroke=ACC, lw=1)
+        s += _m(x + 9, 232, m, 11.5, anchor="start", style=f'fill="{ACC}"')
+        x += w + 8
+    s += _t(end + 36, 262, "the four values tested", 9.5, anchor="start", style='opacity=".6"')
+    s += _box(660, 130, 180, 74, dash="4 3", stroke="#888", lw=1.1)
+    s += _t(672, 150, "held fixed for every image", 10, anchor="start", weight=600)
+    s += _t(672, 167, "seed 200, reset each time", 9.5, anchor="start", style='opacity=".7"')
+    s += _t(672, 182, "guidance 7.5 · 30 steps", 9.5, anchor="start", style='opacity=".7"')
+    s += _t(672, 197, "512 × 512 · SD v1.5", 9.5, anchor="start", style='opacity=".7"')
+    s = _foot(s, 292, "A prompt is a bundle of design statements. Change one, hold the rest, and still expect more than one quality to move.")
+    return s + "</svg>"
+
+
+# ------------------------------------------------------------ a local model
+def ollama_local():
+    """Where a local model runs: one Ollama server on the laptop, several clients."""
+    s = HEAD.format(w=880, h=356)
+    s += _box(40, 46, 590, 240, rx=10, fill="#fbfbfa", lw=1.6)
+    s += _t(58, 68, "your laptop", 12, anchor="start", weight=600)
+    clients = [("terminal", "ollama run llama3.2"), ("your Python", "ollama.chat(...)"),
+               ("Modules 3 and 4", "coding assistant, agents")]
+    for i, (name, code) in enumerate(clients):
+        y = 84 + i * 58
+        s += _box(60, y, 168, 44, fill="#fff", lw=1.1)
+        s += _t(72, y + 18, name, 10.5, anchor="start", weight=600)
+        s += _m(72, y + 34, code, 9.5, anchor="start", style='opacity=".75"')
+        s += _arrow(230, y + 22, 282, 150 + (i - 1) * 12)
+    s += _box(286, 112, 150, 84, fill=GOLD, stroke=ACC, lw=1.8)
+    s += _t(361, 142, "Ollama", 15, weight=600)
+    s += _m(361, 162, "localhost:11434", 10, style=f'fill="{ACC}"')
+    s += _t(361, 182, "runs in the background", 9.5, style='opacity=".65"')
+    # models on disk
+    s += f'<ellipse cx="540" cy="118" rx="62" ry="10" fill="#fff" stroke="#111" stroke-width="1.1"/>'
+    s += f'<path d="M478,118 L478,182 A62,10 0 0 0 602,182 L602,118" fill="#fff" stroke="#111" stroke-width="1.1"/>'
+    s += _t(540, 142, "models on disk", 10.5, weight=600)
+    s += _m(540, 160, "llama3.2  2.0 GB", 9.5, style='opacity=".75"')
+    s += _m(540, 175, "gemma3    3.3 GB", 9.5, style='opacity=".75"')
+    s += _arrow(476, 156, 440, 156)
+    s += _t(458, 210, "loaded into memory (RAM)", 9.5, style='opacity=".6"')
+    s += _t(335, 272, "after the download: no API key, no per-token cost, your prompts stay on this machine",
+            10, style=f'fill="{ACC}"')
+    # the registry
+    s += _box(680, 92, 160, 64, dash="5 4", stroke="#888", lw=1.2)
+    s += _t(760, 118, "ollama.com", 11.5, weight=600)
+    s += _t(760, 138, "model library", 9.5, style='opacity=".65"')
+    s += f'<path d="M680,124 C 650,124 640,124 604,128" marker-end="url(#ao)" stroke-dasharray="4 3" fill="none"/>'
+    s += _m(760, 178, "ollama pull llama3.2", 10, style=f'fill="{ACC}"')
+    s += _t(760, 194, "downloads once", 9.5, style='opacity=".6"')
+    s = _foot(s, 308, "One program serves the model on your laptop. The terminal, your scripts and the course's later tools all talk to it.")
+    return s + "</svg>"
+
+
 ALL = {"gen_families": gen_families, "control_hierarchy": control_hierarchy,
-       "llm_structured": llm_structured, "image_to_model": image_to_model, "vibe_loop": vibe_loop}
+       "llm_structured": llm_structured, "image_to_model": image_to_model, "vibe_loop": vibe_loop,
+       "prompt_anatomy": prompt_anatomy, "ollama_local": ollama_local}

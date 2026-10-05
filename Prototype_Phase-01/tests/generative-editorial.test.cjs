@@ -32,8 +32,8 @@ function checkCopy(doc,file){
   assert.doesNotMatch(article.textContent,/That's the one\./,file);
 }
 
-test('all 19 Generative AI studio topics have clean student copy and working navigation',async()=>{
-  assert.equal(topics.length,19);
+test('all 21 Generative AI studio topics have clean student copy and working navigation',async()=>{
+  assert.equal(topics.length,21);
   for(const file of topics){
     const t=await open(file);checkCopy(t.doc,file);
     for(const a of t.doc.querySelectorAll('nav a[href],footer a[href]')){const href=a.getAttribute('href');if(!/^[a-z]+:|^#/.test(href))assert(fs.existsSync(path.join(site,href)),a.href);}

@@ -14,7 +14,7 @@ with engine/make_videos.py - see its --help.
 Reads course.yml, parses every episode listed there, and hands the same topic
 tree to both renderers. Content authors never open this file.
 """
-import argparse, os, sys, yaml
+import argparse, glob, io, os, re, sys, yaml
 
 # Windows consoles default to cp1252; topic titles contain em-dashes.
 for _s in (sys.stdout, sys.stderr):
@@ -117,12 +117,19 @@ def main():
     ap.add_argument("--port", type=int, default=8000)
     ap.add_argument("--doctor", action="store_true",
                     help="check what is installed for video rendering")
+    ap.add_argument("--preview", action="store_true",
+                    help="instructor preview: build every module unlocked (locked ones keep their status badge). "
+                         "Never publish this build.")
     a = ap.parse_args()
 
     if a.doctor:
         sys.exit(doctor())
 
     course, episodes = load_course()
+    if a.preview:
+        for mod in course["modules"]:
+            mod.pop("locked", None)
+        print("\n  PREVIEW BUILD - every module unlocked. For checking and tests only; do not publish it.")
     flat = render_web.build_site(course, episodes, a.out)
 
     # one storyboard (<lesson>.video.md) per lesson drives that lesson's video
@@ -154,6 +161,15 @@ def main():
     print(f"  {len(flat)} pages  ·  {len(episodes)} lessons  ·  "
           f"{sum(1 for v in boards.values() if isinstance(v, int))} video storyboards  ·  {n_scenes} video scenes")
     print(f"  written to {a.out}")
+    miss = missing_assets()
+    if miss:
+        print(f"\n  !!  {len(miss)} picture(s) the lessons use are not in this folder, so they show blank:")
+        for m in miss[:6]:
+            print("        " + m)
+        if len(miss) > 6:
+            print(f"        ... and {len(miss) - 6} more")
+        print("      The folder is incomplete. If the course came in several zips, unzip them all\n"
+              "      into this one folder (WEBSITE, VIDEOS-4K and SLIDES-4K do it for you).")
     broken = [k for k, v in boards.items() if not isinstance(v, int)]
     if broken:
         print(f"\n  !!  Broken storyboard(s): {', '.join(broken)} — fix before rendering video.")
@@ -171,6 +187,25 @@ def main():
     if a.serve:
         serve(a.out, a.port)
     print()
+
+
+ASSET_REF = re.compile(r"assets/[A-Za-z0-9_./-]+?\.(?:png|jpe?g|gif|webp|svg|mp4|csv|json|whl)\b", re.I)
+
+
+def missing_assets(root=None):
+    """Files under assets/ that the lessons, storyboards, course.yml or the studio labs
+    point at but that are not in this folder (a download unzipped in pieces, say).
+    A missing picture is otherwise silent: the page and the video just show a blank."""
+    root = root or ROOT
+    files = (glob.glob(os.path.join(root, "content", "*", "*.md")) + [os.path.join(root, "course.yml")]
+             + glob.glob(os.path.join(root, "assets", "generative", "*.mjs")))
+    refs = set()
+    for f in files:
+        try:
+            refs.update(ASSET_REF.findall(io.open(f, encoding="utf-8").read()))
+        except OSError:
+            pass
+    return sorted(r for r in refs if not os.path.isfile(os.path.join(root, *r.split("/"))))
 
 
 def _installed_fonts():

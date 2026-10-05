@@ -8,7 +8,7 @@ voice_samples.py - hear the same paragraph in several narration voices, then pic
 
 It writes one mp3 per voice and an index.html with a player for each, plus the
 line to paste into course.yml. Nothing else in the course changes until you edit
-course.yml (the `voice:` and `voice_rate:` keys); the next make-video run then
+course.yml (the `voice:` and `voice_rate:` keys); the next VIDEOS-4K run then
 re-records every scene, because the voice is part of each scene's cache id.
 
 Needs edge-tts (pip install edge-tts) and an internet connection: the voices are
@@ -99,7 +99,7 @@ h1{{font-size:24px}}p{{color:#444;line-height:1.5}}ul{{list-style:none;padding:0
 .v b{{display:block}}.v span{{font-size:13px;color:#666}}code{{font-size:12px;background:#f4f4f2;padding:4px 8px;border-radius:4px}}audio{{width:100%}}</style></head>
 <body><h1>Narration voice samples</h1>
 <p>The same paragraph (the start of the course introduction) at rate {html.escape(a.rate)}. Pick one, paste its line into
-<code>course.yml</code> (the <code>voice:</code> key), and the next <code>make-video</code> run re-records every lesson with it.
+<code>course.yml</code> (the <code>voice:</code> key), and the next <code>VIDEOS-4K</code> run re-records every lesson with it.
 <code>voice_rate:</code> sets the pace; "-3%" is a touch slower than the voice's own.</p>
 <ul>{items}</ul>
 <p style="font-size:13px;color:#666">Voices are Microsoft neural voices served through edge-tts. Generated: {len(rows)}; not available or failed: {", ".join(skipped) or "none"}.</p>

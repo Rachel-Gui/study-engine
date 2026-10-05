@@ -48,7 +48,8 @@ class GenerativeBuild(unittest.TestCase):
                 for block in topic['blocks']:
                     self.assertIn(block['kind'],components.REGISTRY)
                     components.render(block,'frame')
-        self.assertEqual(total,19)
+        # 19 studio pages, plus 2.2 'A real run, step by step' and 2.6 'A model can fill the fields'
+        self.assertEqual(total,21)
     def test_local_assets_and_clean_popovers(self):
         for path in (ROOT/'site').glob('2-*.html'):
             page=Page(path.read_text());self.assertNotIn('{{',''.join(page.text))

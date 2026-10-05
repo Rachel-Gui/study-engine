@@ -1,6 +1,7 @@
 """Line-art SVG diagrams. Black on white, no fills, no colour.
 Every diagram is a standalone <svg> string with a viewBox, so it scales
 identically in the player and in the rendered video frame."""
+import re
 
 _S = ('font-family="Montserrat, sans-serif" fill="#111"')
 HEAD = ('<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" '
@@ -16,6 +17,8 @@ HEAD = ('<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" '
 
 def _t(x, y, s, size=13, anchor="middle", weight=400, style=""):
     base = _S.replace(' fill="#111"', "") if "fill=" in style else _S   # first attribute wins in SVG
+    if "font-family=" in style:                                              # so a MONO style must replace, not follow
+        base = re.sub(r'font-family="[^"]*"\s*', "", base)
     return (f'<text x="{x}" y="{y}" font-size="{size}" text-anchor="{anchor}" '
             f'font-weight="{weight}" {base} stroke="none" {style}>{s}</text>')
 
@@ -376,7 +379,7 @@ def orchestration():
     s = HEAD.format(w=880, h=320)
     s += '<line x1="292" y1="46" x2="292" y2="236" opacity=".25" stroke-dasharray="3 4"/>'
     s += '<line x1="596" y1="46" x2="596" y2="236" opacity=".25" stroke-dasharray="3 4"/>'
-    for x, n, lab in [(150, "PHASE 1", "sequential"), (444, "PHASE 2", "parallel"),
+    for x, n, lab in [(150, "PHASE 1", "sequential"), (444, "PHASE 2", "parallel — they never see each other"),
                       (740, "PHASE 3", "sequential")]:
         s += _t(x, 40, n, 10.5, weight=700)
         s += _t(x, 258, lab, 11, style='font-style="italic" opacity=".6"')
@@ -395,7 +398,6 @@ def orchestration():
         s += _t(445, y + 36, sub, 9.5, style='opacity=".55"')
         s += f'<path d="M226,148 C 300,148 300,{y+24} 366,{y+24}" marker-end="url(#ao)"/>'
         s += f'<path d="M522,{y+24} C 590,{y+24} 590,148 662,148" marker-end="url(#ao)"/>'
-    s += _t(445, 240, "they never see each other", 10, style='opacity=".5"')
 
     s += '<rect x="666" y="118" width="150" height="60" rx="3" stroke-width="2"/>'
     s += _t(741, 142, "Manager", 13, weight=600)

@@ -18,6 +18,15 @@ voice_rate: "-3%"                      # a touch slower than default; "+0%" is t
 # The only place the Pyodide version appears. Bump it here if a lab stops working.
 pyodide_url: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
 
+# Lesson videos on the website. The build takes each lesson's video from dist/video/
+# (where VIDEOS-4K puts it), makes a 1080p web copy with a poster frame in
+# site/video/, plays it at the top of the lesson, and lists it on videos.html.
+#   embed: all                  every unlocked lesson that has a rendered video
+#   embed: ["0.1", "1.2"]       only these lessons
+# Locked modules never show a video.
+videos:
+  embed: all
+
 modules:
   - title: "Course Introduction"
     short: "Introduction"

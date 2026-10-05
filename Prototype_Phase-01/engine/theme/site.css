@@ -60,7 +60,7 @@ nav a.mod{flex:1;display:block;font-size:9.5px;font-weight:700;letter-spacing:.2
 nav a.ep{flex:1;display:block;font-size:12.5px;font-weight:500;color:var(--ink3);
   padding:7px 8px 7px 26px;line-height:1.4;text-decoration:none;
   border-left:2px solid transparent;transition:color .15s,background .15s}
-nav a.ep .n{font:500 10.5px var(--mono);color:var(--ink4);margin-right:8px}
+nav a.ep .n,nav span.ep .n{font:500 10.5px var(--mono);color:var(--ink4);margin-right:8px}
 nav .e.open>.eh>a.ep{color:var(--ink);font-weight:600}
 nav .e.open>.eh>a.ep .n{color:var(--accent)}
 nav a.tp{display:block;font-size:13px;line-height:1.42;color:var(--ink2);
@@ -317,7 +317,8 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;background:var(--ink)
 .wfs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 0}
 .wf{border:1px solid var(--rule);padding:15px 16px}
 .wf .n{font:500 10px var(--mono);color:var(--ink3);letter-spacing:.1em}
-.wf strong{display:block;font-size:14px;margin:5px 0 4px}
+.wf>strong{display:block;font-size:14px;margin:5px 0 4px}
+.wf p strong{font-weight:600;color:var(--ink2)}
 .wf p{font-size:12.5px;margin:0;color:var(--ink3);line-height:1.5}
 .wf details{margin-top:11px;border-top:1px solid var(--rule);padding-top:9px}
 .wf summary,.exp summary{cursor:pointer;font-size:11.5px;font-weight:600;
@@ -881,7 +882,7 @@ nav a.home .mn{font-size:13px;color:var(--accent);min-width:18px;text-align:cent
 nav a.home:hover{background:#eeeeec;color:var(--ink)}
 nav a.home.on{border-left-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 nav a.ep{font-size:13.5px;padding:7px 8px 7px 24px}
-nav a.ep .n{font-size:11px;color:var(--ink3)}
+nav a.ep .n,nav span.ep .n{font-size:11px;color:var(--ink3)}
 nav a.tp{font-size:14px;padding:6px 24px 6px 40px}
 nav .who{font-size:12.5px;margin:34px 24px 0}
 nav .who b{font-size:13.5px}
@@ -1091,3 +1092,102 @@ header .search input:focus~kbd{display:none}
 .cards.howto .card.link:hover{background:var(--gold-wash)}
 nav .home.rd{margin-top:-6px}
 body.readings .page .readings{margin-top:14px}
+
+/* ---- embedded lesson video (course.yml  videos: embed:) ---- */
+.lesson-video{margin:6px 0 34px;border:1px solid var(--rule);background:#0d0d0d}
+.lesson-video video{display:block;width:100%;aspect-ratio:16/9;background:#0d0d0d}
+.lesson-video figcaption{display:flex;gap:12px;align-items:baseline;padding:11px 16px;background:var(--paper);
+  border-top:1px solid var(--rule);font-size:14px;color:var(--ink2)}
+.lesson-video figcaption .lbl{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+@media print{.lesson-video{display:none!important}}
+
+/* ---- real screenshots (:::screenshot) ---- */
+.fig.shot img{display:block;width:100%;height:auto;border:1px solid var(--rule);box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.fig.shot figcaption .credit{display:block;margin-top:4px;font-size:12px;color:var(--ink3)}
+.os-pane .fig,.os-pane .fig.shot{margin:18px 0!important}
+
+/* ---- October 2026 review: justified prose, calmer objectives, aligned boxes ---- */
+/* Prose is justified and hyphenated. text-align inherits, so it is set once on the
+   article; :where() keeps the left-aligned resets at zero specificity, so any component
+   that centres its own text still wins. */
+article.page{text-align:justify;-webkit-hyphens:auto;hyphens:auto;hyphenate-limit-chars:7 3 3}
+:where(article.page) :where(h1,h2,h3,h4,h5,h6,.crumb,.epmeta,pre,code,table,.tbl,.cards,.card,.compare,
+  .stats,.flow,.reflect,.predict,.pylab,.trace,.wg,.gallery,.screen,.resources,.refs,.readings,.workflow,
+  .deck,.slide,.lesson-video,.vid-grid,.mless,.epcard,.lock-panel,button,input,textarea,select,label,.btn,
+  .status-badge,.glossary,.gl,.tip,.term,.lede,.land-hero,.vmod,.vstrip,.vtile,.vcard,.mgrid,.howto){text-align:left;-webkit-hyphens:manual;hyphens:manual}
+/* the question box and the objectives box share one width */
+article.hero .lede{max-width:none}
+.objs{padding:15px 20px 13px;margin:4px 0 26px}
+.objs .lbl{font-size:10px;margin-bottom:9px}
+.objs li{font-size:14.5px;line-height:1.5;padding-left:30px;margin:0 0 6px;color:var(--ink2)}
+.objs li::before{font-size:11px;top:2px}
+
+/* ---- lesson videos: the videos page, module strips, lesson links ---- */
+.lesson-video figcaption .allv{margin-left:auto;font-size:12px;font-weight:600;color:var(--accent);text-decoration:none;white-space:nowrap}
+.lesson-video figcaption .allv:hover{text-decoration:underline}
+.pl{display:inline-block;width:0;height:0;border-style:solid;border-width:5px 0 5px 8px;
+  border-color:transparent transparent transparent currentColor;margin-right:8px;vertical-align:1px}
+.crumb .vlink{margin-left:auto;display:inline-flex;font-size:10.5px;align-items:center;padding:5px 10px;border:1px solid var(--accent);
+  color:var(--accent);letter-spacing:.12em;font-weight:700;text-decoration:none;border-radius:2px;transition:background .15s,color .15s}
+.crumb .vlink:hover{background:var(--accent);color:#fff}
+.crumb .vlink + .k{margin-left:14px}
+.btn.ghost.vids{display:inline-flex;align-items:center;color:var(--accent);border-color:var(--accent)}
+.btn.ghost.vids .pl{margin-right:10px}
+.mless li a .hasvid{margin-left:auto;font:600 9.5px var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--accent);border:1px solid var(--accent-soft);background:var(--accent-soft);padding:2px 6px;align-self:center;font-style:normal}
+nav .home.vd{margin-top:-6px}
+/* the videos page */
+.vmod{margin:0 0 34px}
+.vmod .rdhead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.vmod .vmeta{font:500 12px var(--mono);color:var(--ink3);letter-spacing:0;text-transform:none}
+.vid-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.vcard{margin:0;border:1px solid var(--rule);background:var(--paper);scroll-margin-top:24px;display:flex;flex-direction:column}
+.vcard:target{outline:2px solid var(--accent);outline-offset:3px}
+.vcard .vframe{background:#0d0d0d}
+.vcard video{display:block;width:100%;aspect-ratio:16/9;background:#0d0d0d}
+.vcard figcaption{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;padding:12px 14px 13px;font-size:14px;line-height:1.4}
+.vcard figcaption .n{font:600 12px var(--mono);color:var(--accent)}
+.vcard figcaption .t{flex:1 1 60%;font-weight:600;color:var(--ink)}
+.vcard figcaption .dur{font:500 12px var(--mono);color:var(--ink3)}
+.vcard figcaption .open{flex-basis:100%;font-size:12.5px;font-weight:600;color:var(--accent);text-decoration:none}
+.vcard figcaption .open:hover{text-decoration:underline}
+@media (max-width:860px){.vid-grid{grid-template-columns:1fr}}
+/* module landing page: a strip of its videos */
+.vstrip{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin:4px 0 30px}
+.vtile{position:relative;display:block;border:1px solid var(--rule);text-decoration:none;color:var(--ink);background:var(--paper);
+  transition:border-color .15s,transform .15s}
+.vtile:hover{border-color:var(--accent);transform:translateY(-1px)}
+.vtile img,.vtile .noposter{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#0d0d0d}
+.vtile .play{position:absolute;right:10px;top:10px;width:34px;height:34px;border-radius:50%;background:rgba(17,17,17,.72);
+  box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+.vtile:hover .play{background:var(--accent)}
+.vtile .play::after{content:"";position:absolute;left:13px;top:10px;border-style:solid;border-width:7px 0 7px 11px;
+  border-color:transparent transparent transparent #fff}
+.vtile .cap{display:block;padding:9px 11px 10px;font-size:12.5px;line-height:1.35}
+.vtile .cap b{font:600 11.5px var(--mono);color:var(--accent);margin-right:6px}
+.vtile .cap i{display:block;font:500 11px var(--mono);font-style:normal;color:var(--ink3);margin-top:3px}
+
+.fig.shot a.zoom{display:block;cursor:zoom-in}
+.fig.shot a.zoom:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.gallery .tile .pic a.zoom{display:block;width:100%;height:100%;cursor:zoom-in}
+/* screenshots stay inside the text column (only drawn figures run wider) */
+.fig.shot{margin-left:0!important;margin-right:0!important}
+
+/* the lab title sits on the purple bar: keep it white (the global strong colour is ink) */
+.pylab .bar strong{color:#fff}
+
+/* lesson videos: the label sits above the player, and a large play button sits on the
+   poster until the video starts, so the player cannot be mistaken for a picture */
+.lesson-video figcaption{border-top:0;border-bottom:1px solid var(--rule)}
+.vwrap{position:relative}
+.vplay{position:absolute;left:50%;top:50%;width:88px;height:88px;margin:-44px 0 0 -44px;padding:0;border:0;border-radius:50%;
+  background:rgba(255,255,255,.94);box-shadow:0 10px 30px rgba(0,0,0,.35);cursor:pointer;transition:transform .15s ease}
+.vplay::before{content:"";position:absolute;left:35px;top:27px;border-style:solid;border-width:17px 0 17px 28px;
+  border-color:transparent transparent transparent var(--accent)}
+.vplay:hover{transform:scale(1.06)}
+.vplay:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.vwrap.playing .vplay{display:none}
+.vcard .vplay{width:64px;height:64px;margin:-32px 0 0 -32px}
+.vcard .vplay::before{left:25px;top:19px;border-width:13px 0 13px 21px}
+.lesson-video{background:var(--paper)}
+.lesson-video .vwrap{background:#0d0d0d}

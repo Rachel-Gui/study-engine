@@ -67,10 +67,14 @@ def parse_episode(path):
             continue
 
         if line.strip() and cur is not None:          # prose paragraph
-            buf = []
-            while i < len(lines) and lines[i].strip() and not lines[i].startswith("## ") \
-                    and not DIRECTIVE.match(lines[i]):
-                buf.append(lines[i]); i += 1
+            buf, fence = [], False
+            while i < len(lines):
+                ln = lines[i]
+                if ln.strip().startswith("```"):        # a code fence keeps its blank lines
+                    fence = not fence
+                elif not fence and (not ln.strip() or ln.startswith("## ") or DIRECTIVE.match(ln)):
+                    break
+                buf.append(ln); i += 1
             cur["blocks"].append({"kind": "prose", "attrs": {},
                                   "body": "\n".join(buf)})
             continue

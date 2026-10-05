@@ -4,7 +4,7 @@ Same conventions as figures.py: black on white, Montserrat, one <svg> string
 per diagram with a viewBox so it scales identically on the site and in a 4K
 video frame. Spirit Purple is used for at most one emphasis element per figure.
 """
-import math
+import math, re
 
 ACC = "#4b2e83"
 _S = ('font-family="Montserrat, sans-serif" fill="#111"')
@@ -21,6 +21,8 @@ HEAD = ('<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" '
 
 def _t(x, y, s, size=13, anchor="middle", weight=400, style=""):
     base = _S.replace(' fill="#111"', "") if "fill=" in style else _S   # first attribute wins in SVG
+    if "font-family=" in style:                                              # so a MONO style must replace, not follow
+        base = re.sub(r'font-family="[^"]*"\s*', "", base)
     return (f'<text x="{x}" y="{y}" font-size="{size}" text-anchor="{anchor}" '
             f'font-weight="{weight}" {base} stroke="none" {style}>{s}</text>')
 
