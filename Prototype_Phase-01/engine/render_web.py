@@ -24,7 +24,8 @@ def build_site(course, episodes, out):
         f.write(css + "\n/* ---- software environment mock-ups (engine/screens.py) ---- */\n" + screens.CSS + "\n")
     assets = os.path.normpath(os.path.join(HERE, "..", "assets"))
     if os.path.isdir(assets):
-        shutil.copytree(assets, os.path.join(out, "assets"), dirs_exist_ok=True)
+        shutil.copytree(assets, os.path.join(out, "assets"), dirs_exist_ok=True,
+                        ignore=lambda directory, names: ["videos"] if directory == assets else [])
 
     videos = _publish_videos(course, episodes, out)
 
@@ -222,7 +223,8 @@ def _publish_videos(course, episodes, out):
 
     course.yml decides which:   videos: embed: all            every unlocked lesson that has a video
                                 videos: embed: ["0.1", "1.2"]  only these
-    A video is looked for in dist/video/ (where make_videos.py writes it). Returns
+    Committed web copies in assets/videos/ are preferred for deployment.
+    Otherwise a video is looked for in dist/video/ (where make_videos.py writes it). Returns
     {episode: info} for the lessons that have one."""
     cfg = (course.get("videos") or {}).get("embed")
     if not cfg:
@@ -231,6 +233,7 @@ def _publish_videos(course, episodes, out):
                  (isinstance(cfg, list) and any(str(e).strip().lower() == "all" for e in cfg))
     want = {str(e).strip() for e in cfg} if isinstance(cfg, list) else set()
     src_dir = os.path.normpath(os.path.join(HERE, "..", "dist", "video"))
+    web_dir = os.path.normpath(os.path.join(HERE, "..", "assets", "videos"))
     dst_dir = os.path.join(out, "video")
     ffmpeg = shutil.which("ffmpeg")
     found, missing = {}, []
@@ -240,6 +243,14 @@ def _publish_videos(course, episodes, out):
             continue
         name = _video_slug(meta)
         src = os.path.join(src_dir, name + ".mp4")
+        web_src = os.path.join(web_dir, name + ".mp4")
+        if os.path.isfile(web_src):
+            os.makedirs(dst_dir, exist_ok=True)
+            shutil.copy2(web_src, os.path.join(dst_dir, name + ".mp4"))
+            web_poster = os.path.join(web_dir, name + ".jpg")
+            if os.path.isfile(web_poster):
+                shutil.copy2(web_poster, os.path.join(dst_dir, name + ".jpg"))
+            src = web_src
         if not os.path.exists(src):
             missing.append(ep if everything else f"{ep} (dist/video/{name}.mp4)")
             continue
